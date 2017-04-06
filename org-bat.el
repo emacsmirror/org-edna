@@ -387,6 +387,11 @@ IDS are all UUIDs as understood by `org-id-find'."
     (when (org-bat--xor condition neg)
       (format "%s %s= %s" var (or neg "=") val))))
 
+(defun org-bat-condition/has-property (neg prop val)
+  (let ((condition (string-equal (org-entry-get nil prop) val)))
+    (when (org-bat--xor condition neg)
+      (org-get-heading))))
+
 
 
 (defun org-bat-transform-consideration (consideration)
