@@ -1,20 +1,12 @@
 ;;; org-bat.el --- Extendable Blockers and Triggers -*- lexical-binding: t; -*-
 
-;; Author: Ian Dunn
+;; Author: Ian Dunn <dunni@gnu.org>
+;; Keywords: convenience, text, org
+;; Version: 1.0
+;; Created: 20 Mar 2017
+;; Modified: 05 Apr 2017
 
 ;;; Commentary:
-
-;; Finders:
-
-;; - self              Self
-;; - siblings          Find all siblings of the current entry
-;; - next-sibling      Find the next sibling on the same level as the entry
-;; - previous-sibling  Find the previous sibling on the same level
-;; - first-child       Find the first child of the current entry
-;; - children          Find all children of the current entry
-;; - parent            Find direct parent of current entry
-;; - descendants       Find all descendants of the current entry
-;; - ancestors         Find all ancestors of the current entry
 
 ;;; Code:
 
@@ -69,13 +61,12 @@
              (setq targets nil))
            (setq state 'finder)
            (let ((markers (apply func args)))
-             ;; Ensure targets is a list so append continues to work
-             (setq targets (append targets (if (consp markers) markers (list markers))))))
+             (setq targets `(,@targets ,@markers))))
           ('action
            (unless (eq action-or-condition 'action)
              (user-error "Actions aren't allowed in this context."))
            (unless targets
-             (user-error "Action specified without targets"))
+             (message "Warning: Action specified without targets"))
            (setq state 'action)
            (dolist (target targets)
              (org-with-point-at target
@@ -84,7 +75,7 @@
            (unless (eq action-or-condition 'condition)
              (user-error "Conditions aren't allowed in this context"))
            (unless targets
-             (user-error "Condition specified without targets"))
+             (message "Warning: Condition specified without targets"))
            (setq state 'condition)
            (unless blocking-entry ;; We're already blocking
              ;; Check the condition at each target
@@ -192,7 +183,7 @@ IDS are all UUIDs as understood by `org-id-find'."
   (mapcar (lambda (id) (org-id-find id 'marker)) ids))
 
 (defun org-bat-finder/self ()
-  (point-marker))
+  (list (point-marker)))
 
 (defun org-bat-finder/siblings ()
   (org-with-wide-buffer
@@ -209,17 +200,17 @@ IDS are all UUIDs as understood by `org-id-find'."
 (defun org-bat-finder/next-sibling ()
   (org-with-wide-buffer
    (and (org-get-next-sibling)
-        (point-marker))))
+        (list (point-marker)))))
 
 (defun org-bat-finder/previous-sibling ()
   (org-with-wide-buffer
    (and (org-get-last-sibling)
-        (point-marker))))
+        (list (point-marker)))))
 
 (defun org-bat-finder/first-child ()
   (org-with-wide-buffer
    (and (org-goto-first-child)
-        (point-marker))))
+        (list (point-marker)))))
 
 (defun org-bat-finder/children ()
   (org-with-wide-buffer
@@ -233,7 +224,7 @@ IDS are all UUIDs as understood by `org-id-find'."
 (defun org-bat-finder/parent ()
   (org-with-wide-buffer
    (and (org-up-heading-safe)
-        (point-marker))))
+        (list (point-marker)))))
 
 (defun org-bat-finder/descendants ()
   (org-with-wide-buffer
@@ -249,18 +240,20 @@ IDS are all UUIDs as understood by `org-id-find'."
      (nreverse markers))))
 
 (defun org-bat-finder/olp (file path)
-  (org-find-olp (cons file (split-string-and-unquote path "/"))))
+  (let ((marker (org-find-olp (cons file (split-string-and-unquote path "/")))))
+    (when (markerp marker)
+      (list marker))))
 
 (defun org-bat-finder/file (file)
   ;; If there isn't a buffer visiting file, then there's no point in having a
   ;; marker to the start of the file.
   (with-current-buffer (find-file-noselect file)
-    (point-min-marker)))
+    (list (point-min-marker))))
 
 (defun org-bat-finder/org-file (file)
   "Finds FILE in `org-directory'."
   (with-current-buffer (find-file-noselect (expand-file-name file org-directory))
-    (point-min-marker)))
+    (list (point-min-marker))))
 
 
 
