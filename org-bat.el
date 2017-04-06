@@ -3,8 +3,7 @@
 ;; Author: Ian Dunn <dunni@gnu.org>
 ;; Keywords: convenience, text, org
 ;; Version: 1.0
-;; Created: 20 Mar 2017
-;; Modified: 05 Apr 2017
+;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "8.0"))
 
 ;;; Commentary:
 
