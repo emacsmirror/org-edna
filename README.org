@@ -247,19 +247,38 @@ Sets the TODO state of the target headline to NEW-STATE.
 :CUSTOM_ID: conditions
 :END:
 
-BAT gives you he option to specify *blocking conditions*.  Each condition is check
+BAT gives you he option to specify *blocking conditions*.  Each condition is checked
 for each of the specified targets; if one of the conditions returns true for
-that target, then
+that target, then that headline is blocked.
 
 *** done
+:PROPERTIES:
+:CUSTOM_ID: done
+:END:
 *** headings
+:PROPERTIES:
+:CUSTOM_ID: headings
+:END:
 *** todo-state
+:PROPERTIES:
+:CUSTOM_ID: todo-state
+:END:
 *** variable-set
+:PROPERTIES:
+:CUSTOM_ID: variable-set
+:END:
+*** has-property
+:PROPERTIES:
+:CUSTOM_ID: has-property
+:END:
 *** Negating Conditions
+:PROPERTIES:
+:CUSTOM_ID: negate
+:END:
 You can also negate a condition using '!'.
 
 #+BEGIN_EXAMPLE
-match(test) !hasProperty(PROP,1)
+match(test) !has-property(PROP,1)
 #+END_EXAMPLE
 
 The above example will cause the current headline to block if any headline
