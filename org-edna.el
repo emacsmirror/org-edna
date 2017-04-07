@@ -103,7 +103,7 @@
              (setq targets nil))
            (setq state 'finder)
            (let ((markers (apply func args)))
-             (setq targets `(,@targets ,@markers))))
+             (setq targets (seq-uniq `(,@targets ,@markers)))))
           ('action
            (unless (eq action-or-condition 'action)
              (user-error "Actions aren't allowed in this context."))
