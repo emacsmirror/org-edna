@@ -374,6 +374,10 @@ IDS are all UUIDs as understood by `org-id-find'."
   (ignore last-entry)
   (org-archive-subtree-default-with-confirmation))
 
+(defun org-bat-action/chain (last-entry property)
+  (when-let ((old-prop (org-entry-get last-entry property)))
+    (org-entry-put nil property old-prop)))
+
 
 
 ;; For most conditions, we return true if condition is true and neg is false, or
