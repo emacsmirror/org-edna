@@ -303,6 +303,7 @@ IDS are all UUIDs as understood by `org-id-find'."
   (org-entry-get nil (if (eq what 'scheduled) "SCHEDULED" "DEADLINE")))
 
 (defun org-bat--handle-planning (type last-entry args)
+  ;; Need case-fold-search enabled so org-read-date-get-relative will recognize "M"
   (let* ((case-fold-search t)
          (arg (nth 0 args))
          (last-ts (org-with-point-at last-entry (org-bat--get-planning-info type)))
