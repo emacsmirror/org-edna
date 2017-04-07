@@ -71,6 +71,17 @@
                   org-bat--types)))
        (cons new-sym (intern (format func-format new-sym)))))))
 
+(defun org-bat--handle-condition (func mod args targets consideration)
+  ;; Check the condition at each target
+  (when-let ((blocks
+              (mapcar
+               (lambda (entry-marker)
+                 (org-with-point-at entry-marker
+                   (apply func mod args)))
+               targets)))
+    ;; Apply consideration
+    (org-bat-handle-consideration consideration blocks)))
+
 (defun org-bat-process-form (form action-or-condition)
   (let ((targets)
         (blocking-entry)
@@ -108,17 +119,9 @@
            (unless targets
              (message "Warning: Condition specified without targets"))
            (setq state 'condition)
-           (unless blocking-entry ;; We're already blocking
-             ;; Check the condition at each target
-             (when-let ((blocks
-                         (mapcar
-                          (lambda (entry-marker)
-                            (org-with-point-at entry-marker
-                              (apply func mod args)))
-                          targets)))
-               ;; Apply consideration
-               (setq blocking-entry
-                     (org-bat-handle-consideration consideration blocks)))))
+           (setq blocking-entry
+                 (or blocking-entry  ;; We're already blocking
+                     (org-bat--handle-condition func mod args targets consideration))))
           ('consideration
            ;; Consideration must be at the start of the targets, so clear out
            ;; any old targets.
@@ -130,15 +133,9 @@
     (when (and (eq action-or-condition 'condition) ;; Looking for conditions
                (eq state 'finder)                  ;; but haven't found any
                (not blocking-entry))                 ;; ever
-      (when-let ((blocks
-                  (mapcar
-                   (lambda (entry-marker)
-                     (org-with-point-at entry-marker
-                       (org-bat-condition/done t)))
-                   targets)))
-        ;; Apply consideration
-        (setq blocking-entry
-              (org-bat-handle-consideration consideration blocks))))
+      (setq blocking-entry
+            (org-bat--handle-condition 'org-bat-condition/done
+                                       t nil targets consideration)))
     ;; Only blockers care about the return value, and this will be non-nil if
     ;; the entry should be blocked.
     (setq org-block-entry-blocking blocking-entry)
