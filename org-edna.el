@@ -237,6 +237,32 @@ IDS are all UUIDs as understood by `org-id-find'."
          (push (point-marker) markers)))
      (nreverse markers))))
 
+(defun org-edna-finder/siblings-wrap ()
+  (org-with-wide-buffer
+   (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
+         (markers))
+     ;; Go from this heading to the end
+     (while (org-get-next-sibling)
+       (unless (equal (point) self)
+         (push (point-marker) markers)))
+     ;; Go to the first heading
+     (org-up-heading-safe)
+     (org-goto-first-child)
+     (while (not (equal (point) self))
+       (push (point-marker) markers)
+       (org-get-next-sibling))
+     (nreverse markers))))
+
+(defun org-edna-finder/rest-of-siblings ()
+  (org-with-wide-buffer
+   (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
+         (markers))
+     ;; Go from this heading to the end
+     (while (org-get-next-sibling)
+       (unless (equal (point) self)
+         (push (point-marker) markers)))
+     (nreverse markers))))
+
 (defun org-edna-finder/next-sibling ()
   (org-with-wide-buffer
    (and (org-get-next-sibling)
@@ -294,6 +320,60 @@ IDS are all UUIDs as understood by `org-id-find'."
   "Finds FILE in `org-directory'."
   (with-current-buffer (find-file-noselect (expand-file-name file org-directory))
     (list (point-min-marker))))
+
+(defun org-edna-finder/chain-find (&rest options)
+  ;; sortfun - function to use to sort elements
+  ;; filterufn - Function to use to filter elements
+  ;; Both should handle positioning point
+  (let (targets sortfun filterfun)
+    (dolist (opt options)
+      (pcase (intern opt)
+        ('from-top
+         (setq targets (org-edna-finder/siblings)))
+        ('from-bottom
+         (setq targets (seq-reverse (org-edna-finder/siblings))))
+        ('from-current
+         (setq targets (org-edna-finder/siblings-wrap)))
+        ('no-wrap
+         (setq targets (org-edna-finder/rest-of-siblings)))
+        ('todo-only
+         (setq filterfun
+               (lambda (target)
+                 (org-entry-get target "TODO"))))
+        ('todo-and-done-only
+         (setq filterfun
+               (lambda (target)
+                 (member (org-entry-get target "TODO") org-done-keywords))))
+        ('priority-up
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((priority-lhs (org-entry-get lhs "PRIORITY"))
+                       (priority-rhs (org-entry-get rhs "PRIORITY")))
+                   (not (string-lessp priority-lhs priority-rhs))))))
+        ('priority-down
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((priority-lhs (org-entry-get lhs "PRIORITY"))
+                       (priority-rhs (org-entry-get rhs "PRIORITY")))
+                   (string-lessp priority-lhs priority-rhs)))))
+        ('effort-up
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((effort-lhs (org-duration-to-minutes (org-entry-get lhs "EFFORT")))
+                       (effort-rhs (org-duration-to-minutes (org-entry-get rhs "EFFORT"))))
+                   (not (< effort-lhs effort-rhs))))))
+        ('effort-down
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((effort-lhs (org-duration-to-minutes (org-entry-get lhs "EFFORT")))
+                       (effort-rhs (org-duration-to-minutes (org-entry-get rhs "EFFORT"))))
+                   (< effort-lhs effort-rhs)))))))
+    (when (and targets sortfun)
+      (setq targets (seq-sort sortfun targets)))
+    (when (and targets filterfun)
+      (setq targets (seq-filter filterfun targets)))
+    (when targets
+      (seq-elt 0 targets))))
 
 
 
