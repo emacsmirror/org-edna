@@ -377,7 +377,7 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 ;; Block if there are headings
 (defun org-bat-condition/headings (neg)
-  (let ((condition (seq-empty-p (org-map-entries (lambda nil t)))))
+  (let ((condition (not (seq-empty-p (org-map-entries (lambda nil t))))))
     (when (org-bat--xor condition neg)
       (buffer-name))))
 
