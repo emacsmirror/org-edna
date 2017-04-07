@@ -13,13 +13,45 @@
 (require 'subr-x)
 
 (defun org-bat-parse-form (form)
-  "Form should be KEY(ARGS)."
-  (when (string-match "^\\([!]\\)?\\([a-zA-Z-]+\\)\\(?:(\\([^)]+\\))\\)?" form)
-    (list (intern (match-string 2 form))
-          (when-let (args (match-string 3 form))
-            (save-match-data (split-string args ",")))
-          (match-string 1 form)
-          (match-end 0))))
+  (pcase-let* ((`(,token . ,pos) (read-from-string form))
+               (modifier nil)
+               (args nil))
+    (unless token
+      (signal 'invalid-read-syntax (substring form pos)))
+    ;; Check for either end of string or an opening parenthesis
+    (unless (or (equal pos (length form))
+                (equal (string-match-p "(" form pos) pos))
+      (signal 'invalid-read-syntax (substring form pos 1)))
+    ;; Parse arguments if we have any
+    (when (equal (string-match-p "(" form pos) pos)
+      ;; Move past the parenthesis
+      (cl-incf pos)
+      (while (and (< pos (length form))
+                  (not (= (string-match-p ")" form pos) pos)))
+        (pcase-let* ((`(,arg . ,new-pos) (read-from-string form pos)))
+          (unless arg
+            (signal 'invalid-read-syntax (substring form pos)))
+          (let ((new-arg (if (stringp arg) arg (symbol-name arg))))
+            (push new-arg args))
+          (setq pos new-pos)
+          ;; Move past whitespace
+          (when (eq (string-match "\\w+" form pos) pos)
+            (setq pos (match-end 0)))
+          ;; The next character should either be a ',' or a ')'
+          (unless (equal (string-match-p "[,)]" form pos) pos)
+            (signal 'invalid-read-syntax (substring form pos 1)))
+          ;; Move past a comma if there is one
+          (when (equal (string-match-p "," form pos) pos)
+            (cl-incf pos))))
+      (unless (equal (string-match-p ")" form pos) pos)
+        (signal 'invalid-read-syntax (substring form pos 1)))
+      (setq args (seq-reverse args))
+      ;; Move past the closing parenthesis
+      (cl-incf pos))
+    (when (string-match "^\\([!]\\)\\(.*\\)" (symbol-name token))
+      (setq modifier (intern (match-string 1 (symbol-name token))))
+      (setq token    (intern (match-string 2 (symbol-name token)))))
+    (list token args modifier pos)))
 
 (defconst org-bat--types
   '(finder action condition)
