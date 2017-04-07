@@ -393,10 +393,6 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 ;; This means that we want to take the exclusive-or of condition and neg.
 
-(defsubst org-edna--xor (lhs rhs)
-  (or (and lhs (not rhs))
-      (and (not lhs) rhs)))
-
 (defun org-edna-condition/done (neg)
   (when-let ((condition
               (if neg
@@ -406,23 +402,23 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 (defun org-edna-condition/todo-state (neg state)
   (let ((condition (string-equal (org-entry-get nil "TODO") state)))
-    (when (org-edna--xor condition neg)
+    (when (org-xor condition neg)
       (org-get-heading))))
 
 ;; Block if there are headings
 (defun org-edna-condition/headings (neg)
   (let ((condition (not (seq-empty-p (org-map-entries (lambda nil t))))))
-    (when (org-edna--xor condition neg)
+    (when (org-xor condition neg)
       (buffer-name))))
 
 (defun org-edna-condition/variable-set (neg var val)
   (let ((condition (string-equal (symbol-value (intern var)) (read val))))
-    (when (org-edna--xor condition neg)
+    (when (org-xor condition neg)
       (format "%s %s= %s" var (or neg "=") val))))
 
 (defun org-edna-condition/has-property (neg prop val)
   (let ((condition (string-equal (org-entry-get nil prop) val)))
-    (when (org-edna--xor condition neg)
+    (when (org-xor condition neg)
       (org-get-heading))))
 
 
