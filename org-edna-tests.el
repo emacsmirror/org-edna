@@ -1,4 +1,4 @@
-;;; org-bat-tests.el --- Tests for org-bat
+;;; org-edna-tests.el --- Tests for org-edna
 
 ;; Author: Ian Dunn
 
@@ -6,12 +6,12 @@
 
 ;;; Code:
 
-(require 'org-bat)
+(require 'org-edna)
 (require 'ert)
 
-(ert-deftest org-bat-parse-form-no-arguments ()
+(ert-deftest org-edna-parse-form-no-arguments ()
   (let* ((input-string "test-string")
-         (parsed       (org-bat-parse-form input-string)))
+         (parsed       (org-edna-parse-form input-string)))
     (should parsed)
     (should (= (length parsed) 4))
     (pcase-let* ((`(,token ,args ,modifier ,pos) parsed))
@@ -20,9 +20,9 @@
       (should (not modifier))
       (should (= pos 11)))))
 
-(ert-deftest org-bat-parse-form-no-arguments-modifier ()
+(ert-deftest org-edna-parse-form-no-arguments-modifier ()
   (let* ((input-string "!test-string")
-         (parsed       (org-bat-parse-form input-string)))
+         (parsed       (org-edna-parse-form input-string)))
     (should parsed)
     (should (= (length parsed) 4))
     (pcase-let* ((`(,token ,args ,modifier ,pos) parsed))
@@ -31,9 +31,9 @@
       (should (eq modifier '!))
       (should (= pos 12)))))
 
-(ert-deftest org-bat-parse-form-single-argument ()
+(ert-deftest org-edna-parse-form-single-argument ()
   (let* ((input-string "test-string(abc)")
-         (parsed       (org-bat-parse-form input-string)))
+         (parsed       (org-edna-parse-form input-string)))
     (should parsed)
     (should (= (length parsed) 4))
     (pcase-let* ((`(,token ,args ,modifier ,pos) parsed))
@@ -44,9 +44,9 @@
       (should (not modifier))
       (should (= pos (length input-string))))))
 
-(ert-deftest org-bat-parse-form-string-argument ()
+(ert-deftest org-edna-parse-form-string-argument ()
   (let* ((input-string "test-string(abc,\"def (ghi)\")")
-         (parsed       (org-bat-parse-form input-string)))
+         (parsed       (org-edna-parse-form input-string)))
     (should parsed)
     (should (= (length parsed) 4))
     (pcase-let* ((`(,token ,args ,modifier ,pos) parsed))
@@ -59,6 +59,6 @@
       (should (not modifier))
       (should (= pos (length input-string))))))
 
-(provide 'org-bat-tests)
+(provide 'org-edna-tests)
 
-;;; org-bat-tests.el ends here
+;;; org-edna-tests.el ends here

@@ -1,6 +1,8 @@
-#+TITLE: Paced
+#+TITLE: Org Edna
 #+AUTHOR: Ian Dunn
 #+EMAIL: dunni@gnu.org
+
+Extensible Dependencies 'N' Actions for Org-Mode tasks
 
 * Copying
 Copyright (C) 2017 Ian Dunn
@@ -28,10 +30,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 - [ ] Stick with one of heading, headline, or entry; don't keep switching between them
 :END:
 
-Org Blockers and Triggers (BAT) is an extensible means of specifying blocking
-conditions and trigger actions for Org headlines.
 
-Org BAT runs when either the BLOCKER or TRIGGER properties are set on a
+Edna provides an extensible means of specifying conditions which must be
+fulfilled before a task can be completed and actions to take once it is.
+
+Org Edna runs when either the BLOCKER or TRIGGER properties are set on a
 headline, and when it is changing from a TODO state to a DONE state.
 
 For brevity, we use TODO state to indicate any state in ~org-not-done-keywords~,
@@ -61,6 +64,10 @@ A trigger is an action triggered by setting a headline to DONE.
 ** Finders
 A finder specifies locations from which to test conditions or perform actions.
 These locations are referred to as "targets".
+
+More than one finder may be used.  In this case, the targets are merged
+together, removing any duplicates.
+
 *** ancestors
 :PROPERTIES:
 :DESCRIPTION: Find a list of ancestors
@@ -206,7 +213,7 @@ argument.
 :CUSTOM_ID: siblings
 :END:
 ** Actions
-Once BAT has collected its targets for a trigger, it will perform actions on
+Once Edna has collected its targets for a trigger, it will perform actions on
 them.
 *** Scheduled/Deadline
 PLANNING(WKDY[ TIME]) -> Set PLANNING to following weekday WKDY at TIME
@@ -247,7 +254,7 @@ Sets the TODO state of the target headline to NEW-STATE.
 :CUSTOM_ID: conditions
 :END:
 
-BAT gives you he option to specify *blocking conditions*.  Each condition is checked
+Edna gives you he option to specify *blocking conditions*.  Each condition is checked
 for each of the specified targets; if one of the conditions returns true for
 that target, then that headline is blocked.
 
@@ -316,4 +323,4 @@ The above code will allow task completion if at least one of ID1, ID2, and ID3
 are complete, and at least two of ID3, ID4, ID5, and ID6 are complete.
 
 If no consideration is given, ALL is assumed.
-* Extending BAT
+* Extending Edna

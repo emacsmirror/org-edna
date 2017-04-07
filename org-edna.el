@@ -1,4 +1,4 @@
-;;; org-bat.el --- Extendable Blockers and Triggers -*- lexical-binding: t; -*-
+;;; org-edna.el --- Extendable Blockers and Triggers -*- lexical-binding: t; -*-
 
 ;; Author: Ian Dunn <dunni@gnu.org>
 ;; Keywords: convenience, text, org
@@ -12,7 +12,7 @@
 (require 'org)
 (require 'subr-x)
 
-(defun org-bat-parse-form (form)
+(defun org-edna-parse-form (form)
   (pcase-let* ((`(,token . ,pos) (read-from-string form))
                (modifier nil)
                (args nil))
@@ -53,25 +53,25 @@
       (setq token    (intern (match-string 2 (symbol-name token)))))
     (list token args modifier pos)))
 
-(defconst org-bat--types
+(defconst org-edna--types
   '(finder action condition)
-  "Types recognized by org-bat.")
+  "Types recognized by org-edna.")
 
-(defun org-bat--function-for-key (key)
+(defun org-edna--function-for-key (key)
   (cond
     ((eq key 'consideration)
      ;; Function is ignored here
      (cons 'consideration 'identity))
     (key
-     (when-let ((func-format (format "org-bat-%%s/%s" key))
+     (when-let ((func-format (format "org-edna-%%s/%s" key))
                 (new-sym
                  ;; Find the first bound function
                  (seq-find
                   (lambda (sym) (fboundp (intern (format func-format sym))))
-                  org-bat--types)))
+                  org-edna--types)))
        (cons new-sym (intern (format func-format new-sym)))))))
 
-(defun org-bat--handle-condition (func mod args targets consideration)
+(defun org-edna--handle-condition (func mod args targets consideration)
   ;; Check the condition at each target
   (when-let ((blocks
               (mapcar
@@ -80,9 +80,9 @@
                    (apply func mod args)))
                targets)))
     ;; Apply consideration
-    (org-bat-handle-consideration consideration blocks)))
+    (org-edna-handle-consideration consideration blocks)))
 
-(defun org-bat-process-form (form action-or-condition)
+(defun org-edna-process-form (form action-or-condition)
   (let ((targets)
         (blocking-entry)
         (form-string form)
@@ -91,8 +91,8 @@
         ;; Keep track of the current headline
         (last-entry (point-marker)))
     (while (not (string-empty-p form-string))
-      (pcase-let* ((`(,key ,args ,mod ,new-pos) (org-bat-parse-form form-string))
-                   (`(,type . ,func) (org-bat--function-for-key key)))
+      (pcase-let* ((`(,key ,args ,mod ,new-pos) (org-edna-parse-form form-string))
+                   (`(,type . ,func) (org-edna--function-for-key key)))
         (unless (and key type func)
           (user-error "Unrecognized form '%s'" form-string))
         (setq form-string (string-trim-left (substring form-string new-pos)))
@@ -121,20 +121,20 @@
            (setq state 'condition)
            (setq blocking-entry
                  (or blocking-entry  ;; We're already blocking
-                     (org-bat--handle-condition func mod args targets consideration))))
+                     (org-edna--handle-condition func mod args targets consideration))))
           ('consideration
            ;; Consideration must be at the start of the targets, so clear out
            ;; any old targets.
            (setq targets nil)
            ;; The actual consideration will be the only argument
-           (setq consideration (org-bat-transform-consideration (nth 0 args)))))))
+           (setq consideration (org-edna-transform-consideration (nth 0 args)))))))
     ;; We exhausted the input string, but didn't find a condition when we were
     ;; expecting one.
     (when (and (eq action-or-condition 'condition) ;; Looking for conditions
                (eq state 'finder)                  ;; but haven't found any
                (not blocking-entry))                 ;; ever
       (setq blocking-entry
-            (org-bat--handle-condition 'org-bat-condition/done
+            (org-edna--handle-condition 'org-edna-condition/done
                                        t nil targets consideration)))
     ;; Only blockers care about the return value, and this will be non-nil if
     ;; the entry should be blocked.
@@ -143,7 +143,7 @@
 
 
 
-(defmacro org-bat-run (change-plist &rest body)
+(defmacro org-edna-run (change-plist &rest body)
   (declare (indent 1))
   `(let* ((pos (plist-get ,change-plist :position))
           (type (plist-get ,change-plist :type))
@@ -160,33 +160,33 @@
        ;; is no block here.
        t)))
 
-(defun org-bat-trigger-function (change-plist)
-  (org-bat-run change-plist
+(defun org-edna-trigger-function (change-plist)
+  (org-edna-run change-plist
     (when-let ((form (org-entry-get pos "TRIGGER")))
-      (org-bat-process-form form 'action))))
+      (org-edna-process-form form 'action))))
 
-(defun org-bat-blocker-function (change-plist)
-  (org-bat-run change-plist
+(defun org-edna-blocker-function (change-plist)
+  (org-edna-run change-plist
     (if-let ((form (org-entry-get pos "BLOCKER")))
-        (org-bat-process-form form 'condition)
+        (org-edna-process-form form 'condition)
       t)))
 
 ;;;###autoload
-(defun org-bat-load ()
+(defun org-edna-load ()
   (interactive)
-  (add-hook 'org-trigger-hook 'org-bat-trigger-function)
-  (add-hook 'org-blocker-hook 'org-bat-blocker-function))
+  (add-hook 'org-trigger-hook 'org-edna-trigger-function)
+  (add-hook 'org-blocker-hook 'org-edna-blocker-function))
 
 ;;;###autoload
-(defun org-bat-unload ()
+(defun org-edna-unload ()
   (interactive)
-  (remove-hook 'org-trigger-hook 'org-bat-trigger-function)
-  (remove-hook 'org-blocker-hook 'org-bat-blocker-function))
+  (remove-hook 'org-trigger-hook 'org-edna-trigger-function)
+  (remove-hook 'org-blocker-hook 'org-edna-blocker-function))
 
 
 
 ;; Tag Finder
-(defun org-bat-finder/match (match-spec &optional scope skip)
+(defun org-edna-finder/match (match-spec &optional scope skip)
   "Find entries with match-spec MATCH-SPEC.
 
 MATCH-SPEC may be any valid match string; it is passed straight
@@ -204,16 +204,16 @@ SCOPE defaults to \"agenda\", and SKIP defaults to nil."
    match-spec scope skip))
 
 ;; ID finder
-(defun org-bat-finder/ids (&rest ids)
+(defun org-edna-finder/ids (&rest ids)
   "Find entries with IDs in IDS.
 
 IDS are all UUIDs as understood by `org-id-find'."
   (mapcar (lambda (id) (org-id-find id 'marker)) ids))
 
-(defun org-bat-finder/self ()
+(defun org-edna-finder/self ()
   (list (point-marker)))
 
-(defun org-bat-finder/siblings ()
+(defun org-edna-finder/siblings ()
   (org-with-wide-buffer
    (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
          (markers))
@@ -225,22 +225,22 @@ IDS are all UUIDs as understood by `org-id-find'."
          (push (point-marker) markers)))
      (nreverse markers))))
 
-(defun org-bat-finder/next-sibling ()
+(defun org-edna-finder/next-sibling ()
   (org-with-wide-buffer
    (and (org-get-next-sibling)
         (list (point-marker)))))
 
-(defun org-bat-finder/previous-sibling ()
+(defun org-edna-finder/previous-sibling ()
   (org-with-wide-buffer
    (and (org-get-last-sibling)
         (list (point-marker)))))
 
-(defun org-bat-finder/first-child ()
+(defun org-edna-finder/first-child ()
   (org-with-wide-buffer
    (and (org-goto-first-child)
         (list (point-marker)))))
 
-(defun org-bat-finder/children ()
+(defun org-edna-finder/children ()
   (org-with-wide-buffer
    (let ((markers))
      (org-goto-first-child)
@@ -249,36 +249,36 @@ IDS are all UUIDs as understood by `org-id-find'."
        (push (point-marker) markers))
      (nreverse markers))))
 
-(defun org-bat-finder/parent ()
+(defun org-edna-finder/parent ()
   (org-with-wide-buffer
    (and (org-up-heading-safe)
         (list (point-marker)))))
 
-(defun org-bat-finder/descendants ()
+(defun org-edna-finder/descendants ()
   (org-with-wide-buffer
    (org-map-entries
     (lambda nil (point-marker))
     nil 'tree)))
 
-(defun org-bat-finder/ancestors ()
+(defun org-edna-finder/ancestors ()
   (org-with-wide-buffer
    (let ((markers))
      (while (org-up-heading-safe)
        (push (point-marker) markers))
      (nreverse markers))))
 
-(defun org-bat-finder/olp (file path)
+(defun org-edna-finder/olp (file path)
   (let ((marker (org-find-olp (cons file (split-string-and-unquote path "/")))))
     (when (markerp marker)
       (list marker))))
 
-(defun org-bat-finder/file (file)
+(defun org-edna-finder/file (file)
   ;; If there isn't a buffer visiting file, then there's no point in having a
   ;; marker to the start of the file.
   (with-current-buffer (find-file-noselect file)
     (list (point-min-marker))))
 
-(defun org-bat-finder/org-file (file)
+(defun org-edna-finder/org-file (file)
   "Finds FILE in `org-directory'."
   (with-current-buffer (find-file-noselect (expand-file-name file org-directory))
     (list (point-min-marker))))
@@ -286,28 +286,28 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 
 ;; Set TODO state
-(defun org-bat-action/todo (last-entry new-state)
+(defun org-edna-action/todo (last-entry new-state)
   (ignore last-entry)
   (org-todo new-state))
 
 ;; Set planning info
 
-(defun org-bat--mod-timestamp (time-stamp n what)
+(defun org-edna--mod-timestamp (time-stamp n what)
   (with-temp-buffer
     (insert time-stamp)
     (goto-char (point-min))
     (org-timestamp-change n what)
     (buffer-string)))
 
-(defun org-bat--get-planning-info (what)
+(defun org-edna--get-planning-info (what)
   (org-entry-get nil (if (eq what 'scheduled) "SCHEDULED" "DEADLINE")))
 
-(defun org-bat--handle-planning (type last-entry args)
+(defun org-edna--handle-planning (type last-entry args)
   ;; Need case-fold-search enabled so org-read-date-get-relative will recognize "M"
   (let* ((case-fold-search t)
          (arg (nth 0 args))
-         (last-ts (org-with-point-at last-entry (org-bat--get-planning-info type)))
-         (this-ts (org-bat--get-planning-info type))
+         (last-ts (org-with-point-at last-entry (org-edna--get-planning-info type)))
+         (this-ts (org-edna--get-planning-info type))
          (this-time (and this-ts (org-parse-time-string this-ts)))
          (current (org-current-time))
          (current-ts (format-time-string (org-time-stamp-format t) current))
@@ -320,7 +320,7 @@ IDS are all UUIDs as understood by `org-id-find'."
      ((member arg '("rm" "remove"))
       (org-add-planning-info nil nil type))
      ((member arg '("cp" "copy"))
-      ;; Copy old time verbatim
+      ;; Copy old time verednaim
       (org-add-planning-info type last-ts))
      ((string-match-p "\\`[+-]" arg)
       ;; We support hours and minutes, so this must be supported separately,
@@ -329,7 +329,7 @@ IDS are all UUIDs as understood by `org-id-find'."
       (pcase-let* ((`(,n ,what-string ,def) (org-read-date-get-relative arg this-time current))
                    (ts (if def current-ts this-ts))
                    (what (cdr (assoc-string what-string type-map))))
-        (org--deadline-or-schedule nil type (org-bat--mod-timestamp ts n what))))
+        (org--deadline-or-schedule nil type (org-edna--mod-timestamp ts n what))))
      (t
       ;; For everything else, assume `org-read-date-analyze' can handle it
       (let* ((parsed-time (org-read-date-analyze arg this-time (decode-time this-time)))
@@ -337,29 +337,29 @@ IDS are all UUIDs as understood by `org-id-find'."
              (new-ts (format-time-string "%F %R" final-time)))
         (org--deadline-or-schedule nil type new-ts))))))
 
-(defun org-bat-action/scheduled (last-entry &rest args)
-  (org-bat--handle-planning 'scheduled last-entry args))
+(defun org-edna-action/scheduled (last-entry &rest args)
+  (org-edna--handle-planning 'scheduled last-entry args))
 
-(defun org-bat-action/deadline (last-entry &rest args)
-  (org-bat--handle-planning 'deadline last-entry args))
+(defun org-edna-action/deadline (last-entry &rest args)
+  (org-edna--handle-planning 'deadline last-entry args))
 
-(defun org-bat-action/tag (last-entry tags)
+(defun org-edna-action/tag (last-entry tags)
   (ignore last-entry)
   (org-set-tags-to tags))
 
-(defun org-bat-action/set-property (last-entry property value)
+(defun org-edna-action/set-property (last-entry property value)
   (ignore last-entry)
   (org-entry-put nil property value))
 
-(defun org-bat-action/clock-in (last-entry)
+(defun org-edna-action/clock-in (last-entry)
   (ignore last-entry)
   (org-clock-in))
 
-(defun org-bat-action/clock-out (last-entry)
+(defun org-edna-action/clock-out (last-entry)
   (ignore last-entry)
   (org-clock-out))
 
-(defun org-bat-action/set-priority (last-entry priority-action)
+(defun org-edna-action/set-priority (last-entry priority-action)
   "PRIORITY-ACTION is passed straight to `org-priority'."
   (ignore last-entry)
   (org-priority (if (stringp priority-action)
@@ -367,15 +367,15 @@ IDS are all UUIDs as understood by `org-id-find'."
                   priority-action)))
 
 ;; TODO I will likely want to check the arguments
-(defun org-bat-action/set-effort (last-entry value increment)
+(defun org-edna-action/set-effort (last-entry value increment)
   (ignore last-entry)
   (org-set-effort value increment))
 
-(defun org-bat-action/archive (last-entry)
+(defun org-edna-action/archive (last-entry)
   (ignore last-entry)
   (org-archive-subtree-default-with-confirmation))
 
-(defun org-bat-action/chain (last-entry property)
+(defun org-edna-action/chain (last-entry property)
   (when-let ((old-prop (org-entry-get last-entry property)))
     (org-entry-put nil property old-prop)))
 
@@ -393,41 +393,41 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 ;; This means that we want to take the exclusive-or of condition and neg.
 
-(defsubst org-bat--xor (lhs rhs)
+(defsubst org-edna--xor (lhs rhs)
   (or (and lhs (not rhs))
       (and (not lhs) rhs)))
 
-(defun org-bat-condition/done (neg)
+(defun org-edna-condition/done (neg)
   (when-let ((condition
               (if neg
                   (member (org-entry-get nil "TODO") org-not-done-keywords)
                 (member (org-entry-get nil "TODO") org-done-keywords))))
     (org-get-heading)))
 
-(defun org-bat-condition/todo-state (neg state)
+(defun org-edna-condition/todo-state (neg state)
   (let ((condition (string-equal (org-entry-get nil "TODO") state)))
-    (when (org-bat--xor condition neg)
+    (when (org-edna--xor condition neg)
       (org-get-heading))))
 
 ;; Block if there are headings
-(defun org-bat-condition/headings (neg)
+(defun org-edna-condition/headings (neg)
   (let ((condition (not (seq-empty-p (org-map-entries (lambda nil t))))))
-    (when (org-bat--xor condition neg)
+    (when (org-edna--xor condition neg)
       (buffer-name))))
 
-(defun org-bat-condition/variable-set (neg var val)
+(defun org-edna-condition/variable-set (neg var val)
   (let ((condition (string-equal (symbol-value (intern var)) (read val))))
-    (when (org-bat--xor condition neg)
+    (when (org-edna--xor condition neg)
       (format "%s %s= %s" var (or neg "=") val))))
 
-(defun org-bat-condition/has-property (neg prop val)
+(defun org-edna-condition/has-property (neg prop val)
   (let ((condition (string-equal (org-entry-get nil prop) val)))
-    (when (org-bat--xor condition neg)
+    (when (org-edna--xor condition neg)
       (org-get-heading))))
 
 
 
-(defun org-bat-transform-consideration (consideration)
+(defun org-edna-transform-consideration (consideration)
   (pcase consideration
     ;; Leave symbols alone
     ('"all" (intern consideration))
@@ -437,7 +437,7 @@ IDS are all UUIDs as understood by `org-id-find'."
     (_
      (user-error "Unrecognized consideration '%s'" consideration))))
 
-(defun org-bat-handle-consideration (consideration blocks)
+(defun org-edna-handle-consideration (consideration blocks)
   (let ((first-block (seq-find #'identity blocks))
         (total-blocks (seq-length blocks)))
     (pcase consideration
@@ -459,6 +459,6 @@ IDS are all UUIDs as understood by `org-id-find'."
              nil
            first-block))))))
 
-(provide 'org-bat)
+(provide 'org-edna)
 
-;;; org-bat.el ends here
+;;; org-edna.el ends here

@@ -1,4 +1,4 @@
-# This is part of org-bat
+# This is part of org-edna
 #
 #  Copyright (C) 2017 Ian Dunn.
 #
@@ -15,8 +15,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-EMACS=emacs --batch
-ALLSRC=org-bat.el
+EMACS=emacs --ednach
+ALLSRC=org-edna.el
 SOURCE=$(ALLSRC)
 TARGET=$(patsubst %.el,%.elc,$(SOURCE))
 
@@ -27,15 +27,15 @@ compile: $(TARGET)
 %.elc: %.el
 	@$(EMACS) \
 	-L "." \
-	-f batch-byte-compile $<
+	-f ednach-byte-compile $<
 
-autoloads: org-bat-autoloads.el
+autoloads: org-edna-autoloads.el
 
-org-bat-autoloads.el:
+org-edna-autoloads.el:
 	@$(EMACS) \
 	--eval "(require 'package)" \
 	--eval "(setq inhibit-message t)" \
-	--eval "(package-generate-autoloads \"org-bat\" \"$$(pwd)\")"
+	--eval "(package-generate-autoloads \"org-edna\" \"$$(pwd)\")"
 
 clean:
 	-rm -f *.elc
