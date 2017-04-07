@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-EMACS=emacs --ednach
+EMACS=emacs --batch
 ALLSRC=org-edna.el
 SOURCE=$(ALLSRC)
 TARGET=$(patsubst %.el,%.elc,$(SOURCE))
@@ -27,7 +27,7 @@ compile: $(TARGET)
 %.elc: %.el
 	@$(EMACS) \
 	-L "." \
-	-f ednach-byte-compile $<
+	-f batch-byte-compile $<
 
 autoloads: org-edna-autoloads.el
 
