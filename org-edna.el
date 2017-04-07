@@ -31,7 +31,7 @@
         (pcase-let* ((`(,arg . ,new-pos) (read-from-string form pos)))
           (unless arg
             (signal 'invalid-read-syntax (substring form pos)))
-          (let ((new-arg (if (stringp arg) arg (symbol-name arg))))
+          (let ((new-arg (if (stringp arg) arg (prin1-to-string arg))))
             (push new-arg args))
           (setq pos new-pos)
           ;; Move past whitespace
