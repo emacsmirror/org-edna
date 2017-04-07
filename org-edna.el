@@ -1,4 +1,4 @@
-;;; org-edna.el --- Extendable Blockers and Triggers -*- lexical-binding: t; -*-
+;;; org-edna.el --- Extensible Dependencies 'N' Actions -*- lexical-binding: t; -*-
 
 ;; Author: Ian Dunn <dunni@gnu.org>
 ;; Keywords: convenience, text, org
@@ -11,6 +11,18 @@
 
 (require 'org)
 (require 'subr-x)
+
+(defgroup org-edna nil
+  "Extensible Dependencies 'N' Actions"
+  :group 'org)
+
+(defcustom org-edna-use-inheritance nil
+  "Whether Edna should use inheritance when looking for properties.
+
+This only applies to the BLOCKER and TRIGGER properties, not any
+properties used during actions or conditions."
+  :group 'org-edna
+  :type 'boolean)
 
 (defun org-edna-parse-form (form)
   (pcase-let* ((`(,token . ,pos) (read-from-string form))
@@ -162,12 +174,12 @@
 
 (defun org-edna-trigger-function (change-plist)
   (org-edna-run change-plist
-    (when-let ((form (org-entry-get pos "TRIGGER")))
+    (when-let ((form (org-entry-get pos "TRIGGER" org-edna-use-inheritance)))
       (org-edna-process-form form 'action))))
 
 (defun org-edna-blocker-function (change-plist)
   (org-edna-run change-plist
-    (if-let ((form (org-entry-get pos "BLOCKER")))
+    (if-let ((form (org-entry-get pos "BLOCKER" org-edna-use-inheritance)))
         (org-edna-process-form form 'condition)
       t)))
 
