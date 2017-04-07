@@ -59,17 +59,17 @@
 
 (defun org-edna--function-for-key (key)
   (cond
-    ((eq key 'consideration)
-     ;; Function is ignored here
-     (cons 'consideration 'identity))
-    (key
-     (when-let ((func-format (format "org-edna-%%s/%s" key))
-                (new-sym
-                 ;; Find the first bound function
-                 (seq-find
-                  (lambda (sym) (fboundp (intern (format func-format sym))))
-                  org-edna--types)))
-       (cons new-sym (intern (format func-format new-sym)))))))
+   ((eq key 'consideration)
+    ;; Function is ignored here
+    (cons 'consideration 'identity))
+   (key
+    (when-let ((func-format (format "org-edna-%%s/%s" key))
+               (new-sym
+                ;; Find the first bound function
+                (seq-find
+                 (lambda (sym) (fboundp (intern (format func-format sym))))
+                 org-edna--types)))
+      (cons new-sym (intern (format func-format new-sym)))))))
 
 (defun org-edna--handle-condition (func mod args targets consideration)
   ;; Check the condition at each target
@@ -135,7 +135,7 @@
                (not blocking-entry))                 ;; ever
       (setq blocking-entry
             (org-edna--handle-condition 'org-edna-condition/done
-                                       t nil targets consideration)))
+                                        t nil targets consideration)))
     ;; Only blockers care about the return value, and this will be non-nil if
     ;; the entry should be blocked.
     (setq org-block-entry-blocking blocking-entry)
