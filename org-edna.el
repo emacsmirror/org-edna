@@ -21,7 +21,7 @@
     ;; Check for either end of string or an opening parenthesis
     (unless (or (equal pos (length form))
                 (equal (string-match-p "(" form pos) pos))
-      (signal 'invalid-read-syntax (substring form pos 1)))
+      (signal 'invalid-read-syntax (substring form pos (1+ pos))))
     ;; Parse arguments if we have any
     (when (equal (string-match-p "(" form pos) pos)
       ;; Move past the parenthesis
@@ -39,12 +39,12 @@
             (setq pos (match-end 0)))
           ;; The next character should either be a ',' or a ')'
           (unless (equal (string-match-p "[,)]" form pos) pos)
-            (signal 'invalid-read-syntax (substring form pos 1)))
+            (signal 'invalid-read-syntax (substring form pos (1+ pos))))
           ;; Move past a comma if there is one
           (when (equal (string-match-p "," form pos) pos)
             (cl-incf pos))))
       (unless (equal (string-match-p ")" form pos) pos)
-        (signal 'invalid-read-syntax (substring form pos 1)))
+        (signal 'invalid-read-syntax (substring form pos (1+ pos))))
       (setq args (seq-reverse args))
       ;; Move past the closing parenthesis
       (cl-incf pos))
