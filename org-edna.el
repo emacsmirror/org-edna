@@ -373,7 +373,7 @@ IDS are all UUIDs as understood by `org-id-find'."
     (when (and targets filterfun)
       (setq targets (seq-filter filterfun targets)))
     (when targets
-      (seq-elt 0 targets))))
+      (list (seq-elt 0 targets)))))
 
 
 
