@@ -517,6 +517,11 @@ IDS are all UUIDs as understood by `org-id-find'."
     (when (org-xor condition neg)
       (org-get-heading))))
 
+(defun org-edna-condition/re-search (neg match)
+  (let ((condition (re-search-forward match nil t)))
+    (when (org-xor condition neg)
+      (format "Found %s in %s" match buffer-name))))
+
 
 
 (defun org-edna-transform-consideration (consideration)
