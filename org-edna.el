@@ -32,6 +32,7 @@ properties used during actions or conditions."
       (signal 'invalid-read-syntax (substring form pos)))
     ;; Check for either end of string or an opening parenthesis
     (unless (or (equal pos (length form))
+                (equal (string-match-p "\\s-" form pos) pos)
                 (equal (string-match-p "(" form pos) pos))
       (signal 'invalid-read-syntax (substring form pos (1+ pos))))
     ;; Parse arguments if we have any
@@ -63,6 +64,9 @@ properties used during actions or conditions."
     (when (string-match "^\\([!]\\)\\(.*\\)" (symbol-name token))
       (setq modifier (intern (match-string 1 (symbol-name token))))
       (setq token    (intern (match-string 2 (symbol-name token)))))
+    ;; Move across any whitespace
+    (when (string-match "\\s-+" form pos)
+      (setq pos (match-end 0)))
     (list token args modifier pos)))
 
 (defconst org-edna--types
