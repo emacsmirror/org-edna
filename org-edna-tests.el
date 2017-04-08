@@ -59,6 +59,22 @@
       (should (not modifier))
       (should (= pos (length input-string))))))
 
+(ert-deftest org-edna-parse-form-multiple-forms ()
+  (let ((input-string "test-string1 test-string2")
+        pos)
+    (pcase-let* ((`(,token1 ,args1 ,modifier1 ,pos1) (org-edna-parse-form input-string)))
+      ;; (should (and token1 args1 modifier1 pos1))
+      (should (eq token1 'test-string1))
+      (should (not args1))
+      (should (not modifier1))
+      (should (= pos1 13))
+      (setq pos pos1))
+    (pcase-let* ((`(,token2 ,args2 ,modifier2 ,pos2) (org-edna-parse-form (substring input-string pos))))
+      (should (eq token2 'test-string2))
+      (should (not args2))
+      (should (not modifier2))
+      (should (= pos2 12)))))
+
 (defconst org-edna-test-dir
   (expand-file-name (file-name-directory (or load-file-name buffer-file-name))))
 
