@@ -75,6 +75,14 @@
       (should (not modifier2))
       (should (= pos2 12)))))
 
+(ert-deftest org-edna-parse-form-empty-argument-list ()
+  (let ((input-string "test-string1()"))
+    (pcase-let* ((`(,token1 ,args1 ,modifier1 ,pos1) (org-edna-parse-form input-string)))
+      (should (eq token1 'test-string1))
+      (should (not args1))
+      (should (not modifier1))
+      (should (= pos1 (length input-string))))))
+
 (defconst org-edna-test-dir
   (expand-file-name (file-name-directory (or load-file-name buffer-file-name))))
 
