@@ -1,6 +1,10 @@
 #+TITLE: Org Edna
 #+AUTHOR: Ian Dunn
 #+EMAIL: dunni@gnu.org
+#+DATE: {{{modification-time}}}
+
+#+STARTUP: overview
+#+TODO: FIXME | FIXED
 
 Extensible Dependencies 'N' Actions for Org-Mode tasks
 
@@ -25,11 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 :PROPERTIES:
 :CUSTOM_ID: introduction
 :END:
-:TODO:
-- [ ] *Explain how this will make peoples' lives easier*
-- [ ] Stick with one of heading, headline, or entry; don't keep switching between them
-:END:
-
 
 Edna provides an extensible means of specifying conditions which must be
 fulfilled before a task can be completed and actions to take once it is.
@@ -44,7 +43,61 @@ and DONE state to indicate any state in ~org-done-keywords~.
 :PROPERTIES:
 :CUSTOM_ID: operation
 :END:
-Explain targets, actions, conditions
+
+Let's start with an example: Say you want to do laundry, but once you've put
+your clothes in the washer, you forget about it.  Even with a tool like
+org-notify or appt, Org won't know when to remind you.  If you've got them
+scheduled for an hour after the other, maybe you forgot one time, or ran a
+little late.  Now Org will remind you too early.
+
+Edna can handle this for you like so:
+
+#+BEGIN_SRC org
+,* TODO Put clothes in washer
+  SCHEDULED: <2017-04-08 Sat 09:00>
+  :PROPERTIES:
+  :TRIGGER: next-sibling scheduled(++1h)
+  :END:
+,* TODO Put clothes in dryer
+  :PROPERTIES:
+  :TRIGGER: next-sibling scheduled(++1h)
+  :BLOCKER:  previous-sibling
+  :END:
+,* TODO Fold laundry
+  :PROPERTIES:
+  :TRIGGER: next-sibling scheduled(++1h)
+  :BLOCKER:  previous-sibling
+  :END:
+,* TODO Put clothes away
+  :PROPERTIES:
+  :TRIGGER: next-sibling scheduled(++1h)
+  :BLOCKER:  previous-sibling
+  :END:
+#+END_SRC
+
+After you've put your clothes in the washer and mark the task DONE, Edna will
+schedule the following task for one hour after you set the first headline as
+done.
+
+Another example might be a checklist that you've done so many times that you do
+part of it on autopilot:
+
+#+BEGIN_SRC org
+,* TODO Address all TODOs in code
+,* TODO Commit Code to Repository
+#+END_SRC
+
+The last thing anyone wants is to find out that some part of the code on which
+they've been working for days has a surprise waiting for them.  Once again, Edna
+can help:
+
+#+BEGIN_SRC org
+,* TODO Address all TODOs in code
+  :PROPERTIES:
+  :BLOCKER: file(main.cpp) file(code.cpp) re-search(TODO)
+  :END:
+,* TODO Commit Code to Repository
+#+END_SRC
 ** Blockers
 :PROPERTIES:
 :CUSTOM_ID: blockers
@@ -56,7 +109,28 @@ as DONE.
 :PROPERTIES:
 :CUSTOM_ID: triggers
 :END:
-A trigger is an action triggered by setting a headline to DONE.
+A trigger is an action to take when a headline is set to done.  For example,
+scheduling another task, marking another task as TODO, or renaming a file.
+** Syntax
+:PROPERTIES:
+:CUSTOM_ID: syntax
+:DESCRIPTION: Basic explanation of Edna's syntax
+:END:
+#+cindex: syntax
+
+The basic syntax of Edna's commands is KEYWORD(ARG1,ARG2,...)
+
+KEYWORD can be any valid symbol, such as key-word, KEY_WORD, or keyword?.
+
+Each argument can be one of the following:
+
+- A symbol, such as arg or arg-1
+- A valid lisp form, such as (+ 1 2) or (or a b)
+- A quoted string, such as "hello" or "My name is Edna"
+
+Any quotes should be escaped (e.g. "\"\"").
+
+The parentheses can be omitted for commands with no arguments.
 * Basic Features
 :PROPERTIES:
 :CUSTOM_ID: basic
@@ -262,27 +336,76 @@ that target, then that headline is blocked.
 :PROPERTIES:
 :CUSTOM_ID: done
 :END:
+
+Syntax: done
+
+Blocks the current headline if any target is DONE.
+
 *** headings
 :PROPERTIES:
 :CUSTOM_ID: headings
 :END:
+
+Syntax: headings
+
+Blocks the current headline if any target belongs to a file that has an Org heading.
+
+#+BEGIN_EXAMPLE
+org-file(refile.org) headings
+#+END_EXAMPLE
+
+The above example blocks if refile.org has any headings.
+
 *** todo-state
 :PROPERTIES:
 :CUSTOM_ID: todo-state
 :END:
+
+Syntax: todo-state(STATE)
+
+Blocks if any target has a headline with TODO state set to STATE.
+
 *** variable-set
 :PROPERTIES:
 :CUSTOM_ID: variable-set
 :END:
+
+Syntax: variable-set(VARIABLE,VALUE)
+
+Blocks the current headline if VARIABLE is set to VALUE.
+
+#+BEGIN_EXAMPLE
+self variable-set(test-variable,12)
+#+END_EXAMPLE
+
 *** has-property
 :PROPERTIES:
 :CUSTOM_ID: has-property
 :END:
+
+Syntax: has-property(PROPERTY,VALUE)
+
+Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
+
+*** re-search
+:PROPERTIES:
+:CUSTOM_ID: re-search
+:DESCRIPTION: Search for a regular expression
+:END:
+
+Syntax: re-search(REGEXP)
+
+Blocks the current headline if the regular expression REGEXP is present in any
+of the targets.
+
+The targets are expected to be files, although this will work with other targets
+as well.
+
 *** Negating Conditions
 :PROPERTIES:
 :CUSTOM_ID: negate
 :END:
-You can also negate a condition using '!'.
+Any condition can be negated using '!'.
 
 #+BEGIN_EXAMPLE
 match(test) !has-property(PROP,1)
