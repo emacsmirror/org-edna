@@ -132,6 +132,24 @@
     (should (string-equal (substring-no-properties org-block-entry-blocking)
                           "TODO Tagged Heading 1 :1:test:"))))
 
+
+;; Actions
+
+(ert-deftest org-edna-action/todo-test ()
+  (let* ((org-agenda-files `(,org-edna-test-file))
+         (target (org-id-find "0d491588-7da3-43c5-b51a-87fbd34f79f7" t)))
+    (org-with-point-at target
+      (org-edna-action/todo nil "DONE")
+      (should (string-equal (org-entry-get nil "TODO") "DONE"))
+      (org-edna-action/todo nil "TODO")
+      (should (string-equal (org-entry-get nil "TODO") "TODO")))))
+
+
+;; Conditions
+
+
+;; Consideration
+
 (provide 'org-edna-tests)
 
 ;;; org-edna-tests.el ends here
