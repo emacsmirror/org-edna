@@ -4,10 +4,23 @@
 ** TODO ID Heading 1
 :PROPERTIES:
 :ID:       0d491588-7da3-43c5-b51a-87fbd34f79f7
+:LOGGING:  nil
 :END:
 ** TODO ID Heading 2
 :PROPERTIES:
 :ID:       b010cbad-60dc-46ef-a164-eb155e62cbb2
+:LOGGING:  nil
+:END:
+** Scheduled Headings
+*** TODO Scheduled Heading 1
+SCHEDULED: <2017-01-01 Sun>
+:PROPERTIES:
+:ID:       caf27724-0887-4565-9765-ed2f1edcfb16
+:END:
+*** TODO Scheduled Heading 2
+SCHEDULED: <2017-01-01 Sun>
+:PROPERTIES:
+:ID:       5594d4f1-b1bb-400f-9f3d-e2f9b43e82c3
 :END:
 * Finder Tests
 ** Match
@@ -15,4 +28,5 @@
 :PROPERTIES:
 :BLOCKER:  match(test&1)
 :ID:       caccd0a6-d400-410a-9018-b0635b07a37e
+:LOGGING:  nil
 :END:
