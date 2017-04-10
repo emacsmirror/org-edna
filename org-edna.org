@@ -206,7 +206,10 @@ to set a different condition.  For example:
   :END:
 #+END_SRC
 
-Here, "Test" will block until myfile.org is clear of headings.
+Here, "Test" will block until myfile.org is clear of headlines.
+
+WARNING: Make sure to quote the file name.  If not, Edna will interpret it as
+"myfile\\.org" and create that file.
 
 *** first-child
 :PROPERTIES:
