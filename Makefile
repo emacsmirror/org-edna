@@ -15,10 +15,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-EMACS=emacs --batch
+# Load defaults
+include defaults.mk
+
+# Load local definitions
+include local.mk
+
+EMACS=$(emacs) --batch -L $(org_path)
 ALLSRC=org-edna.el
 SOURCE=$(ALLSRC)
 TARGET=$(patsubst %.el,%.elc,$(SOURCE))
+
+.PHONY: clean check local.mk help
 
 all: $(TARGET)
 
@@ -39,3 +47,22 @@ org-edna-autoloads.el:
 
 clean:
 	-rm -f *.elc
+
+check:
+	@$(EMACS) \
+	-L "." \
+	--load "ert" \
+	--load "org-edna-tests.el" \
+	-f ert-run-tests-batch-and-exit
+
+local.mk:
+	@cp -n defaults.mk local.mk
+
+help:
+	$(info )
+	$(info make all       - Default)
+	$(info make compile   - Compile Emacs Lisp Files)
+	$(info make autoloads - Generate Autoloads)
+	$(info make clean     - Remove generated .elc files)
+	$(info make check     - Run Tests)
+	@echo ""
