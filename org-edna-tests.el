@@ -150,6 +150,28 @@
 
 ;; Consideration
 
+(ert-deftest org-edna-consideration/all ()
+  (let ((blocks-blocking `("a" nil "b"))
+        (blocks-no-blocking `(nil nil nil)))
+    (should (string-equal (org-edna-handle-consideration 'all blocks-blocking) "a"))
+    (should (not (org-edna-handle-consideration 'all blocks-no-blocking)))))
+
+(ert-deftest org-edna-consideration/integer ()
+  (let ((blocks-blocking `("a" "c" "b"))
+        (blocks-no-blocking `("a" nil "b"))
+        (blocks-empty `(nil nil nil)))
+    (should (string-equal (org-edna-handle-consideration 1 blocks-blocking) "a"))
+    (should (not (org-edna-handle-consideration 1 blocks-no-blocking)))
+    (should (not (org-edna-handle-consideration 1 blocks-empty)))))
+
+(ert-deftest org-edna-consideration/float ()
+  (let ((blocks-blocking `("a" "c" "b"))
+        (blocks-no-blocking `("a" nil "b"))
+        (blocks-empty `(nil nil nil)))
+    (should (string-equal (org-edna-handle-consideration 0.25 blocks-blocking) "a"))
+    (should (not (org-edna-handle-consideration 0.25 blocks-no-blocking)))
+    (should (not (org-edna-handle-consideration 0.25 blocks-empty)))))
+
 (provide 'org-edna-tests)
 
 ;;; org-edna-tests.el ends here
