@@ -526,9 +526,9 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 (defun org-edna-transform-consideration (consideration)
   (pcase consideration
-    ;; Leave symbols alone
+    ;; Change all into a symbol
     ('"all" (intern consideration))
-    ;; Change strings into numbers
+    ;; Change other strings into numbers
     ((pred stringp)
      (string-to-number consideration))
     (_
@@ -545,14 +545,14 @@ IDS are all UUIDs as understood by `org-id-find'."
        ;; A fixed number of them must be fulfilled, so check how many aren't.
        (let* ((unfulfilled (seq-count #'identity blocks))
               (fulfilled   (- total-blocks unfulfilled)))
-         (if (> fulfilled consideration)
+         (if (>= fulfilled consideration)
              nil
            first-block)))
       ((pred floatp)
        ;; A certain percentage of them must be fulfilled
        (let* ((unfulfilled (seq-count #'identity blocks))
               (fulfilled   (- total-blocks unfulfilled)))
-         (if (> (/ fulfilled total-blocks) consideration)
+         (if (>= (/ fulfilled total-blocks) consideration)
              nil
            first-block))))))
 
