@@ -543,16 +543,14 @@ IDS are all UUIDs as understood by `org-id-find'."
        first-block)
       ((pred integerp)
        ;; A fixed number of them must be fulfilled, so check how many aren't.
-       (let* ((unfulfilled (seq-count #'identity blocks))
-              (fulfilled   (- total-blocks unfulfilled)))
+       (let* ((fulfilled (seq-count #'not blocks)))
          (if (>= fulfilled consideration)
              nil
            first-block)))
       ((pred floatp)
        ;; A certain percentage of them must be fulfilled
-       (let* ((unfulfilled (seq-count #'identity blocks))
-              (fulfilled   (- total-blocks unfulfilled)))
-         (if (>= (/ fulfilled total-blocks) consideration)
+       (let* ((fulfilled (seq-count #'not blocks)))
+         (if (>= (/ (float fulfilled) (float total-blocks)) consideration)
              nil
            first-block))))))
 
