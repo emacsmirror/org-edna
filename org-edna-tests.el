@@ -1,5 +1,7 @@
 ;;; org-edna-tests.el --- Tests for org-edna
 
+;; Copyright (C) 2017 Ian Dunn
+
 ;; Author: Ian Dunn <dunni@gnu.org>
 ;; Keywords: convenience, text, org
 ;; Version: 1.0
