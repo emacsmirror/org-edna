@@ -52,7 +52,7 @@ little late.  Now Org will remind you too early.
 
 Edna can handle this for you like so:
 
-#+BEGIN_SRC org
+#+BEGIN_EXAMPLE
 ,* TODO Put clothes in washer
   SCHEDULED: <2017-04-08 Sat 09:00>
   :PROPERTIES:
@@ -73,7 +73,7 @@ Edna can handle this for you like so:
   :TRIGGER: next-sibling scheduled(++1h)
   :BLOCKER:  previous-sibling
   :END:
-#+END_SRC
+#+END_EXAMPLE
 
 After you've put your clothes in the washer and mark the task DONE, Edna will
 schedule the following task for one hour after you set the first headline as
@@ -82,22 +82,22 @@ done.
 Another example might be a checklist that you've done so many times that you do
 part of it on autopilot:
 
-#+BEGIN_SRC org
+#+BEGIN_EXAMPLE
 ,* TODO Address all TODOs in code
 ,* TODO Commit Code to Repository
-#+END_SRC
+#+END_EXAMPLE
 
 The last thing anyone wants is to find out that some part of the code on which
 they've been working for days has a surprise waiting for them.  Once again, Edna
 can help:
 
-#+BEGIN_SRC org
+#+BEGIN_EXAMPLE
 ,* TODO Address all TODOs in code
   :PROPERTIES:
   :BLOCKER: file(main.cpp) file(code.cpp) re-search(TODO)
   :END:
 ,* TODO Commit Code to Repository
-#+END_SRC
+#+END_EXAMPLE
 ** Blockers
 :PROPERTIES:
 :CUSTOM_ID: blockers
@@ -152,7 +152,7 @@ The ~ancestors~ finder returns a list of the current headline's ancestors.
 
 For example:
 
-#+BEGIN_SRC org
+#+BEGIN_EXAMPLE
 ,* TODO Heading 1
 ,** TODO Heading 2
 ,** TODO Heading 3
@@ -161,7 +161,7 @@ For example:
      :PROPERTIES:
      :BLOCKER:  ancestors
      :END:
-#+END_SRC
+#+END_EXAMPLE
 
 In the above example, "Heading 5" will be blocked until "Heading 1", "Heading
 3", and "Heading 4" are marked "DONE", while "Heading 2" is ignored.
@@ -199,12 +199,12 @@ point in the file.
 Note that with the default condition, ~file~ won't work.  See [[#conditions][conditions]] for how
 to set a different condition.  For example:
 
-#+BEGIN_SRC org
+#+BEGIN_EXAMPLE
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  file("~/myfile.org") headings
   :END:
-#+END_SRC
+#+END_EXAMPLE
 
 Here, "Test" will block until myfile.org is clear of headlines.
 
@@ -228,12 +228,12 @@ The ~first-child~ finder returns the first child of a headline, if any.
 The ~ids~ finder will search for headlines with given IDs, using ~org-id~.  Any
 number of UUIDs may be specified.  For example:
 
-#+BEGIN_SRC org
+#+BEGIN_EXAMPLE
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  ids(62209a9a-c63b-45ef-b8a8-12e47a9ceed9,6dbd7921-a25c-4e20-b035-365677e00f30)
   :END:
-#+END_SRC
+#+END_EXAMPLE
 
 Here, "Test" will block until the headline with ID
 62209a9a-c63b-45ef-b8a8-12e47a9ceed9 and the headline with ID
@@ -248,12 +248,12 @@ Here, "Test" will block until the headline with ID
 The ~match~ keyword will take any arguments that ~org-map-entries~ usually takes.
 In fact, the arguments to ~match~ are passed straight into ~org-map-entries~.
 
-#+BEGIN_SRC org
+#+BEGIN_EXAMPLE
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  match(test&mine,agenda)
   :END:
-#+END_SRC
+#+END_EXAMPLE
 
 "Test" will block until all entries tagged "test" and "mine" in the agenda files
 are marked DONE.
@@ -293,10 +293,10 @@ argument.
 Once Edna has collected its targets for a trigger, it will perform actions on
 them.
 *** Scheduled/Deadline
-PLANNING(WKDY[ TIME]) -> Set PLANNING to following weekday WKDY at TIME
-PLANNING(rm|remove) -> Remove PLANNING info
-PLANNING([copy|cp]) -> Copy timestamp verbatim
-PLANNING([+|-][+|-]NTHING) -> Increment(+) or decrement(-) source (double) or current (single) PLANNING by N THINGs
+- PLANNING(WKDY[ TIME]) -> Set PLANNING to following weekday WKDY at TIME
+- PLANNING(rm|remove) -> Remove PLANNING info
+- PLANNING([copy|cp]) -> Copy timestamp verbatim
+- PLANNING([+|-][+|-]NTHING) -> Increment(+) or decrement(-) source (double) or current (single) PLANNING by N THINGs
 
 PLANNING is either scheduled or deadline
 
