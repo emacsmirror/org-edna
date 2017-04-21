@@ -42,9 +42,9 @@ properties used during actions or conditions."
   :type 'boolean)
 
 (defmacro org-edna--syntax-error (msg form pos)
-  `(signal 'invalid-read-syntax (list :msg msg :form form :pos pos)))
+  `(signal 'invalid-read-syntax (list :msg ,msg :form ,form :pos ,pos)))
 
-(defun org-edna--handle-syntax-error (error-plist)
+(defun org-edna--print-syntax-error (error-plist)
   (let ((msg (plist-get error-plist :msg))
         (form (plist-get error-plist :form))
         (pos (plist-get error-plist :pos)))
