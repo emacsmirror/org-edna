@@ -244,7 +244,7 @@ SCOPE and SKIP are their counterparts in `org-map-entries', but
 as strings.
 
 SCOPE defaults to \"agenda\", and SKIP defaults to nil."
-  (setq scope (or scope 'agenda)
+  (setq scope (or scope 'agenda))
   (org-map-entries
    ;; Find all entries in the agenda files that match the given tag.
    (lambda nil (point-marker))
