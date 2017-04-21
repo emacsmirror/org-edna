@@ -43,7 +43,7 @@ SCHEDULED: <2017-01-01 Sun>
 ** Match
 *** TODO Blocking Test
 :PROPERTIES:
-:BLOCKER:  match(test&1)
+:BLOCKER:  match("test&1")
 :ID:       caccd0a6-d400-410a-9018-b0635b07a37e
 :LOGGING:  nil
 :END:

@@ -27,6 +27,7 @@
 
 (require 'org)
 (require 'subr-x)
+(require 'seq)
 
 (defgroup org-edna nil
   "Extensible Dependencies 'N' Actions"
@@ -40,43 +41,49 @@ properties used during actions or conditions."
   :group 'org-edna
   :type 'boolean)
 
-(defun org-edna-parse-form (form)
-  (pcase-let* ((`(,token . ,pos) (read-from-string form))
+(defmacro org-edna--syntax-error (msg form pos)
+  `(signal 'invalid-read-syntax (list :msg msg :form form :pos pos)))
+
+(defun org-edna--handle-syntax-error (error-plist)
+  (let ((msg (plist-get error-plist :msg))
+        (form (plist-get error-plist :form))
+        (pos (plist-get error-plist :pos)))
+    (message
+     "Org Edna Syntax Error: %s\n%s\n%s"
+     msg form (concat (make-string pos ?\ ) "^"))))
+
+(defun org-edna--transform-arg (arg)
+  "Transform ARG.
+
+Currently, the following are handled:
+
+- UUIDs (as determined by `org-uuidgen-p') are converted to strings"
+  (pcase arg
+    ((and (pred symbolp)
+          (let (pred org-uuidgen-p) (symbol-name arg)))
+     (symbol-name arg))
+    (_
+     arg)))
+
+(defun org-edna-parse-form (form &optional start)
+  "Parse Edna form FORM."
+  (setq start (or start 0))
+  (pcase-let* ((`(,token . ,pos) (read-from-string form start))
                (modifier nil)
                (args nil))
     (unless token
-      (signal 'invalid-read-syntax (substring form pos)))
+      (org-edna--syntax-error "Invalid Token" form start))
     ;; Check for either end of string or an opening parenthesis
     (unless (or (equal pos (length form))
                 (equal (string-match-p "\\s-" form pos) pos)
                 (equal (string-match-p "(" form pos) pos))
-      (signal 'invalid-read-syntax (substring form pos (1+ pos))))
+      (org-edna--syntax-error "Invalid character in form" form pos))
     ;; Parse arguments if we have any
     (when (equal (string-match-p "(" form pos) pos)
-      ;; Move past the parenthesis
-      (cl-incf pos)
-      (while (and (< pos (length form))
-                  (not (= (string-match-p ")" form pos) pos)))
-        (pcase-let* ((`(,arg . ,new-pos) (read-from-string form pos)))
-          (unless arg
-            (signal 'invalid-read-syntax (substring form pos)))
-          (let ((new-arg (if (stringp arg) arg (prin1-to-string arg))))
-            (push new-arg args))
-          (setq pos new-pos)
-          ;; Move past whitespace
-          (when (eq (string-match "\\w+" form pos) pos)
-            (setq pos (match-end 0)))
-          ;; The next character should either be a ',' or a ')'
-          (unless (equal (string-match-p "[,)]" form pos) pos)
-            (signal 'invalid-read-syntax (substring form pos (1+ pos))))
-          ;; Move past a comma if there is one
-          (when (equal (string-match-p "," form pos) pos)
-            (cl-incf pos))))
-      (unless (equal (string-match-p ")" form pos) pos)
-        (signal 'invalid-read-syntax (substring form pos (1+ pos))))
-      (setq args (seq-reverse args))
-      ;; Move past the closing parenthesis
-      (cl-incf pos))
+      (pcase-let* ((`(,new-args . ,new-pos) (read-from-string form pos)))
+        (setq pos new-pos
+              args (mapcar #'org-edna--transform-arg new-args))))
+    ;; Check for a modifier
     (when (string-match "^\\([!]\\)\\(.*\\)" (symbol-name token))
       (setq modifier (intern (match-string 1 (symbol-name token))))
       (setq token    (intern (match-string 2 (symbol-name token)))))
@@ -117,17 +124,16 @@ properties used during actions or conditions."
 (defun org-edna-process-form (form action-or-condition)
   (let ((targets)
         (blocking-entry)
-        (form-string form)
         (consideration 'all)
         (state nil) ;; Type of operation
         ;; Keep track of the current headline
-        (last-entry (point-marker)))
-    (while (not (string-empty-p form-string))
-      (pcase-let* ((`(,key ,args ,mod ,new-pos) (org-edna-parse-form form-string))
+        (last-entry (point-marker))
+        (pos 0))
+    (while (< pos (length form))
+      (pcase-let* ((`(,key ,args ,mod ,new-pos) (org-edna-parse-form form pos))
                    (`(,type . ,func) (org-edna--function-for-key key)))
         (unless (and key type func)
-          (user-error "Unrecognized form '%s'" form-string))
-        (setq form-string (string-trim-left (substring form-string new-pos)))
+          (org-edna--syntax-error "Unrecognized Form" form pos))
         (pcase type
           ('finder
            (unless (eq state 'finder)
@@ -138,7 +144,7 @@ properties used during actions or conditions."
              (setq targets (seq-uniq `(,@targets ,@markers)))))
           ('action
            (unless (eq action-or-condition 'action)
-             (user-error "Actions aren't allowed in this context."))
+             (org-edna--syntax-error "Actions aren't allowed in this context" form pos))
            (unless targets
              (message "Warning: Action specified without targets"))
            (setq state 'action)
@@ -147,7 +153,7 @@ properties used during actions or conditions."
                (apply func last-entry args))))
           ('condition
            (unless (eq action-or-condition 'condition)
-             (user-error "Conditions aren't allowed in this context"))
+             (org-edna--syntax-error "Conditions aren't allowed in this context" form pos))
            (unless targets
              (message "Warning: Condition specified without targets"))
            (setq state 'condition)
@@ -155,11 +161,13 @@ properties used during actions or conditions."
                  (or blocking-entry  ;; We're already blocking
                      (org-edna--handle-condition func mod args targets consideration))))
           ('consideration
+           (unless (= (length args) 1)
+             (org-edna--syntax-error "Consideration requires a single argument" form pos))
            ;; Consideration must be at the start of the targets, so clear out
            ;; any old targets.
-           (setq targets nil)
-           ;; The actual consideration will be the only argument
-           (setq consideration (org-edna-transform-consideration (nth 0 args)))))))
+           (setq targets nil
+                 consideration (nth 0 args))))
+        (setq pos new-pos)))
     ;; We exhausted the input string, but didn't find a condition when we were
     ;; expecting one.
     (when (and (eq action-or-condition 'condition) ;; Looking for conditions
@@ -187,7 +195,10 @@ properties used during actions or conditions."
           ;; And only from a TODO state to a DONE state
           (member from (cons 'todo org-not-done-keywords))
           (member to (cons 'done org-done-keywords)))
-         ,@body
+         (condition-case err
+             ,@body
+           (invalid-syntax-error
+            (org-edna--print-syntax-error (cdr err))))
        ;; Return t for the blocker to let the calling function know that there
        ;; is no block here.
        t)))
@@ -330,6 +341,8 @@ IDS are all UUIDs as understood by `org-id-find'."
     (when (markerp marker)
       (list marker))))
 
+  ;; TODO: Clean up the buffer when it's finished
+
 (defun org-edna-finder/file (file)
   ;; If there isn't a buffer visiting file, then there's no point in having a
   ;; marker to the start of the file.
@@ -347,7 +360,7 @@ IDS are all UUIDs as understood by `org-id-find'."
   ;; Both should handle positioning point
   (let (targets sortfun filterfun)
     (dolist (opt options)
-      (pcase (intern opt)
+      (pcase opt
         ('from-top
          (setq targets (org-edna-finder/siblings)))
         ('from-bottom
@@ -400,7 +413,7 @@ IDS are all UUIDs as understood by `org-id-find'."
 ;; Set TODO state
 (defun org-edna-action/todo (last-entry new-state)
   (ignore last-entry)
-  (org-todo new-state))
+  (org-todo (if (stringp new-state) new-state (symbol-name new-state))))
 
 ;; Set planning info
 
@@ -429,10 +442,10 @@ IDS are all UUIDs as understood by `org-id-find'."
                      ("h" . hour)
                      ("M" . minute))))
     (cond
-     ((member arg '("rm" "remove"))
+     ((member arg '('rm 'remove "rm" "remove"))
       (org-add-planning-info nil nil type))
-     ((member arg '("cp" "copy"))
-      ;; Copy old time verednaim
+     ((member arg '('cp 'copy "cp" "copy"))
+      ;; Copy old time verbatim
       (org-add-planning-info type last-ts))
      ((string-match-p "\\`[+-]" arg)
       ;; We support hours and minutes, so this must be supported separately,
@@ -539,16 +552,6 @@ IDS are all UUIDs as understood by `org-id-find'."
       (format "Found %s in %s" match (buffer-name)))))
 
 
-
-(defun org-edna-transform-consideration (consideration)
-  (pcase consideration
-    ;; Change all into a symbol
-    ('"all" (intern consideration))
-    ;; Change other strings into numbers
-    ((pred stringp)
-     (string-to-number consideration))
-    (_
-     (user-error "Unrecognized consideration '%s'" consideration))))
 
 (defun org-edna-handle-consideration (consideration blocks)
   (let ((first-block (seq-find #'identity blocks))
