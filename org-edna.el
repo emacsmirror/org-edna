@@ -197,8 +197,13 @@ Currently, the following are handled:
           (member to (cons 'done org-done-keywords)))
          (condition-case err
              ,@body
-           (invalid-syntax-error
-            (org-edna--print-syntax-error (cdr err))))
+           (error
+            (if (eq (car err) 'invalid-syntax-error)
+                (org-edna--print-syntax-error (cdr err))
+              (message "Edna Error: %s" (error-message-string err)))
+            (setq org-block-entry-blocking (org-get-heading))
+            ;; Block
+            nil))
        ;; Return t for the blocker to let the calling function know that there
        ;; is no block here.
        t)))
@@ -239,8 +244,7 @@ SCOPE and SKIP are their counterparts in `org-map-entries', but
 as strings.
 
 SCOPE defaults to \"agenda\", and SKIP defaults to nil."
-  (setq scope (if scope (intern scope) 'agenda))
-  (when skip (setq skip (intern skip)))
+  (setq scope (or scope 'agenda)
   (org-map-entries
    ;; Find all entries in the agenda files that match the given tag.
    (lambda nil (point-marker))
