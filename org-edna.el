@@ -360,9 +360,15 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 (defun org-edna-finder/chain-find (&rest options)
   ;; sortfun - function to use to sort elements
-  ;; filterufn - Function to use to filter elements
+  ;; filterfun - Function to use to filter elements
   ;; Both should handle positioning point
-  (let (targets sortfun filterfun)
+  (let (targets
+        sortfun
+        ;; From org-depend.el:
+        ;; (and (not todo-and-done-only)
+        ;;      (member (second item) org-done-keywords))
+        (filterfun (lambda (target)
+                     (member (org-entry-get target "TODO") org-done-keywords))))
     (dolist (opt options)
       (pcase opt
         ('from-top
@@ -374,13 +380,17 @@ IDS are all UUIDs as understood by `org-id-find'."
         ('no-wrap
          (setq targets (org-edna-finder/rest-of-siblings)))
         ('todo-only
+         ;; Remove any entry without a TODO keyword, or with a DONE keyword
          (setq filterfun
                (lambda (target)
-                 (org-entry-get target "TODO"))))
+                 (let ((kwd (org-entry-get target "TODO")))
+                   (or (not kwd)
+                       (member kwd org-done-keywords))))))
         ('todo-and-done-only
+         ;; Remove any entry without a TODO keyword
          (setq filterfun
                (lambda (target)
-                 (member (org-entry-get target "TODO") org-done-keywords))))
+                 (not (org-entry-get target "TODO")))))
         ('priority-up
          (setq sortfun
                (lambda (lhs rhs)
@@ -408,7 +418,7 @@ IDS are all UUIDs as understood by `org-id-find'."
     (when (and targets sortfun)
       (setq targets (seq-sort sortfun targets)))
     (when (and targets filterfun)
-      (setq targets (seq-filter filterfun targets)))
+      (setq targets (seq-remove filterfun targets)))
     (when targets
       (list (seq-elt 0 targets)))))
 
@@ -446,24 +456,32 @@ IDS are all UUIDs as understood by `org-id-find'."
                      ("h" . hour)
                      ("M" . minute))))
     (cond
-     ((member arg '('rm 'remove "rm" "remove"))
+     ((member arg '(rm remove "rm" "remove"))
       (org-add-planning-info nil nil type))
-     ((member arg '('cp 'copy "cp" "copy"))
+     ((member arg '(cp copy "cp" "copy"))
+      (unless last-ts
+        (error "Tried to copy but last entry doesn't have a timestamp"))
       ;; Copy old time verbatim
       (org-add-planning-info type last-ts))
      ((string-match-p "\\`[+-]" arg)
+      ;; Starts with a + or -, so assume we're incrementing a timestamp
       ;; We support hours and minutes, so this must be supported separately,
       ;; since org-read-date-analyze doesn't
-      ;; Starts with a + or -, so assume we're incrementing a timestamp
       (pcase-let* ((`(,n ,what-string ,def) (org-read-date-get-relative arg this-time current))
                    (ts (if def current-ts this-ts))
                    (what (cdr (assoc-string what-string type-map))))
         (org--deadline-or-schedule nil type (org-edna--mod-timestamp ts n what))))
      (t
       ;; For everything else, assume `org-read-date-analyze' can handle it
-      (let* ((parsed-time (org-read-date-analyze arg this-time (decode-time this-time)))
-             (final-time (apply 'encode-time parsed-time))
-             (new-ts (format-time-string "%F %R" final-time)))
+
+      ;; The third argument to `org-read-date-analyze' specifies the defaults to
+      ;; use if that time component isn't specified.  Since there's no way to
+      ;; tell if a time was specified, tell `org-read-date-analyze' to use nil
+      ;; if no time is found.
+      (let* ((parsed-time (org-read-date-analyze arg this-time '(nil nil nil nil nil nil)))
+             (have-time (nth 2 parsed-time))
+             (final-time (apply 'encode-time (mapcar (lambda (e) (or e 0)) parsed-time)))
+             (new-ts (format-time-string (if have-time "%F %R" "%F") final-time)))
         (org--deadline-or-schedule nil type new-ts))))))
 
 (defun org-edna-action/scheduled (last-entry &rest args)
