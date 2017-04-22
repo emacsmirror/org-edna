@@ -44,6 +44,22 @@ SCHEDULED: <2017-01-01 Sun>
 :PROPERTIES:
 :ID:       5594d4f1-b1bb-400f-9f3d-e2f9b43e82c3
 :END:
+** Sibling Headings
+:PROPERTIES:
+:ID:       21b8f1f5-14e8-4677-873d-69e0389fdc9e
+:END:
+*** Sibling 1
+:PROPERTIES:
+:ID:       82a4ac3d-9565-4f94-bc84-2bbfd8d7d96c
+:END:
+*** Sibling 2
+:PROPERTIES:
+:ID:       72534efa-e932-460b-ae2d-f044a0074815
+:END:
+*** Sibling 3
+:PROPERTIES:
+:ID:       06aca55e-ce09-46df-80d7-5b52e55d6505
+:END:
 * Finder Tests
 ** Match
 *** TODO Blocking Test

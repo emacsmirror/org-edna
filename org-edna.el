@@ -266,7 +266,8 @@ IDS are all UUIDs as understood by `org-id-find'."
          (markers))
      (org-up-heading-safe)
      (org-goto-first-child)
-     (push (point-marker) markers)
+     (unless (equal (point) self)
+       (push (point-marker) markers))
      (while (org-get-next-sibling)
        (unless (equal (point) self)
          (push (point-marker) markers)))
@@ -277,15 +278,17 @@ IDS are all UUIDs as understood by `org-id-find'."
    (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
          (markers))
      ;; Go from this heading to the end
-     (while (org-get-next-sibling)
-       (unless (equal (point) self)
-         (push (point-marker) markers)))
+     (save-excursion
+       (while (org-get-next-sibling)
+         (unless (equal (point) self)
+           (push (point-marker) markers))))
      ;; Go to the first heading
      (org-up-heading-safe)
      (org-goto-first-child)
-     (while (not (equal (point) self))
-       (push (point-marker) markers)
-       (org-get-next-sibling))
+     (save-excursion
+       (while (not (equal (point) self))
+         (push (point-marker) markers)
+         (org-get-next-sibling)))
      (nreverse markers))))
 
 (defun org-edna-finder/rest-of-siblings ()
