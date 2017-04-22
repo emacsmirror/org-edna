@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 :CUSTOM_ID: introduction
 :END:
 
+[[https://savannah.nongnu.org/projects/org-edna-el/][Source Code on Savannah]]
+
 Edna provides an extensible means of specifying conditions which must be
 fulfilled before a task can be completed and actions to take once it is.
 
