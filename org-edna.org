@@ -5,6 +5,7 @@
 
 #+STARTUP: overview
 #+TODO: FIXME | FIXED
+#+OPTIONS: toc:2
 
 Extensible Dependencies 'N' Actions for Org-Mode tasks
 
@@ -56,21 +57,21 @@ Edna can handle this for you like so:
 ,* TODO Put clothes in washer
   SCHEDULED: <2017-04-08 Sat 09:00>
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled(++1h)
+  :TRIGGER: next-sibling scheduled("++1h")
   :END:
 ,* TODO Put clothes in dryer
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled(++1h)
+  :TRIGGER: next-sibling scheduled("++1h")
   :BLOCKER:  previous-sibling
   :END:
 ,* TODO Fold laundry
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled(++1h)
+  :TRIGGER: next-sibling scheduled("++1h")
   :BLOCKER:  previous-sibling
   :END:
 ,* TODO Put clothes away
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled(++1h)
+  :TRIGGER: next-sibling scheduled("++1h")
   :BLOCKER:  previous-sibling
   :END:
 #+END_EXAMPLE
@@ -94,7 +95,7 @@ can help:
 #+BEGIN_EXAMPLE
 ,* TODO Address all TODOs in code
   :PROPERTIES:
-  :BLOCKER: file(main.cpp) file(code.cpp) re-search(TODO)
+  :BLOCKER: file("main.cpp") file("code.cpp") re-search("TODO")
   :END:
 ,* TODO Commit Code to Repository
 #+END_EXAMPLE
@@ -223,7 +224,19 @@ In order to get all levels of children of the current headline, use the
 The ~descendants~ finder returns a list of all descendants of the current
 headline.
 
-EXAMPLE HERE
+#+BEGIN_EXAMPLE
+,* TODO Heading 1
+   :PROPERTIES:
+   :BLOCKER:  descendants
+   :END:
+,** TODO Heading 2
+,** TODO Heading 3
+,*** TODO Heading 4
+,**** TODO Heading 5
+#+END_EXAMPLE
+
+In the above example, "Heading 1" will block until Headings 2, 3, 4, and 5 are
+DONE.
 
 *** file
 :PROPERTIES:
@@ -369,6 +382,11 @@ Returns the current headline.
 :PROPERTIES:
 :CUSTOM_ID: siblings
 :END:
+
+Syntax: siblings
+
+Returns all siblings of the source heading as targets.
+
 *** siblings-wrap
 
 Finds the siblings on the same level as the current headline, wrapping when it
@@ -382,8 +400,8 @@ them.
 :CUSTOM_ID: planning
 :END:
 
-scheduled(OPTIONS)
-deadline(OPTIONS)
+Syntax: scheduled(OPTIONS)
+Syntax: deadline(OPTIONS)
 
 There are several forms that the planning keywords can take:
 
@@ -419,15 +437,59 @@ Examples:
 
 scheduled("Mon 09:00") -> Set SCHEDULED to the following Monday at 9:00
 *** Todo State
-todo(NEW-STATE)
+
+Syntax: todo(NEW-STATE)
 
 Sets the TODO state of the target headline to NEW-STATE.
+
+NEW-STATE may either be a string or a symbol denoting the new TODO state.
+
 *** archive
-*** set-property
-*** set-priority
+
+Syntax: archive
+
+Archives all targets with confirmation.
+
+*** chain
+
+Syntax: chain("PROPERTY")
+
+Copies PROPERTY from the source entry to all targets.
+
 *** clock-in
+
+Syntax: clock-in
+
+Clocks into all targets (so be careful when using this with more than one
+target).
+
 *** clock-out
+
+Syntax: clock-out
+
+Clocks out of all targets
+*** set-property
+
+Syntax: set-property("PROPERTY","VALUE")
+
+Sets the property PROPERTY on all targets to VALUE.
+
+*** set-priority
+
+Syntax: set-priority(PRIORITY)
+
+Sets the priority of all targets to PRIORITY.  PRIORITY is processed as follows:
+
+- If PRIORITY is a string, the first character is used as the priority
+- Any other value is passed into ~org-priority~ verbatim, so it can be 'up, 'down, or an integer
+
 *** tag
+
+Syntax: tag("TAG-SPEC")
+
+Tags all targets with TAG-SPEC, which is any valid tag specification,
+e.g. tag1:tag2
+
 *** set-effort
 * Advanced Features
 :PROPERTIES:
@@ -475,6 +537,8 @@ Syntax: todo-state(STATE)
 
 Blocks if any target has a headline with TODO state set to STATE.
 
+STATE may be a string or a symbol.
+
 *** variable-set
 :PROPERTIES:
 :CUSTOM_ID: variable-set
@@ -493,7 +557,7 @@ self variable-set(test-variable,12)
 :CUSTOM_ID: has-property
 :END:
 
-Syntax: has-property(PROPERTY,VALUE)
+Syntax: has-property("PROPERTY","VALUE")
 
 Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 
@@ -503,7 +567,7 @@ Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 :DESCRIPTION: Search for a regular expression
 :END:
 
-Syntax: re-search(REGEXP)
+Syntax: re-search("REGEXP")
 
 Blocks the current headline if the regular expression REGEXP is present in any
 of the targets.
@@ -518,11 +582,11 @@ as well.
 Any condition can be negated using '!'.
 
 #+BEGIN_EXAMPLE
-match(test) !has-property(PROP,1)
+match(test) !has-property("PROP","1")
 #+END_EXAMPLE
 
 The above example will cause the current headline to block if any headline
-tagged "test" does *not* have the property PROP set to 1.
+tagged "test" does *not* have the property PROP set to "1".
 ** Consideration
 Special keyword that's only valid for blockers.
 
@@ -532,8 +596,9 @@ This keyword can allow specifying only a portion of tasks to consider:
 2. consider(NUMBER)
 3. consider(all) (Default)
 
-(1) tells the blocker to only consider some portion of the targets.  If at least PERCENT of
-them are in a DONE state, allow the task to be set to DONE.  PERCENT must be a decimal.
+(1) tells the blocker to only consider some portion of the targets.  If at least
+PERCENT of them are in a DONE state, allow the task to be set to DONE.  PERCENT
+must be a decimal.
 
 (2) tells the blocker to only consider NUMBER of the targets.
 
@@ -541,19 +606,82 @@ them are in a DONE state, allow the task to be set to DONE.  PERCENT must be a d
 
 A consideration must be specified before the targets to which it applies:
 
-#+BEGIN_QUOTE
+#+BEGIN_EXAMPLE
 consider(0.5) siblings consider(all) match(find_me)
-#+END_QUOTE
+#+END_EXAMPLE
 
 The above code will allow task completion if at least half the siblings are
 complete, and all tasks tagged "find_me" are complete.
 
-#+BEGIN_QUOTE
+#+BEGIN_SRC emacs-lisp
 consider(1) ids(ID1,ID2,ID3) consider(2) ids(ID3,ID4,ID5,ID6)
-#+END_QUOTE
+#+END_SRC
 
 The above code will allow task completion if at least one of ID1, ID2, and ID3
 are complete, and at least two of ID3, ID4, ID5, and ID6 are complete.
 
 If no consideration is given, ALL is assumed.
 * Extending Edna
+
+Extending Edna is (relatively) simple.
+
+During operation, Edna searches for functions of the form org-edna-TYPE/KEYWORD
+
+** Finders
+
+Finders have the form org-edna-finder/KEYWORD, like so:
+
+#+BEGIN_SRC emacs-lisp
+(defun org-edna-finder/test-finder ()
+  (list (point-marker)))
+#+END_SRC
+
+All finders must return a list of markers, one for each target found, or nil if
+no targets were found.
+
+** Actions
+
+Actions have the form org-edna-action/KEYWORD:
+
+#+BEGIN_SRC emacs-lisp
+(defun org-edna-action/test-action (last-entry arg1 arg2)
+  )
+#+END_SRC
+
+Each action has at least one argument: ~last-entry~.  This is a marker for the
+current entry (not to be confused with the current target).
+
+The rest of the arguments are the arguments specified in the form.
+
+** Conditions
+
+#+BEGIN_SRC emacs-lisp
+(defun org-edna-condition/test-cond (neg))
+#+END_SRC
+
+All conditions have at least one argument, "NEG".  If NEG is non-nil, the
+condition should be negated.
+
+Most conditions have the following form:
+
+#+BEGIN_SRC emacs-lisp
+(defun org-edna-condition/test-condition (neg)
+  (let ((condition (my-test-for-condition)))
+    (when (org-xor condition neg)
+      (string-for-blocking-entry-here))))
+#+END_SRC
+
+For conditions, we return true if condition is true and neg is false, or if
+condition is false and neg is true:
+
+| cond | neg | res |
+|------+-----+-----|
+| t    | t   | f   |
+| t    | f   | t   |
+| f    | t   | t   |
+| f    | f   | f   |
+
+This is an XOR table, so we pass CONDITION and NEG into ~org-xor~ to get our
+result.
+
+A condition must return a string if the current entry should be blocked.
