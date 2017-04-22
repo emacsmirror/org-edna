@@ -123,6 +123,17 @@
       (should (not modifier1))
       (should (= pos1 (length input-string))))))
 
+(ert-deftest org-edna-parse-form-condition ()
+  (let ((input-string "variable-set?()"))
+    (pcase-let* ((`(,token1 ,args1 ,modifier1 ,pos1) (org-edna-parse-form input-string))
+                 (`(,type . ,func) (org-edna--function-for-key token1)))
+      (should (eq token1 'variable-set?))
+      (should (not args1))
+      (should (not modifier1))
+      (should (= pos1 (length input-string)))
+      (should (eq type 'condition))
+      (should (eq func 'org-edna-condition/variable-set?)))))
+
 
 ;; Finders
 
@@ -285,13 +296,13 @@
   (let* ((org-agenda-files `(,org-edna-test-file))
          (target (org-id-find "0d491588-7da3-43c5-b51a-87fbd34f79f7" t)))
     (org-with-point-at target
-      (org-edna-action/todo nil "DONE")
+      (org-edna-action/todo! nil "DONE")
       (should (string-equal (org-entry-get nil "TODO") "DONE"))
-      (org-edna-action/todo nil "TODO")
+      (org-edna-action/todo! nil "TODO")
       (should (string-equal (org-entry-get nil "TODO") "TODO"))
-      (org-edna-action/todo nil 'DONE)
+      (org-edna-action/todo! nil 'DONE)
       (should (string-equal (org-entry-get nil "TODO") "DONE"))
-      (org-edna-action/todo nil 'TODO)
+      (org-edna-action/todo! nil 'TODO)
       (should (string-equal (org-entry-get nil "TODO") "TODO")))))
 
 (ert-deftest org-edna-action-scheduled/wkdy ()
@@ -300,15 +311,15 @@
              (org-agenda-files `(,org-edna-test-file))
              (target (org-id-find "0d491588-7da3-43c5-b51a-87fbd34f79f7" t)))
     (org-with-point-at target
-      (org-edna-action/scheduled nil "Mon")
+      (org-edna-action/scheduled! nil "Mon")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-17 Mon>"))
-      (org-edna-action/scheduled nil 'rm)
+      (org-edna-action/scheduled! nil 'rm)
       (should (not (org-entry-get nil "SCHEDULED")))
-      (org-edna-action/scheduled nil "Mon 9:00")
+      (org-edna-action/scheduled! nil "Mon 9:00")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-17 Mon 09:00>"))
-      (org-edna-action/scheduled nil 'rm)
+      (org-edna-action/scheduled! nil 'rm)
       (should (not (org-entry-get nil "SCHEDULED"))))))
 
 (ert-deftest org-edna-action-scheduled/cp ()
@@ -320,10 +331,10 @@
     (org-with-point-at target
       (dolist (pair pairs)
         ;; (message "Pair: %s" pair)
-        (org-edna-action/scheduled source (car pair))
+        (org-edna-action/scheduled! source (car pair))
         (should (string-equal (org-entry-get nil "SCHEDULED")
                               "<2000-01-15 Sat 00:00>"))
-        (org-edna-action/scheduled source (cdr pair))
+        (org-edna-action/scheduled! source (cdr pair))
         (should (not (org-entry-get nil "SCHEDULED")))))))
 
 (ert-deftest org-edna-action-scheduled/inc ()
@@ -334,19 +345,19 @@
     (org-with-point-at target
       ;; Time started at Jan 15, 2000
       ;; Increment 1 minute
-      (org-edna-action/scheduled nil "+1M")
+      (org-edna-action/scheduled! nil "+1M")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:01>"))
-      (org-edna-action/scheduled nil "-1M")
+      (org-edna-action/scheduled! nil "-1M")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:00>"))
-      (org-edna-action/scheduled nil "+1d")
+      (org-edna-action/scheduled! nil "+1d")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-16 Sun 00:00>"))
-      (org-edna-action/scheduled nil "++1h")
+      (org-edna-action/scheduled! nil "++1h")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 01:00>"))
-      (org-edna-action/scheduled nil "2000-01-15 Sat 00:00")
+      (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:00>")))))
 

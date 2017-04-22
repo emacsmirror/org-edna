@@ -59,21 +59,21 @@ Edna can handle this for you like so:
 ,* TODO Put clothes in washer
   SCHEDULED: <2017-04-08 Sat 09:00>
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled("++1h")
+  :TRIGGER: next-sibling scheduled!("++1h")
   :END:
 ,* TODO Put clothes in dryer
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled("++1h")
+  :TRIGGER: next-sibling scheduled!("++1h")
   :BLOCKER:  previous-sibling
   :END:
 ,* TODO Fold laundry
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled("++1h")
+  :TRIGGER: next-sibling scheduled!("++1h")
   :BLOCKER:  previous-sibling
   :END:
 ,* TODO Put clothes away
   :PROPERTIES:
-  :TRIGGER: next-sibling scheduled("++1h")
+  :TRIGGER: next-sibling scheduled!("++1h")
   :BLOCKER:  previous-sibling
   :END:
 #+END_EXAMPLE
@@ -97,7 +97,7 @@ can help:
 #+BEGIN_EXAMPLE
 ,* TODO Address all TODOs in code
   :PROPERTIES:
-  :BLOCKER: file("main.cpp") file("code.cpp") re-search("TODO")
+  :BLOCKER: file("main.cpp") file("code.cpp") re-search?("TODO")
   :END:
 ,* TODO Commit Code to Repository
 #+END_EXAMPLE
@@ -123,7 +123,7 @@ scheduling another task, marking another task as TODO, or renaming a file.
 
 Edna has its own language for commands, the basic form of which is KEYWORD(ARG1 ARG2 ...)
 
-KEYWORD can be any valid lisp symbol, such as key-word, KEY_WORD, or keyword?.
+KEYWORD can be any valid lisp symbol, such as key-word, KEY_WORD!, or keyword?.
 
 Each argument can be one of the following:
 
@@ -153,6 +153,8 @@ together, removing any duplicates.
 :CUSTOM_ID: ancestors
 :END:
 
+Syntax: ancestors
+
 The ~ancestors~ finder returns a list of the current headline's ancestors.
 
 For example:
@@ -172,7 +174,7 @@ In the above example, "Heading 5" will be blocked until "Heading 1", "Heading
 3", and "Heading 4" are marked "DONE", while "Heading 2" is ignored.
 *** chain-find
 
-chain-find(OPTION OPTION...)
+Syntax: chain-find(OPTION OPTION...)
 
 Identical to the chain argument in org-depend, chain-find selects its single
 target using the following method:
@@ -211,6 +213,9 @@ one is specified, the last will be used.
 :DESCRIPTION: Find all immediate children
 :CUSTOM_ID: children
 :END:
+
+Syntax: children
+
 The ~children~ finder returns a list of the *immediate* children of the current
 headline.
 
@@ -222,6 +227,8 @@ In order to get all levels of children of the current headline, use the
 :DESCRIPTION: Find all descendants
 :CUSTOM_ID: descendants
 :END:
+
+Syntax: descendants
 
 The ~descendants~ finder returns a list of all descendants of the current
 headline.
@@ -246,7 +253,7 @@ DONE.
 :DESCRIPTION: Find a file by name
 :END:
 
-file(FILE)
+Syntax: file("FILE")
 
 The ~file~ finder finds a single file, specified as a string.  The returned target
 will be the minimum point in the file.
@@ -257,7 +264,7 @@ to set a different condition.  For example:
 #+BEGIN_EXAMPLE
 ,* TODO Test
   :PROPERTIES:
-  :BLOCKER:  file("~/myfile.org") headings
+  :BLOCKER:  file("~/myfile.org") headings?
   :END:
 #+END_EXAMPLE
 
@@ -269,6 +276,8 @@ Here, "Test" will block until myfile.org is clear of headlines.
 :DESCRIPTION: Find the first child of a headline
 :END:
 
+Syntax: first-child
+
 The ~first-child~ finder returns the first child of a headline, if any.
 
 *** ids
@@ -276,6 +285,8 @@ The ~first-child~ finder returns the first child of a headline, if any.
 :DESCRIPTION: Find a list of headlines with given IDs
 :CUSTOM_ID: ids
 :END:
+
+Syntax: id(ID1 ID2 ...)
 
 The ~ids~ finder will search for headlines with given IDs, using ~org-id~.  Any
 number of UUIDs may be specified.  For example:
@@ -299,7 +310,7 @@ Note that UUIDs need not be quoted; Edna will handle that for you.
 :DESCRIPTION: Good old tag matching
 :END:
 
-match(MATCH-STRING SCOPE SKIP)
+Syntax: match("MATCH-STRING" SCOPE SKIP)
 
 The ~match~ keyword will take any arguments that ~org-map-entries~ usually takes.
 In fact, the arguments to ~match~ are passed straight into ~org-map-entries~.
@@ -322,6 +333,8 @@ argument.
 :CUSTOM_ID: next-sibling
 :END:
 
+Syntax: next-sibling
+
 The ~next-sibling~ keyword returns the next sibling of the current heading, if
 any.
 
@@ -330,7 +343,7 @@ any.
 :CUSTOM_ID: olp
 :END:
 
-olp(FILE OLP)
+Syntax: olp("FILE" "OLP")
 
 Finds the heading given by OLP in FILE.  Both arguments are strings.
 
@@ -348,7 +361,7 @@ Finds the heading given by OLP in FILE.  Both arguments are strings.
 :CUSTOM_ID: org-file
 :END:
 
-org-file("FILE")
+Syntax: org-file("FILE")
 
 A special form of ~file~, ~org-file~ will find FILE in ~org-directory~.
 
@@ -365,11 +378,27 @@ Note that the file still requires an extension.
 :PROPERTIES:
 :CUSTOM_ID: parent
 :END:
+
+Syntax: parent
+
+Returns the parent of the current headline, if any.
+
 *** previous-sibling
 :PROPERTIES:
 :CUSTOM_ID: previous-sibling
 :END:
+
+Syntax: previous-sibling
+
+Returns the previous sibling of the current headline on the same level.
+
+
 *** rest-of-siblings
+:PROPERTIES:
+:CUSTOM_ID: rest-of-siblings
+:END:
+
+Syntax: rest-of-siblings
 
 Finds the remaining siblings on the same level as the current headline.
 
@@ -377,6 +406,8 @@ Finds the remaining siblings on the same level as the current headline.
 :PROPERTIES:
 :CUSTOM_ID: self
 :END:
+
+Syntax: self
 
 Returns the current headline.
 
@@ -390,6 +421,11 @@ Syntax: siblings
 Returns all siblings of the source heading as targets.
 
 *** siblings-wrap
+:PROPERTIES:
+:CUSTOM_ID: siblings-wrap
+:END:
+
+Syntax: siblings-wrap
 
 Finds the siblings on the same level as the current headline, wrapping when it
 reaches the end.
@@ -397,13 +433,16 @@ reaches the end.
 ** Actions
 Once Edna has collected its targets for a trigger, it will perform actions on
 them.
+
+Actions must always end with '!'.
+
 *** Scheduled/Deadline
 :PROPERTIES:
 :CUSTOM_ID: planning
 :END:
 
-Syntax: scheduled(OPTIONS)
-Syntax: deadline(OPTIONS)
+Syntax: scheduled!(OPTIONS)
+Syntax: deadline!(OPTIONS)
 
 There are several forms that the planning keywords can take:
 
@@ -446,53 +485,63 @@ Sets the TODO state of the target headline to NEW-STATE.
 
 NEW-STATE may either be a string or a symbol denoting the new TODO state.
 
-*** archive
+*** Archive
+:PROPERTIES:
+:CUSTOM_ID: archive!
+:END:
 
-Syntax: archive
+Syntax: archive!
 
 Archives all targets with confirmation.
 
-*** chain
+*** Chain Property
 
-Syntax: chain("PROPERTY")
+Syntax: chain!("PROPERTY")
 
 Copies PROPERTY from the source entry to all targets.
 
-*** clock-in
+*** Clocking
 
-Syntax: clock-in
+Syntax: clock-in!
+Syntax: clock-out!
 
-Clocks into all targets (so be careful when using this with more than one
-target).
+Clocks into or out of all targets.
 
-*** clock-out
+~clock-in!~ has no special handling of targets, so be careful when specifying
+multiple targets.
 
-Syntax: clock-out
+*** Property
 
-Clocks out of all targets
-*** set-property
-
-Syntax: set-property("PROPERTY","VALUE")
+Syntax: set-property!("PROPERTY","VALUE")
 
 Sets the property PROPERTY on all targets to VALUE.
 
-*** set-priority
+*** Priority
 
-Syntax: set-priority(PRIORITY)
+Syntax: set-priority!(PRIORITY)
 
 Sets the priority of all targets to PRIORITY.  PRIORITY is processed as follows:
 
 - If PRIORITY is a string, the first character is used as the priority
 - Any other value is passed into ~org-priority~ verbatim, so it can be 'up, 'down, or an integer
 
-*** tag
+*** Tag
 
-Syntax: tag("TAG-SPEC")
+Syntax: tag!("TAG-SPEC")
 
 Tags all targets with TAG-SPEC, which is any valid tag specification,
 e.g. tag1:tag2
 
-*** set-effort
+*** Effort
+
+Syntax: set-effort!(VALUE)
+
+Sets the effort of all targets according to VALUE:
+
+- If VALUE is a string, then the effort is set to VALUE
+- If VALUE is an integer, then set the value to the VALUE'th allowed effort property
+- If VALUE is the symbol 'increment, increment effort
+
 * Advanced Features
 :PROPERTIES:
 :CUSTOM_ID: advanced
@@ -511,7 +560,7 @@ that target, then that headline is blocked.
 :CUSTOM_ID: done
 :END:
 
-Syntax: done
+Syntax: done?
 
 Blocks the current headline if any target is DONE.
 
@@ -520,12 +569,12 @@ Blocks the current headline if any target is DONE.
 :CUSTOM_ID: headings
 :END:
 
-Syntax: headings
+Syntax: headings?
 
 Blocks the current headline if any target belongs to a file that has an Org heading.
 
 #+BEGIN_EXAMPLE
-org-file(refile.org) headings
+org-file("refile.org") headings?
 #+END_EXAMPLE
 
 The above example blocks if refile.org has any headings.
@@ -535,7 +584,7 @@ The above example blocks if refile.org has any headings.
 :CUSTOM_ID: todo-state
 :END:
 
-Syntax: todo-state(STATE)
+Syntax: todo-state?(STATE)
 
 Blocks if any target has a headline with TODO state set to STATE.
 
@@ -546,12 +595,14 @@ STATE may be a string or a symbol.
 :CUSTOM_ID: variable-set
 :END:
 
-Syntax: variable-set(VARIABLE,VALUE)
+Syntax: variable-set?(VARIABLE,VALUE)
 
 Blocks the current headline if VARIABLE is set to VALUE.
 
+VARIABLE should be a symbol, and VALUE is any valid lisp expression
+
 #+BEGIN_EXAMPLE
-self variable-set(test-variable,12)
+self variable-set?(test-variable,12)
 #+END_EXAMPLE
 
 *** has-property
@@ -559,7 +610,7 @@ self variable-set(test-variable,12)
 :CUSTOM_ID: has-property
 :END:
 
-Syntax: has-property("PROPERTY","VALUE")
+Syntax: has-property?("PROPERTY","VALUE")
 
 Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 
@@ -569,7 +620,7 @@ Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 :DESCRIPTION: Search for a regular expression
 :END:
 
-Syntax: re-search("REGEXP")
+Syntax: re-search?("REGEXP")
 
 Blocks the current headline if the regular expression REGEXP is present in any
 of the targets.
@@ -584,7 +635,7 @@ as well.
 Any condition can be negated using '!'.
 
 #+BEGIN_EXAMPLE
-match(test) !has-property("PROP","1")
+match("test") !has-property?("PROP","1")
 #+END_EXAMPLE
 
 The above example will cause the current headline to block if any headline
@@ -609,14 +660,14 @@ must be a decimal.
 A consideration must be specified before the targets to which it applies:
 
 #+BEGIN_EXAMPLE
-consider(0.5) siblings consider(all) match(find_me)
+consider(0.5) siblings consider(all) match("find_me")
 #+END_EXAMPLE
 
 The above code will allow task completion if at least half the siblings are
 complete, and all tasks tagged "find_me" are complete.
 
 #+BEGIN_SRC emacs-lisp
-consider(1) ids(ID1,ID2,ID3) consider(2) ids(ID3,ID4,ID5,ID6)
+consider(1) ids(ID1 ID2 ID3) consider(2) ids(ID3 ID4 ID5 ID6)
 #+END_SRC
 
 The above code will allow task completion if at least one of ID1, ID2, and ID3
@@ -627,7 +678,16 @@ If no consideration is given, ALL is assumed.
 
 Extending Edna is (relatively) simple.
 
-During operation, Edna searches for functions of the form org-edna-TYPE/KEYWORD
+During operation, Edna searches for functions of the form org-edna-TYPE/KEYWORD.
+
+** Naming Conventions
+
+In order to distinguish between actions, finders, and conditions, we add '?' to
+conditions and '!' to actions.  This is taken from the practice in Guile and
+Scheme to suffix destructive functions with '!' and predicates with '?'.
+
+Thus, one can have an action that files a target, and a finder that finds a
+file.
 
 ** Finders
 
@@ -643,10 +703,10 @@ no targets were found.
 
 ** Actions
 
-Actions have the form org-edna-action/KEYWORD:
+Actions have the form org-edna-action/KEYWORD!:
 
 #+BEGIN_SRC emacs-lisp
-(defun org-edna-action/test-action (last-entry arg1 arg2)
+(defun org-edna-action/test-action! (last-entry arg1 arg2)
   )
 #+END_SRC
 
@@ -658,7 +718,7 @@ The rest of the arguments are the arguments specified in the form.
 ** Conditions
 
 #+BEGIN_SRC emacs-lisp
-(defun org-edna-condition/test-cond (neg))
+(defun org-edna-condition/test-cond? (neg))
 #+END_SRC
 
 All conditions have at least one argument, "NEG".  If NEG is non-nil, the
@@ -667,7 +727,7 @@ condition should be negated.
 Most conditions have the following form:
 
 #+BEGIN_SRC emacs-lisp
-(defun org-edna-condition/test-condition (neg)
+(defun org-edna-condition/test-condition? (neg)
   (let ((condition (my-test-for-condition)))
     (when (org-xor condition neg)
       (string-for-blocking-entry-here))))

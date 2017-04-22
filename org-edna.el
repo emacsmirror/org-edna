@@ -92,23 +92,30 @@ Currently, the following are handled:
       (setq pos (match-end 0)))
     (list token args modifier pos)))
 
-(defconst org-edna--types
-  '(finder action condition)
-  "Types recognized by org-edna.")
-
 (defun org-edna--function-for-key (key)
   (cond
+   ;; Just return nil if it's not a symbol; `org-edna-process-form' will handle
+   ;; the rest
+   ((or (not key)
+        (not (symbolp key))))
    ((eq key 'consideration)
     ;; Function is ignored here
     (cons 'consideration 'identity))
-   (key
-    (when-let ((func-format (format "org-edna-%%s/%s" key))
-               (new-sym
-                ;; Find the first bound function
-                (seq-find
-                 (lambda (sym) (fboundp (intern (format func-format sym))))
-                 org-edna--types)))
-      (cons new-sym (intern (format func-format new-sym)))))))
+   ((string-suffix-p "!" (symbol-name key))
+    ;; Action
+    (let ((func-sym (intern (format "org-edna-action/%s" key))))
+      (when (fboundp func-sym)
+        (cons 'action func-sym))))
+   ((string-suffix-p "?" (symbol-name key))
+    ;; Condition
+    (let ((func-sym (intern (format "org-edna-condition/%s" key))))
+      (when (fboundp func-sym)
+        (cons 'condition func-sym))))
+   (t
+    ;; Everything else is a finder
+    (let ((func-sym (intern (format "org-edna-finder/%s" key))))
+      (when (fboundp func-sym)
+        (cons 'finder func-sym))))))
 
 (defun org-edna--handle-condition (func mod args targets consideration)
   ;; Check the condition at each target
@@ -174,7 +181,7 @@ Currently, the following are handled:
                (eq state 'finder)                  ;; but haven't found any
                (not blocking-entry))                 ;; ever
       (setq blocking-entry
-            (org-edna--handle-condition 'org-edna-condition/done
+            (org-edna--handle-condition 'org-edna-condition/done?
                                         t nil targets consideration)))
     ;; Only blockers care about the return value, and this will be non-nil if
     ;; the entry should be blocked.
@@ -348,7 +355,7 @@ IDS are all UUIDs as understood by `org-id-find'."
     (when (markerp marker)
       (list marker))))
 
-  ;; TODO: Clean up the buffer when it's finished
+;; TODO: Clean up the buffer when it's finished
 
 (defun org-edna-finder/file (file)
   ;; If there isn't a buffer visiting file, then there's no point in having a
@@ -428,7 +435,7 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 
 ;; Set TODO state
-(defun org-edna-action/todo (last-entry new-state)
+(defun org-edna-action/todo! (last-entry new-state)
   (ignore last-entry)
   (org-todo (if (stringp new-state) new-state (symbol-name new-state))))
 
@@ -487,45 +494,46 @@ IDS are all UUIDs as understood by `org-id-find'."
              (new-ts (format-time-string (if have-time "%F %R" "%F") final-time)))
         (org--deadline-or-schedule nil type new-ts))))))
 
-(defun org-edna-action/scheduled (last-entry &rest args)
+(defun org-edna-action/scheduled! (last-entry &rest args)
   (org-edna--handle-planning 'scheduled last-entry args))
 
-(defun org-edna-action/deadline (last-entry &rest args)
+(defun org-edna-action/deadline! (last-entry &rest args)
   (org-edna--handle-planning 'deadline last-entry args))
 
-(defun org-edna-action/tag (last-entry tags)
+(defun org-edna-action/tag! (last-entry tags)
   (ignore last-entry)
   (org-set-tags-to tags))
 
-(defun org-edna-action/set-property (last-entry property value)
+(defun org-edna-action/set-property! (last-entry property value)
   (ignore last-entry)
   (org-entry-put nil property value))
 
-(defun org-edna-action/clock-in (last-entry)
+(defun org-edna-action/clock-in! (last-entry)
   (ignore last-entry)
   (org-clock-in))
 
-(defun org-edna-action/clock-out (last-entry)
+(defun org-edna-action/clock-out! (last-entry)
   (ignore last-entry)
   (org-clock-out))
 
-(defun org-edna-action/set-priority (last-entry priority-action)
+(defun org-edna-action/set-priority! (last-entry priority-action)
   "PRIORITY-ACTION is passed straight to `org-priority'."
   (ignore last-entry)
   (org-priority (if (stringp priority-action)
                     (string-to-char priority-action)
                   priority-action)))
 
-;; TODO I will likely want to check the arguments
-(defun org-edna-action/set-effort (last-entry value increment)
+(defun org-edna-action/set-effort! (last-entry value)
   (ignore last-entry)
-  (org-set-effort value increment))
+  (if (eq value 'increment)
+      (org-set-effort nil value)
+    (org-set-effort value nil)))
 
-(defun org-edna-action/archive (last-entry)
+(defun org-edna-action/archive! (last-entry)
   (ignore last-entry)
   (org-archive-subtree-default-with-confirmation))
 
-(defun org-edna-action/chain (last-entry property)
+(defun org-edna-action/chain! (last-entry property)
   (when-let ((old-prop (org-entry-get last-entry property)))
     (org-entry-put nil property old-prop)))
 
@@ -543,35 +551,35 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 ;; This means that we want to take the exclusive-or of condition and neg.
 
-(defun org-edna-condition/done (neg)
+(defun org-edna-condition/done? (neg)
   (when-let ((condition
               (if neg
                   (member (org-entry-get nil "TODO") org-not-done-keywords)
                 (member (org-entry-get nil "TODO") org-done-keywords))))
     (org-get-heading)))
 
-(defun org-edna-condition/todo-state (neg state)
+(defun org-edna-condition/todo-state? (neg state)
   (let ((condition (string-equal (org-entry-get nil "TODO") state)))
     (when (org-xor condition neg)
       (org-get-heading))))
 
 ;; Block if there are headings
-(defun org-edna-condition/headings (neg)
+(defun org-edna-condition/headings? (neg)
   (let ((condition (not (seq-empty-p (org-map-entries (lambda nil t))))))
     (when (org-xor condition neg)
       (buffer-name))))
 
-(defun org-edna-condition/variable-set (neg var val)
+(defun org-edna-condition/variable-set? (neg var val)
   (let ((condition (equal (symbol-value var) val)))
     (when (org-xor condition neg)
       (format "%s %s= %s" var (or neg "=") val))))
 
-(defun org-edna-condition/has-property (neg prop val)
+(defun org-edna-condition/has-property? (neg prop val)
   (let ((condition (string-equal (org-entry-get nil prop) val)))
     (when (org-xor condition neg)
       (org-get-heading))))
 
-(defun org-edna-condition/re-search (neg match)
+(defun org-edna-condition/re-search? (neg match)
   (let ((condition (re-search-forward match nil t)))
     (when (org-xor condition neg)
       (format "Found %s in %s" match (buffer-name)))))
