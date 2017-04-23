@@ -34,6 +34,9 @@
 (defconst org-edna-test-file
   (expand-file-name "org-edna-tests.org" org-edna-test-dir))
 
+(defconst org-edna-tests-el
+  (expand-file-name "org-edna-tests.el" org-edna-test-dir))
+
 ;; Jan 15, 2000; chosen at random
 (defconst org-edna-test-time
   (encode-time 0 0 0 15 1 2000))
@@ -42,12 +45,14 @@
 (defconst org-edna-test-sibling-two-id   "72534efa-e932-460b-ae2d-f044a0074815")
 (defconst org-edna-test-sibling-three-id "06aca55e-ce09-46df-80d7-5b52e55d6505")
 (defconst org-edna-test-parent-id        "21b8f1f5-14e8-4677-873d-69e0389fdc9e")
+(defconst org-edna-test-id-heading-one   "0d491588-7da3-43c5-b51a-87fbd34f79f7")
+(defconst org-edna-test-id-heading-two   "b010cbad-60dc-46ef-a164-eb155e62cbb2")
+(defconst org-edna-test-id-heading-three "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")
+(defconst org-edna-test-id-heading-four  "7d4d564b-18b2-445c-a0c8-b1b3fb9ad29e")
 
 (defun org-edna-find-test-heading (id)
   "Find the test heading with id ID."
-  (with-current-buffer (find-file-noselect org-edna-test-file)
-    (goto-char (org-find-entry-with-id id))
-    (point-marker)))
+  (org-id-find-id-in-file id org-edna-test-file t))
 
 (ert-deftest org-edna-parse-form-no-arguments ()
   (let* ((input-string "test-string")
@@ -363,6 +368,89 @@
 
 
 ;; Conditions
+
+(defun org-edna-test-condition-form (func-sym pom-true pom-false block-true block-false &rest args)
+  (org-with-point-at pom-true
+    (should-not (apply func-sym t args))
+    (should     (equal (apply func-sym nil args) block-true)))
+  (org-with-point-at pom-false
+    (should     (equal (apply func-sym t args) block-false))
+    (should-not (apply func-sym nil args))))
+
+(ert-deftest org-edna-condition-done ()
+  (let* ((pom-done (org-edna-find-test-heading org-edna-test-id-heading-four))
+         (pom-todo (org-edna-find-test-heading org-edna-test-id-heading-one))
+         (block-done (org-with-point-at pom-done (org-get-heading)))
+         (block-todo (org-with-point-at pom-todo (org-get-heading))))
+    (org-edna-test-condition-form 'org-edna-condition/done?
+                                  pom-done pom-todo
+                                  block-done block-todo)))
+
+(ert-deftest org-edna-condition-todo-state-string ()
+  (let* ((pom-done (org-edna-find-test-heading org-edna-test-id-heading-four))
+         (pom-todo (org-edna-find-test-heading org-edna-test-id-heading-one))
+         (block-done (org-with-point-at pom-done (org-get-heading)))
+         (block-todo (org-with-point-at pom-todo (org-get-heading))))
+    (org-edna-test-condition-form 'org-edna-condition/todo-state?
+                                  pom-todo pom-done
+                                  block-todo block-done
+                                  "TODO")))
+
+(ert-deftest org-edna-condition-todo-state-symbol ()
+  (let* ((pom-done (org-edna-find-test-heading org-edna-test-id-heading-four))
+         (pom-todo (org-edna-find-test-heading org-edna-test-id-heading-one))
+         (block-done (org-with-point-at pom-done (org-get-heading)))
+         (block-todo (org-with-point-at pom-todo (org-get-heading))))
+    (org-edna-test-condition-form 'org-edna-condition/todo-state?
+                                  pom-todo pom-done
+                                  block-todo block-done
+                                  'TODO)))
+
+(ert-deftest org-edna-condition-headings ()
+  (pcase-let* ((`(,pom-headings ,block-headings)
+                (with-current-buffer (find-file-noselect org-edna-test-file)
+                  (list (point-min-marker) (buffer-name))))
+               (`(,pom-no-headings ,block-no-headings)
+                (with-current-buffer (find-file-noselect org-edna-tests-el)
+                  (list (point-min-marker) (buffer-name)))))
+    (org-edna-test-condition-form 'org-edna-condition/headings?
+                                  pom-headings pom-no-headings
+                                  block-headings block-no-headings)))
+
+(ert-deftest org-edna-condition-variable-set ()
+  (let* ((temp-var t))
+    (should-not (org-edna-condition/variable-set? t 'temp-var t))
+    (should     (equal (org-edna-condition/variable-set? nil 'temp-var t)
+                       "temp-var == t"))
+    (should     (equal (org-edna-condition/variable-set? t 'temp-var nil)
+                       "temp-var != nil"))
+    (should-not (org-edna-condition/variable-set? nil 'temp-var nil))))
+
+(ert-deftest org-edna-condition-has-property ()
+  (let* ((pom-true (org-edna-find-test-heading org-edna-test-id-heading-four))
+         (pom-false (org-edna-find-test-heading org-edna-test-id-heading-one))
+         (block-true (org-with-point-at pom-true (org-get-heading)))
+         (block-false (org-with-point-at pom-false (org-get-heading))))
+    (org-edna-test-condition-form 'org-edna-condition/has-property?
+                                  pom-true pom-false
+                                  block-true block-false
+                                  "ID" org-edna-test-id-heading-four)))
+
+(ert-deftest org-edna-condition-re-search ()
+  (pcase-let* ((case-fold-search nil)
+               (string "require")
+               (`(,pom-true ,block-true)
+                (with-current-buffer (find-file-noselect org-edna-tests-el)
+                  (list (point-min-marker)
+                        (format "Found %s in %s" string (buffer-name)))))
+               (`(,pom-false ,block-false)
+                (with-current-buffer (find-file-noselect org-edna-test-file)
+                  (list (point-min-marker)
+                        (format "Did Not Find %s in %s" string (buffer-name))))))
+    (org-edna-test-condition-form 'org-edna-condition/re-search?
+                                  pom-true pom-false
+                                  block-true block-false
+                                  string)))
 
 
 ;; Consideration

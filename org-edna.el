@@ -572,7 +572,7 @@ IDS are all UUIDs as understood by `org-id-find'."
 (defun org-edna-condition/variable-set? (neg var val)
   (let ((condition (equal (symbol-value var) val)))
     (when (org-xor condition neg)
-      (format "%s %s= %s" var (or neg "=") val))))
+      (format "%s %s= %s" var (if neg "!" "=") val))))
 
 (defun org-edna-condition/has-property? (neg prop val)
   (let ((condition (string-equal (org-entry-get nil prop) val)))
@@ -582,7 +582,7 @@ IDS are all UUIDs as understood by `org-id-find'."
 (defun org-edna-condition/re-search? (neg match)
   (let ((condition (re-search-forward match nil t)))
     (when (org-xor condition neg)
-      (format "Found %s in %s" match (buffer-name)))))
+      (format "%s %s in %s" (if neg "Did Not Find" "Found") match (buffer-name)))))
 
 
 
