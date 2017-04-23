@@ -494,10 +494,10 @@ There are several forms that the planning keywords can take:
 
 Examples:
 
-scheduled("Mon 09:00") -> Set SCHEDULED to the following Monday at 9:00
-*** Todo State
+scheduled!("Mon 09:00") -> Set SCHEDULED to the following Monday at 9:00
+*** TODO State
 
-Syntax: todo(NEW-STATE)
+Syntax: todo!(NEW-STATE)
 
 Sets the TODO state of the target headline to NEW-STATE.
 
@@ -511,6 +511,9 @@ NEW-STATE may either be a string or a symbol denoting the new TODO state.
 Syntax: archive!
 
 Archives all targets with confirmation.
+
+Confirmation is controlled with ~org-edna-prompt-for-archive~.  If this option is
+nil, Edna will not ask before archiving the target.
 
 *** Chain Property
 
