@@ -205,7 +205,7 @@ Currently, the following are handled:
          (condition-case err
              ,@body
            (error
-            (if (eq (car err) 'invalid-syntax-error)
+            (if (eq (car err) 'invalid-read-syntax)
                 (org-edna--print-syntax-error (cdr err))
               (message "Edna Error: %s" (error-message-string err)))
             (setq org-block-entry-blocking (org-get-heading))
