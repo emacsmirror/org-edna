@@ -437,7 +437,8 @@
     (org-with-point-at new-pom
       (org-edna-action/chain! old-pom "TEST")
       (should (equal (org-entry-get nil "TEST") "1")))
-    (org-entry-delete old-pom "TEST")))
+    (org-entry-delete old-pom "TEST")
+    (org-entry-delete new-pom "TEST")))
 
 
 ;; Conditions
