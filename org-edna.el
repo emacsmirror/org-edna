@@ -3,9 +3,11 @@
 ;; Copyright (C) 2017 Ian Dunn
 
 ;; Author: Ian Dunn <dunni@gnu.org>
+;; Maintainer: Ian Dunn <dunni@gnu.org>
 ;; Keywords: convenience, text, org
-;; Version: 1.0
-;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "8.0"))
+;; URL: https://savannah.nongnu.org/projects/org-edna-el/
+;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
+;; Version: 1.0alpha1
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -22,6 +24,14 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+
+;; Edna provides an extensible means of specifying conditions which must be
+;; fulfilled before a task can be completed and actions to take once it is.
+
+;; Org Edna runs when either the BLOCKER or TRIGGER properties are set on a
+;; headline, and when it is changing from a TODO state to a DONE state.
+
+;;; History:
 
 ;;; Code:
 
@@ -47,9 +57,15 @@ properties used during actions or conditions."
   :type 'boolean)
 
 (defmacro org-edna--syntax-error (msg form pos)
+  "Signal an Edna syntax error.
+
+MSG will be reported to the user and should describe the error.
+FORM is the form that generated the error.
+POS is the position in FORM at which the error occurred."
   `(signal 'invalid-read-syntax (list :msg ,msg :form ,form :pos ,pos)))
 
 (defun org-edna--print-syntax-error (error-plist)
+  "Prints the syntax error from ERROR-PLIST."
   (let ((msg (plist-get error-plist :msg))
         (form (plist-get error-plist :form))
         (pos (plist-get error-plist :pos)))
@@ -71,7 +87,7 @@ Currently, the following are handled:
      arg)))
 
 (defun org-edna-parse-form (form &optional start)
-  "Parse Edna form FORM."
+  "Parse Edna form FORM starting at position START."
   (setq start (or start 0))
   (pcase-let* ((`(,token . ,pos) (read-from-string form start))
                (modifier nil)
@@ -98,6 +114,10 @@ Currently, the following are handled:
     (list token args modifier pos)))
 
 (defun org-edna--function-for-key (key)
+  "Determine the Edna function for KEY.
+
+KEY should be a symbol, the keyword for which to find the Edna
+function."
   (cond
    ;; Just return nil if it's not a symbol; `org-edna-process-form' will handle
    ;; the rest
@@ -123,6 +143,7 @@ Currently, the following are handled:
         (cons 'finder func-sym))))))
 
 (defun org-edna--handle-condition (func mod args targets consideration)
+  "Handle a condition."
   ;; Check the condition at each target
   (when-let ((blocks
               (mapcar
@@ -134,6 +155,10 @@ Currently, the following are handled:
     (org-edna-handle-consideration consideration blocks)))
 
 (defun org-edna-process-form (form action-or-condition)
+  "Process FORM.
+
+ACTION-OR-CONDITION is a symbol, either 'action or 'condition,
+indicating whether FORM accepts actions or conditions."
   (let ((targets)
         (blocking-entry)
         (consideration 'all)
@@ -196,6 +221,10 @@ Currently, the following are handled:
 
 
 (defmacro org-edna-run (change-plist &rest body)
+  "Run a TODO state change.
+
+The state information is held in CHANGE-PLIST.  If the TODO state
+is changing from a TODO state to a DONE state, run BODY."
   (declare (indent 1))
   `(let* ((pos (plist-get ,change-plist :position))
           (type (plist-get ,change-plist :type))
@@ -221,11 +250,21 @@ Currently, the following are handled:
        t)))
 
 (defun org-edna-trigger-function (change-plist)
+  "Trigger function work-horse.
+
+See `org-edna-run' for CHANGE-PLIST explanation.
+
+This shouldn't be run from outside of `org-trigger-hook'."
   (org-edna-run change-plist
     (when-let ((form (org-entry-get pos "TRIGGER" org-edna-use-inheritance)))
       (org-edna-process-form form 'action))))
 
 (defun org-edna-blocker-function (change-plist)
+  "Blocker function work-horse.
+
+See `org-edna-run' for CHANGE-PLIST explanation.
+
+This shouldn't be run from outside of `org-blocker-hook'."
   (org-edna-run change-plist
     (if-let ((form (org-entry-get pos "BLOCKER" org-edna-use-inheritance)))
         (org-edna-process-form form 'condition)
@@ -233,12 +272,19 @@ Currently, the following are handled:
 
 ;;;###autoload
 (defun org-edna-load ()
+  "Setup the hooks necessary for Org Edna to run.
+
+This means adding to `org-trigger-hook' and `org-blocker-hook'."
   (interactive)
   (add-hook 'org-trigger-hook 'org-edna-trigger-function)
   (add-hook 'org-blocker-hook 'org-edna-blocker-function))
 
 ;;;###autoload
 (defun org-edna-unload ()
+  "Unload Org Edna.
+
+Remove Edna's workers from `org-trigger-hook' and
+`org-blocker-hook'."
   (interactive)
   (remove-hook 'org-trigger-hook 'org-edna-trigger-function)
   (remove-hook 'org-blocker-hook 'org-edna-blocker-function))
@@ -616,6 +662,22 @@ IDS are all UUIDs as understood by `org-id-find'."
          (if (>= (/ (float fulfilled) (float total-blocks)) consideration)
              nil
            first-block))))))
+
+
+
+(declare-function 'lm-report-bug "lisp-mnt" (topic))
+
+(defun org-edna-submit-bug-report (topic)
+  (interactive "sTopic: ")
+  (require 'lisp-mnt)
+  (let* ((src-file (locate-library "org-edna.el" t))
+         (src-buf-live (find-buffer-visiting src-file))
+         (src-buf (find-file-noselect src-file)))
+    (with-current-buffer src-buf
+      (lm-report-bug topic))
+    ;; Kill the buffer if it wasn't live
+    (unless src-buf-live
+      (kill-buffer src-buf))))
 
 (provide 'org-edna)
 
