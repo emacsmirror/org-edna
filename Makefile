@@ -48,7 +48,7 @@ org-edna-autoloads.el:
 clean:
 	-rm -f *.elc
 
-check:
+check: compile
 	@$(EMACS) \
 	-L "." \
 	--load "ert" \
