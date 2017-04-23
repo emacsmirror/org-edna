@@ -293,15 +293,23 @@ Remove Edna's workers from `org-trigger-hook' and
 
 ;; Tag Finder
 (defun org-edna-finder/match (match-spec &optional scope skip)
-  "Find entries with match-spec MATCH-SPEC.
+  "Find entries using Org matching.
 
 MATCH-SPEC may be any valid match string; it is passed straight
-into `org-map-entries', with 'agenda as the scope.
+into `org-map-entries'.
 
-SCOPE and SKIP are their counterparts in `org-map-entries', but
-as strings.
+SCOPE and SKIP are their counterparts in `org-map-entries'.
+SCOPE defaults to agenda, and SKIP defaults to nil.
 
-SCOPE defaults to \"agenda\", and SKIP defaults to nil."
+#+BEGIN_SRC org
+,* TODO Test
+  :PROPERTIES:
+  :BLOCKER:  match(\"test&mine\" agenda)
+  :END:
+#+END_SRC
+
+\"Test\" will block until all entries tagged \"test\" and
+\"mine\" in the agenda files are marked DONE."
   (setq scope (or scope 'agenda))
   (org-map-entries
    ;; Find all entries in the agenda files that match the given tag.
@@ -310,7 +318,7 @@ SCOPE defaults to \"agenda\", and SKIP defaults to nil."
 
 ;; ID finder
 (defun org-edna-finder/ids (&rest ids)
-  "Find entries with IDs in IDS.
+  "Find a list of headlines with given IDs.
 
 IDS are all UUIDs as understood by `org-id-find'."
   (mapcar (lambda (id) (org-id-find id 'marker)) ids))
@@ -395,14 +403,43 @@ IDS are all UUIDs as understood by `org-id-find'."
     nil 'tree)))
 
 (defun org-edna-finder/ancestors ()
+  "Find a list of ancestors.
+
+Example:
+
+#+BEGIN_SRC org
+,* TODO Heading 1
+,** TODO Heading 2
+,*** TODO Heading 3
+,**** TODO Heading 4
+,***** TODO Heading 5
+      :PROPERTIES:
+      :BLOCKER:  ancestors
+      :END:
+#+END_SRC
+
+In the above example, Heading 5 will be blocked until Heading 1, Heading
+3, and Heading 4 are marked DONE, while Heading 2 is ignored."
   (org-with-wide-buffer
    (let ((markers))
      (while (org-up-heading-safe)
        (push (point-marker) markers))
      (nreverse markers))))
 
-(defun org-edna-finder/olp (file path)
-  (let ((marker (org-find-olp (cons file (split-string-and-unquote path "/")))))
+(defun org-edna-finder/olp (file olp)
+  "Find a headline by its outline path.
+
+Finds the heading given by OLP in FILE.  Both arguments are strings.
+
+#+BEGIN_SRC org
+,* TODO Test
+  :PROPERTIES:
+  :BLOCKER:  olp(\"test.org\" \"path/to/heading\")
+  :END:
+#+END_SRC
+
+Test will block if the heading \"path/to/heading\" in \"test.org\" is not DONE."
+  (let ((marker (org-find-olp (cons file (split-string-and-unquote olp "/")))))
     (when (markerp marker)
       (list marker))))
 
