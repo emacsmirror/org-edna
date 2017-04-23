@@ -702,7 +702,7 @@ Test will block if the heading \"path/to/heading\" in \"test.org\" is not DONE."
 
 
 
-(declare-function 'lm-report-bug "lisp-mnt" (topic))
+(declare-function lm-report-bug "lisp-mnt" (topic))
 
 (defun org-edna-submit-bug-report (topic)
   (interactive "sTopic: ")
