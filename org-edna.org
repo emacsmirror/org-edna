@@ -72,7 +72,7 @@ little late.  Now Org will remind you too early.
 
 Edna can handle this for you like so:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Put clothes in washer
   SCHEDULED: <2017-04-08 Sat 09:00>
   :PROPERTIES:
@@ -93,7 +93,7 @@ Edna can handle this for you like so:
   :TRIGGER: next-sibling scheduled!("++1h")
   :BLOCKER:  previous-sibling
   :END:
-#+END_EXAMPLE
+#+END_SRC
 
 After you've put your clothes in the washer and mark the task DONE, Edna will
 schedule the following task for one hour after you set the first headline as
@@ -102,22 +102,22 @@ done.
 Another example might be a checklist that you've done so many times that you do
 part of it on autopilot:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Address all TODOs in code
 ,* TODO Commit Code to Repository
-#+END_EXAMPLE
+#+END_SRC
 
 The last thing anyone wants is to find out that some part of the code on which
 they've been working for days has a surprise waiting for them.  Once again, Edna
 can help:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Address all TODOs in code
   :PROPERTIES:
   :BLOCKER: file("main.cpp") file("code.cpp") re-search?("TODO")
   :END:
 ,* TODO Commit Code to Repository
-#+END_EXAMPLE
+#+END_SRC
 
 ** Blockers
 :PROPERTIES:
@@ -177,7 +177,7 @@ The ~ancestors~ finder returns a list of the current headline's ancestors.
 
 For example:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Heading 1
 ,** TODO Heading 2
 ,** TODO Heading 3
@@ -186,7 +186,7 @@ For example:
      :PROPERTIES:
      :BLOCKER:  ancestors
      :END:
-#+END_EXAMPLE
+#+END_SRC
 
 In the above example, "Heading 5" will be blocked until "Heading 1", "Heading
 3", and "Heading 4" are marked "DONE", while "Heading 2" is ignored.
@@ -207,19 +207,19 @@ returns it.
 One option from each of the following three categories may be used; if more than
 one is specified, the last will be used.
 
-<<Selection>>
+*Selection*
 
 - from-top:     Select siblings of the current headline, starting at the top
 - from-bottom:  As above, but from the bottom
 - from-current: Selects siblings, starting from the headline (wraps)
 - no-wrap:      As above, but without wrapping
 
-<<Filtering>>
+*Filtering*
 
 - todo-only:          Select only targets with TODO state set that isn't a DONE keyword
 - todo-and-done-only: Select all targets with a TODO state set
 
-<<Sorting>>
+*Sorting*
 
 - priority-up:   Sort by priority, highest first
 - priority-down: Same, but lowest first
@@ -251,7 +251,7 @@ Syntax: descendants
 The ~descendants~ finder returns a list of all descendants of the current
 headline.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Heading 1
    :PROPERTIES:
    :BLOCKER:  descendants
@@ -260,7 +260,7 @@ headline.
 ,** TODO Heading 3
 ,*** TODO Heading 4
 ,**** TODO Heading 5
-#+END_EXAMPLE
+#+END_SRC
 
 In the above example, "Heading 1" will block until Headings 2, 3, 4, and 5 are
 DONE.
@@ -279,12 +279,12 @@ will be the minimum point in the file.
 Note that with the default condition, ~file~ won't work.  See [[#conditions][conditions]] for how
 to set a different condition.  For example:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  file("~/myfile.org") headings?
   :END:
-#+END_EXAMPLE
+#+END_SRC
 
 Here, "Test" will block until myfile.org is clear of headlines.
 
@@ -309,12 +309,12 @@ Syntax: id(ID1 ID2 ...)
 The ~ids~ finder will search for headlines with given IDs, using ~org-id~.  Any
 number of UUIDs may be specified.  For example:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  ids(62209a9a-c63b-45ef-b8a8-12e47a9ceed9 6dbd7921-a25c-4e20-b035-365677e00f30)
   :END:
-#+END_EXAMPLE
+#+END_SRC
 
 Here, "Test" will block until the headline with ID
 62209a9a-c63b-45ef-b8a8-12e47a9ceed9 and the headline with ID
@@ -333,12 +333,12 @@ Syntax: match("MATCH-STRING" SCOPE SKIP)
 The ~match~ keyword will take any arguments that ~org-map-entries~ usually takes.
 In fact, the arguments to ~match~ are passed straight into ~org-map-entries~.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  match("test&mine" agenda)
   :END:
-#+END_EXAMPLE
+#+END_SRC
 
 "Test" will block until all entries tagged "test" and "mine" in the agenda files
 are marked DONE.
@@ -365,12 +365,12 @@ Syntax: olp("FILE" "OLP")
 
 Finds the heading given by OLP in FILE.  Both arguments are strings.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  olp("test.org" "path/to/heading")
   :END:
-#+END_EXAMPLE
+#+END_SRC
 
 "Test" will block if the heading "path/to/heading" in "test.org" is not DONE.
 
@@ -383,12 +383,12 @@ Syntax: org-file("FILE")
 
 A special form of ~file~, ~org-file~ will find FILE in ~org-directory~.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC org
 ,* TODO Test
   :PROPERTIES:
   :BLOCKER:  org-file("test.org")
   :END:
-#+END_EXAMPLE
+#+END_SRC
 
 Note that the file still requires an extension.
 
