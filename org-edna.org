@@ -42,6 +42,23 @@ headline, and when it is changing from a TODO state to a DONE state.
 For brevity, we use TODO state to indicate any state in ~org-not-done-keywords~,
 and DONE state to indicate any state in ~org-done-keywords~.
 
+** Installation and Setup
+
+Right now, the only way to install Edna is by cloning the bazaar repo:
+
+#+BEGIN_SRC shell
+bzr branch https://bzr.savannah.gnu.org/r/org-edna-el/ org-edna
+#+END_SRC
+
+After that, add the following to your init file (typically .emacs):
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "/full/path/to/org-edna/")
+(org-edna-load)
+#+END_SRC
+
+If you ever want to disable Edna, run ~org-edna-unload~.
+
 ** Basic Operation
 :PROPERTIES:
 :CUSTOM_ID: operation
@@ -101,6 +118,7 @@ can help:
   :END:
 ,* TODO Commit Code to Repository
 #+END_EXAMPLE
+
 ** Blockers
 :PROPERTIES:
 :CUSTOM_ID: blockers
