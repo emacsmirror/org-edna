@@ -1,3 +1,6 @@
+#+STARTUP: nologdone
+#+PROPERTY: EFFORT_ALL 0:01 0:02 0:03
+
 * COMMENT Copying
 Copyright (C) 2017 Ian Dunn
 
@@ -63,6 +66,11 @@ SCHEDULED: <2017-01-01 Sun>
 *** Sibling 3
 :PROPERTIES:
 :ID:       06aca55e-ce09-46df-80d7-5b52e55d6505
+:END:
+** Archive
+*** TODO Archive One
+:PROPERTIES:
+:ID:       d7668277-f959-43ba-8e85-8a3c76996862
 :END:
 * Finder Tests
 ** Match

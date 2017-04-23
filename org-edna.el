@@ -41,6 +41,11 @@ properties used during actions or conditions."
   :group 'org-edna
   :type 'boolean)
 
+(defcustom org-edna-prompt-for-archive t
+  "Whether Edna should prompt before archiving a target."
+  :group 'org-edna
+  :type 'boolean)
+
 (defmacro org-edna--syntax-error (msg form pos)
   `(signal 'invalid-read-syntax (list :msg ,msg :form ,form :pos ,pos)))
 
@@ -508,6 +513,10 @@ IDS are all UUIDs as understood by `org-id-find'."
   (ignore last-entry)
   (org-entry-put nil property value))
 
+(defun org-edna-action/delete-property! (last-entry property)
+  (ignore last-entry)
+  (org-entry-delete nil property))
+
 (defun org-edna-action/clock-in! (last-entry)
   (ignore last-entry)
   (org-clock-in))
@@ -531,7 +540,9 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 (defun org-edna-action/archive! (last-entry)
   (ignore last-entry)
-  (org-archive-subtree-default-with-confirmation))
+  (if org-edna-prompt-for-archive
+      (org-archive-subtree-default-with-confirmation)
+    (org-archive-subtree-default)))
 
 (defun org-edna-action/chain! (last-entry property)
   (when-let ((old-prop (org-entry-get last-entry property)))

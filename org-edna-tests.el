@@ -27,6 +27,7 @@
 
 (require 'org-edna)
 (require 'ert)
+(require 'org-id)
 
 (defconst org-edna-test-dir
   (expand-file-name (file-name-directory (or load-file-name buffer-file-name))))
@@ -49,6 +50,7 @@
 (defconst org-edna-test-id-heading-two   "b010cbad-60dc-46ef-a164-eb155e62cbb2")
 (defconst org-edna-test-id-heading-three "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")
 (defconst org-edna-test-id-heading-four  "7d4d564b-18b2-445c-a0c8-b1b3fb9ad29e")
+(defconst org-edna-test-archive-heading  "d7668277-f959-43ba-8e85-8a3c76996862")
 
 (defun org-edna-find-test-heading (id)
   "Find the test heading with id ID."
@@ -365,6 +367,77 @@
       (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:00>")))))
+
+(ert-deftest org-edna-action-tag ()
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+    (org-with-point-at pom
+      (org-edna-action/tag! nil "tag")
+      (should (equal (org-get-tags) '("tag")))
+      (org-edna-action/tag! nil "")
+      (should-not (org-get-tags)))))
+
+(ert-deftest org-edna-action-property ()
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+    (org-with-point-at pom
+      (org-edna-action/set-property! nil "TEST" "1")
+      (should (equal (org-entry-get nil "TEST") "1"))
+      (org-edna-action/delete-property! nil "TEST")
+      (should-not (org-entry-get nil "TEST")))))
+
+(ert-deftest org-edna-action-clock ()
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+    (org-with-point-at pom
+      (org-edna-action/clock-in! nil)
+      (should (org-clocking-p))
+      (should (equal org-clock-hd-marker pom))
+      (org-edna-action/clock-out! nil)
+      (should-not (org-clocking-p)))))
+
+(ert-deftest org-edna-action-priority ()
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (org-lowest-priority  ?C)
+        (org-highest-priority ?A)
+        (org-default-priority ?B))
+    (org-with-point-at pom
+      (org-edna-action/set-priority! nil "A")
+      (should (equal (org-entry-get nil "PRIORITY") "A"))
+      (org-edna-action/set-priority! nil 'down)
+      (should (equal (org-entry-get nil "PRIORITY") "B"))
+      (org-edna-action/set-priority! nil 'up)
+      (should (equal (org-entry-get nil "PRIORITY") "A"))
+      (org-edna-action/set-priority! nil ?C)
+      (should (equal (org-entry-get nil "PRIORITY") "C"))
+      (org-edna-action/set-priority! nil 'remove)
+      (should (equal (org-entry-get nil "PRIORITY") "B")))))
+
+(ert-deftest org-edna-action-effort ()
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+    (org-with-point-at pom
+      (org-edna-action/set-effort! nil "0:01")
+      (should (equal (org-entry-get nil "EFFORT") "0:01"))
+      (org-edna-action/set-effort! nil 'increment)
+      (should (equal (org-entry-get nil "EFFORT") "0:02"))
+      (org-entry-delete nil "EFFORT"))))
+
+(ert-deftest org-edna-action-archive ()
+  (let ((org-archive-save-context-info '(todo))
+        (pom (org-edna-find-test-heading org-edna-test-archive-heading))
+        ;; Archive it to the same location
+        (org-archive-location "::** Archive")
+        (org-edna-prompt-for-archive nil))
+    (org-with-point-at pom
+      (org-edna-action/archive! nil)
+      (should (equal (org-entry-get nil "ARCHIVE_TODO") "TODO"))
+      (org-entry-delete nil "ARCHIVE_TODO"))))
+
+(ert-deftest org-edna-action-chain ()
+  (let ((old-pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (new-pom (org-edna-find-test-heading org-edna-test-id-heading-two)))
+    (org-entry-put old-pom "TEST" "1")
+    (org-with-point-at new-pom
+      (org-edna-action/chain! old-pom "TEST")
+      (should (equal (org-entry-get nil "TEST") "1")))
+    (org-entry-delete old-pom "TEST")))
 
 
 ;; Conditions
