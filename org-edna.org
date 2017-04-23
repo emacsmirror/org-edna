@@ -534,6 +534,10 @@ Syntax: set-property!("PROPERTY","VALUE")
 
 Sets the property PROPERTY on all targets to VALUE.
 
+Syntax: delete-property!("PROPERTY")
+
+Deletes the property PROPERTY from all targets.
+
 *** Priority
 
 Syntax: set-priority!(PRIORITY)
