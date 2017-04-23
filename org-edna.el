@@ -418,8 +418,9 @@ Example:
       :END:
 #+END_SRC
 
-In the above example, Heading 5 will be blocked until Heading 1, Heading
-3, and Heading 4 are marked DONE, while Heading 2 is ignored."
+In the above example, Heading 5 will be blocked until Heading 1,
+Heading 3, and Heading 4 are marked DONE, while Heading 2 is
+ignored."
   (org-with-wide-buffer
    (let ((markers))
      (while (org-up-heading-safe)
@@ -438,7 +439,8 @@ Finds the heading given by OLP in FILE.  Both arguments are strings.
   :END:
 #+END_SRC
 
-Test will block if the heading \"path/to/heading\" in \"test.org\" is not DONE."
+Test will block if the heading \"path/to/heading\" in
+\"test.org\" is not DONE."
   (let ((marker (org-find-olp (cons file (split-string-and-unquote olp "/")))))
     (when (markerp marker)
       (list marker))))
@@ -446,17 +448,77 @@ Test will block if the heading \"path/to/heading\" in \"test.org\" is not DONE."
 ;; TODO: Clean up the buffer when it's finished
 
 (defun org-edna-finder/file (file)
+  "Find a file by name.
+
+The `file' finder finds a single file, specified as a string.
+The returned target will be the minimum point in the file.
+
+#+BEGIN_SRC org
+,* TODO Test
+  :PROPERTIES:
+  :BLOCKER:  file(\"~/myfile.org\") headings?
+  :END:
+#+END_SRC
+
+Here, \"Test\" will block until myfile.org is clear of headlines.
+
+Note that with the default condition, `file' won't work."
   ;; If there isn't a buffer visiting file, then there's no point in having a
-  ;; marker to the start of the file.
+  ;; marker to the start of the file, so use `find-file-noselect'.
   (with-current-buffer (find-file-noselect file)
     (list (point-min-marker))))
 
 (defun org-edna-finder/org-file (file)
-  "Finds FILE in `org-directory'."
+  "Find a file in `org-directory'.
+
+A special form of `file', `org-file' will find FILE (a string) in
+`org-directory'.
+
+#+BEGIN_SRC org
+,* TODO Test
+  :PROPERTIES:
+  :BLOCKER:  org-file(\"test.org\")
+  :END:
+#+END_SRC
+
+Note that the file still requires an extension."
   (with-current-buffer (find-file-noselect (expand-file-name file org-directory))
     (list (point-min-marker))))
 
 (defun org-edna-finder/chain-find (&rest options)
+  "Find a target as org-depend does.
+
+Identical to the chain argument in org-depend, chain-find selects its single
+target using the following method:
+
+1. Creates a list of possible targets
+2. Filters the targets from Step 1
+3. Sorts the targets from Step 2
+
+After this is finished, chain-find selects the first target in the list and
+returns it.
+
+One option from each of the following three categories may be used; if more than
+one is specified, the last will be used.
+
+*Selection*
+
+- from-top:     Select siblings of the current headline, starting at the top
+- from-bottom:  As above, but from the bottom
+- from-current: Selects siblings, starting from the headline (wraps)
+- no-wrap:      As above, but without wrapping
+
+*Filtering*
+
+- todo-only:          Select only targets with TODO state set that isn't a DONE state
+- todo-and-done-only: Select all targets with a TODO state set
+
+*Sorting*
+
+- priority-up:   Sort by priority, highest first
+- priority-down: Same, but lowest first
+- effort-up:     Sort by effort, highest first
+- effort-down:   Sort by effort, lowest first"
   ;; sortfun - function to use to sort elements
   ;; filterfun - Function to use to filter elements
   ;; Both should handle positioning point
