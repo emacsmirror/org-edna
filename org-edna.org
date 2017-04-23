@@ -211,12 +211,12 @@ For example:
 #+BEGIN_SRC org
 ,* TODO Heading 1
 ,** TODO Heading 2
-,*** TODO Heading 3
-,**** TODO Heading 4
-,***** TODO Heading 5
-      :PROPERTIES:
-      :BLOCKER:  ancestors
-      :END:
+,** TODO Heading 3
+,*** TODO Heading 4
+,**** TODO Heading 5
+     :PROPERTIES:
+     :BLOCKER:  ancestors
+     :END:
 #+END_SRC
 
 In the above example, "Heading 5" will be blocked until "Heading 1", "Heading
