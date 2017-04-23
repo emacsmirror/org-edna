@@ -1,2 +1,6 @@
 *.elc
 local.mk
+org-edna-autoloads.el
+org-edna.info
+org-edna.texi
+org-edna.html

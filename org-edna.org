@@ -4,10 +4,14 @@
 #+DATE: {{{modification-time}}}
 
 #+STARTUP: overview
+#+STARTUP: indent
 #+TODO: FIXME | FIXED
-#+OPTIONS: toc:2
+#+OPTIONS: toc:2 num:nil timestamp:nil \n:nil |:t ':t email:t
+#+OPTIONS: *:t <:t d:nil todo:nil pri:nil tags:not-in-toc
 
-Extensible Dependencies 'N' Actions for Org-Mode tasks
+#+TEXINFO_DIR_CATEGORY: Emacs
+#+TEXINFO_DIR_TITLE: Org Edna: (edna)
+#+TEXINFO_DIR_DESC: Extensible Dependencies 'N' Actions for Org Mode tasks
 
 * Copying
 Copyright (C) 2017 Ian Dunn
@@ -29,9 +33,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * Introduction
 :PROPERTIES:
 :CUSTOM_ID: introduction
+:DESCRIPTION: A Brief Introduction to Edna
 :END:
 
-[[https://savannah.nongnu.org/projects/org-edna-el/][Source Code on Savannah]]
+Extensible Dependencies 'N' Actions (EDNA) for Org Mode tasks
 
 Edna provides an extensible means of specifying conditions which must be
 fulfilled before a task can be completed and actions to take once it is.
@@ -43,17 +48,28 @@ For brevity, we use TODO state to indicate any state in ~org-not-done-keywords~,
 and DONE state to indicate any state in ~org-done-keywords~.
 
 ** Installation and Setup
+:PROPERTIES:
+:DESCRIPTION: How to install Edna
+:END:
+
+*Requirements*
+
+| Emacs |  25.1 |
+| seq   |  2.19 |
+| org   | 9.0.5 |
 
 Right now, the only way to install Edna is by cloning the bazaar repo:
 
 #+BEGIN_SRC shell
 bzr branch https://bzr.savannah.gnu.org/r/org-edna-el/ org-edna
+make -C org-edna compile autoloads
 #+END_SRC
 
 After that, add the following to your init file (typically .emacs):
 
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "/full/path/to/org-edna/")
+(load "/path/to/org-edna/org-edna-autoloads.el")
 (org-edna-load)
 #+END_SRC
 
@@ -62,6 +78,7 @@ If you ever want to disable Edna, run ~org-edna-unload~.
 ** Basic Operation
 :PROPERTIES:
 :CUSTOM_ID: operation
+:DESCRIPTION: How to use Edna
 :END:
 
 Let's start with an example: Say you want to do laundry, but once you've put
@@ -122,16 +139,22 @@ can help:
 ** Blockers
 :PROPERTIES:
 :CUSTOM_ID: blockers
+:DESCRIPTION: Blocking a TODO Item
 :END:
+
 A blocker indicates conditions which must be met in order for a headline to be
 marked as DONE.  Typically, this will be a list of headlines that must be marked
 as DONE.
+
 ** Triggers
 :PROPERTIES:
 :CUSTOM_ID: triggers
+:DESCRIPTION: Triggering actions after completing a task
 :END:
+
 A trigger is an action to take when a headline is set to done.  For example,
 scheduling another task, marking another task as TODO, or renaming a file.
+
 ** Syntax
 :PROPERTIES:
 :CUSTOM_ID: syntax
@@ -157,8 +180,16 @@ The parentheses can be omitted for commands with no arguments.
 * Basic Features
 :PROPERTIES:
 :CUSTOM_ID: basic
+:DESCRIPTION: Finders and Actions
 :END:
+
+The most basic features of Edna are *finders* and *actions*.
+
 ** Finders
+:PROPERTIES:
+:DESCRIPTION: How to find targets
+:CUSTOM_ID: finders
+:END:
 A finder specifies locations from which to test conditions or perform actions.
 These locations are referred to as "targets".
 
@@ -180,17 +211,22 @@ For example:
 #+BEGIN_SRC org
 ,* TODO Heading 1
 ,** TODO Heading 2
-,** TODO Heading 3
-,*** TODO Heading 4
-,**** TODO Heading 5
-     :PROPERTIES:
-     :BLOCKER:  ancestors
-     :END:
+,*** TODO Heading 3
+,**** TODO Heading 4
+,***** TODO Heading 5
+      :PROPERTIES:
+      :BLOCKER:  ancestors
+      :END:
 #+END_SRC
 
 In the above example, "Heading 5" will be blocked until "Heading 1", "Heading
 3", and "Heading 4" are marked "DONE", while "Heading 2" is ignored.
+
 *** chain-find
+:PROPERTIES:
+:CUSTOM_ID: chain-find
+:DESCRIPTION: Find a target as org-depend does
+:END:
 
 Syntax: chain-find(OPTION OPTION...)
 
@@ -228,8 +264,8 @@ one is specified, the last will be used.
 
 *** children
 :PROPERTIES:
-:DESCRIPTION: Find all immediate children
 :CUSTOM_ID: children
+:DESCRIPTION: Find all immediate children
 :END:
 
 Syntax: children
@@ -242,8 +278,8 @@ In order to get all levels of children of the current headline, use the
 
 *** descendants
 :PROPERTIES:
-:DESCRIPTION: Find all descendants
 :CUSTOM_ID: descendants
+:DESCRIPTION: Find all descendants
 :END:
 
 Syntax: descendants
@@ -257,9 +293,9 @@ headline.
    :BLOCKER:  descendants
    :END:
 ,** TODO Heading 2
-,** TODO Heading 3
-,*** TODO Heading 4
-,**** TODO Heading 5
+,*** TODO Heading 3
+,**** TODO Heading 4
+,***** TODO Heading 5
 #+END_SRC
 
 In the above example, "Heading 1" will block until Headings 2, 3, 4, and 5 are
@@ -349,6 +385,7 @@ argument.
 *** next-sibling
 :PROPERTIES:
 :CUSTOM_ID: next-sibling
+:DESCRIPTION: Find the next sibling
 :END:
 
 Syntax: next-sibling
@@ -359,6 +396,7 @@ any.
 *** olp
 :PROPERTIES:
 :CUSTOM_ID: olp
+:DESCRIPTION: Find a headline by its outline path
 :END:
 
 Syntax: olp("FILE" "OLP")
@@ -377,6 +415,7 @@ Finds the heading given by OLP in FILE.  Both arguments are strings.
 *** org-file
 :PROPERTIES:
 :CUSTOM_ID: org-file
+:DESCRIPTION: Find a file in org-directory
 :END:
 
 Syntax: org-file("FILE")
@@ -395,6 +434,7 @@ Note that the file still requires an extension.
 *** parent
 :PROPERTIES:
 :CUSTOM_ID: parent
+:DESCRIPTION: Find a parent
 :END:
 
 Syntax: parent
@@ -404,6 +444,7 @@ Returns the parent of the current headline, if any.
 *** previous-sibling
 :PROPERTIES:
 :CUSTOM_ID: previous-sibling
+:DESCRIPTION: Find the previous sibling
 :END:
 
 Syntax: previous-sibling
@@ -414,11 +455,13 @@ Returns the previous sibling of the current headline on the same level.
 *** rest-of-siblings
 :PROPERTIES:
 :CUSTOM_ID: rest-of-siblings
+:DESCRIPTION: Find the remaining siblings
 :END:
 
 Syntax: rest-of-siblings
 
-Finds the remaining siblings on the same level as the current headline.
+Starting from the headline following the current one, all same-level siblings
+are returned.
 
 *** self
 :PROPERTIES:
@@ -432,6 +475,7 @@ Returns the current headline.
 *** siblings
 :PROPERTIES:
 :CUSTOM_ID: siblings
+:DESCRIPTION: Find all the siblings
 :END:
 
 Syntax: siblings
@@ -441,6 +485,7 @@ Returns all siblings of the source heading as targets.
 *** siblings-wrap
 :PROPERTIES:
 :CUSTOM_ID: siblings-wrap
+:DESCRIPTION: Find the siblings, but wrap around
 :END:
 
 Syntax: siblings-wrap
@@ -449,6 +494,9 @@ Finds the siblings on the same level as the current headline, wrapping when it
 reaches the end.
 
 ** Actions
+:PROPERTIES:
+:DESCRIPTION: Next steps
+:END:
 Once Edna has collected its targets for a trigger, it will perform actions on
 them.
 
@@ -700,12 +748,18 @@ are complete, and at least two of ID3, ID4, ID5, and ID6 are complete.
 
 If no consideration is given, ALL is assumed.
 * Extending Edna
+:PROPERTIES:
+:DESCRIPTION: What else can it do?
+:END:
 
 Extending Edna is (relatively) simple.
 
 During operation, Edna searches for functions of the form org-edna-TYPE/KEYWORD.
 
 ** Naming Conventions
+:PROPERTIES:
+:DESCRIPTION: How to name new functions
+:END:
 
 In order to distinguish between actions, finders, and conditions, we add '?' to
 conditions and '!' to actions.  This is taken from the practice in Guile and
@@ -715,6 +769,9 @@ Thus, one can have an action that files a target, and a finder that finds a
 file.
 
 ** Finders
+:PROPERTIES:
+:DESCRIPTION: Making a new finder
+:END:
 
 Finders have the form org-edna-finder/KEYWORD, like so:
 
@@ -727,6 +784,9 @@ All finders must return a list of markers, one for each target found, or nil if
 no targets were found.
 
 ** Actions
+:PROPERTIES:
+:DESCRIPTION: Making a new action
+:END:
 
 Actions have the form org-edna-action/KEYWORD!:
 
@@ -741,6 +801,9 @@ current entry (not to be confused with the current target).
 The rest of the arguments are the arguments specified in the form.
 
 ** Conditions
+:PROPERTIES:
+:DESCRIPTION: Making a new condition
+:END:
 
 #+BEGIN_SRC emacs-lisp
 (defun org-edna-condition/test-cond? (neg))
@@ -772,3 +835,43 @@ This is an XOR table, so we pass CONDITION and NEG into ~org-xor~ to get our
 result.
 
 A condition must return a string if the current entry should be blocked.
+* Contributing
+:PROPERTIES:
+:DESCRIPTION: I wanna help!
+:END:
+
+We are all happy for any help you may provide.
+
+First, check out the source code on Savannah: https://savannah.nongnu.org/projects/org-edna-el/
+
+#+BEGIN_SRC shell
+bzr branch https://bzr.savannah.gnu.org/r/org-edna-el/ org-edna
+#+END_SRC
+
+You'll also want a copy of the most recent Org Mode source:
+
+#+BEGIN_SRC shell
+git clone git://orgmode.org/org-mode.git
+#+END_SRC
+
+*Bugs*
+
+There are two ways to submit bug reports:
+
+1. Using the bug tracker at Savannah
+2. Sending an email using ~org-edna-submit-bug-report~
+
+When submitting a bug report, be sure to include the Edna form that caused the
+bug, with as much context as possible.
+
+*Development*
+
+Submitting patches along with a bug report is the easiest way.
+
+There are a few rules to follow:
+
+- Verify that any new Edna keywords follow the appropriate naming conventions
+- Any new keywords should be documented
+- Run 'make check' to verify that your mods don't break anything
+- Avoid additional or altered dependencies if at all possible
+  - Exception: New versions of Org mode are allowed
