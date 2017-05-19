@@ -307,7 +307,7 @@ DONE.
 :DESCRIPTION: Find a file by name
 :END:
 
-Syntax: file("FILE")
+- Syntax: file("FILE")
 
 The ~file~ finder finds a single file, specified as a string.  The returned target
 will be the minimum point in the file.
@@ -330,7 +330,7 @@ Here, "Test" will block until myfile.org is clear of headlines.
 :DESCRIPTION: Find the first child of a headline
 :END:
 
-Syntax: first-child
+- Syntax: first-child
 
 The ~first-child~ finder returns the first child of a headline, if any.
 
@@ -340,7 +340,7 @@ The ~first-child~ finder returns the first child of a headline, if any.
 :CUSTOM_ID: ids
 :END:
 
-Syntax: id(ID1 ID2 ...)
+- Syntax: id(ID1 ID2 ...)
 
 The ~ids~ finder will search for headlines with given IDs, using ~org-id~.  Any
 number of UUIDs may be specified.  For example:
@@ -364,7 +364,7 @@ Note that UUIDs need not be quoted; Edna will handle that for you.
 :DESCRIPTION: Good old tag matching
 :END:
 
-Syntax: match("MATCH-STRING" SCOPE SKIP)
+- Syntax: match("MATCH-STRING" SCOPE SKIP)
 
 The ~match~ keyword will take any arguments that ~org-map-entries~ usually takes.
 In fact, the arguments to ~match~ are passed straight into ~org-map-entries~.
@@ -388,7 +388,7 @@ argument.
 :DESCRIPTION: Find the next sibling
 :END:
 
-Syntax: next-sibling
+- Syntax: next-sibling
 
 The ~next-sibling~ keyword returns the next sibling of the current heading, if
 any.
@@ -399,7 +399,7 @@ any.
 :DESCRIPTION: Find a headline by its outline path
 :END:
 
-Syntax: olp("FILE" "OLP")
+- Syntax: olp("FILE" "OLP")
 
 Finds the heading given by OLP in FILE.  Both arguments are strings.
 
@@ -418,7 +418,7 @@ Finds the heading given by OLP in FILE.  Both arguments are strings.
 :DESCRIPTION: Find a file in org-directory
 :END:
 
-Syntax: org-file("FILE")
+- Syntax: org-file("FILE")
 
 A special form of ~file~, ~org-file~ will find FILE in ~org-directory~.
 
@@ -437,7 +437,7 @@ Note that the file still requires an extension.
 :DESCRIPTION: Find a parent
 :END:
 
-Syntax: parent
+- Syntax: parent
 
 Returns the parent of the current headline, if any.
 
@@ -447,10 +447,9 @@ Returns the parent of the current headline, if any.
 :DESCRIPTION: Find the previous sibling
 :END:
 
-Syntax: previous-sibling
+- Syntax: previous-sibling
 
 Returns the previous sibling of the current headline on the same level.
-
 
 *** rest-of-siblings
 :PROPERTIES:
@@ -458,7 +457,7 @@ Returns the previous sibling of the current headline on the same level.
 :DESCRIPTION: Find the remaining siblings
 :END:
 
-Syntax: rest-of-siblings
+- Syntax: rest-of-siblings
 
 Starting from the headline following the current one, all same-level siblings
 are returned.
@@ -468,7 +467,7 @@ are returned.
 :CUSTOM_ID: self
 :END:
 
-Syntax: self
+- Syntax: self
 
 Returns the current headline.
 
@@ -478,7 +477,7 @@ Returns the current headline.
 :DESCRIPTION: Find all the siblings
 :END:
 
-Syntax: siblings
+- Syntax: siblings
 
 Returns all siblings of the source heading as targets.
 
@@ -488,7 +487,7 @@ Returns all siblings of the source heading as targets.
 :DESCRIPTION: Find the siblings, but wrap around
 :END:
 
-Syntax: siblings-wrap
+- Syntax: siblings-wrap
 
 Finds the siblings on the same level as the current headline, wrapping when it
 reaches the end.
@@ -507,8 +506,8 @@ Actions must always end with '!'.
 :CUSTOM_ID: planning
 :END:
 
-Syntax: scheduled!(OPTIONS)
-Syntax: deadline!(OPTIONS)
+- Syntax: scheduled!(OPTIONS)
+- Syntax: deadline!(OPTIONS)
 
 There are several forms that the planning keywords can take:
 
@@ -545,7 +544,7 @@ Examples:
 scheduled!("Mon 09:00") -> Set SCHEDULED to the following Monday at 9:00
 *** TODO State
 
-Syntax: todo!(NEW-STATE)
+- Syntax: todo!(NEW-STATE)
 
 Sets the TODO state of the target headline to NEW-STATE.
 
@@ -556,7 +555,7 @@ NEW-STATE may either be a string or a symbol denoting the new TODO state.
 :CUSTOM_ID: archive!
 :END:
 
-Syntax: archive!
+- Syntax: archive!
 
 Archives all targets with confirmation.
 
@@ -565,14 +564,14 @@ nil, Edna will not ask before archiving the target.
 
 *** Chain Property
 
-Syntax: chain!("PROPERTY")
+- Syntax: chain!("PROPERTY")
 
 Copies PROPERTY from the source entry to all targets.
 
 *** Clocking
 
-Syntax: clock-in!
-Syntax: clock-out!
+- Syntax: clock-in!
+- Syntax: clock-out!
 
 Clocks into or out of all targets.
 
@@ -581,17 +580,17 @@ multiple targets.
 
 *** Property
 
-Syntax: set-property!("PROPERTY","VALUE")
+- Syntax: set-property!("PROPERTY","VALUE")
 
 Sets the property PROPERTY on all targets to VALUE.
 
-Syntax: delete-property!("PROPERTY")
+- Syntax: delete-property!("PROPERTY")
 
 Deletes the property PROPERTY from all targets.
 
 *** Priority
 
-Syntax: set-priority!(PRIORITY)
+- Syntax: set-priority!(PRIORITY)
 
 Sets the priority of all targets to PRIORITY.  PRIORITY is processed as follows:
 
@@ -600,14 +599,14 @@ Sets the priority of all targets to PRIORITY.  PRIORITY is processed as follows:
 
 *** Tag
 
-Syntax: tag!("TAG-SPEC")
+- Syntax: tag!("TAG-SPEC")
 
 Tags all targets with TAG-SPEC, which is any valid tag specification,
 e.g. tag1:tag2
 
 *** Effort
 
-Syntax: set-effort!(VALUE)
+- Syntax: set-effort!(VALUE)
 
 Sets the effort of all targets according to VALUE:
 
@@ -633,7 +632,7 @@ that target, then that headline is blocked.
 :CUSTOM_ID: done
 :END:
 
-Syntax: done?
+- Syntax: done?
 
 Blocks the current headline if any target is DONE.
 
@@ -642,7 +641,7 @@ Blocks the current headline if any target is DONE.
 :CUSTOM_ID: headings
 :END:
 
-Syntax: headings?
+- Syntax: headings?
 
 Blocks the current headline if any target belongs to a file that has an Org heading.
 
@@ -657,7 +656,7 @@ The above example blocks if refile.org has any headings.
 :CUSTOM_ID: todo-state
 :END:
 
-Syntax: todo-state?(STATE)
+- Syntax: todo-state?(STATE)
 
 Blocks if any target has a headline with TODO state set to STATE.
 
@@ -668,7 +667,7 @@ STATE may be a string or a symbol.
 :CUSTOM_ID: variable-set
 :END:
 
-Syntax: variable-set?(VARIABLE,VALUE)
+- Syntax: variable-set?(VARIABLE,VALUE)
 
 Blocks the current headline if VARIABLE is set to VALUE.
 
@@ -683,7 +682,7 @@ self variable-set?(test-variable,12)
 :CUSTOM_ID: has-property
 :END:
 
-Syntax: has-property?("PROPERTY","VALUE")
+- Syntax: has-property?("PROPERTY","VALUE")
 
 Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 
@@ -693,7 +692,7 @@ Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 :DESCRIPTION: Search for a regular expression
 :END:
 
-Syntax: re-search?("REGEXP")
+- Syntax: re-search?("REGEXP")
 
 Blocks the current headline if the regular expression REGEXP is present in any
 of the targets.

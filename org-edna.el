@@ -301,12 +301,10 @@ into `org-map-entries'.
 SCOPE and SKIP are their counterparts in `org-map-entries'.
 SCOPE defaults to agenda, and SKIP defaults to nil.
 
-#+BEGIN_SRC org
-,* TODO Test
+* TODO Test
   :PROPERTIES:
   :BLOCKER:  match(\"test&mine\" agenda)
   :END:
-#+END_SRC
 
 \"Test\" will block until all entries tagged \"test\" and
 \"mine\" in the agenda files are marked DONE."
@@ -407,16 +405,14 @@ IDS are all UUIDs as understood by `org-id-find'."
 
 Example:
 
-#+BEGIN_SRC org
-,* TODO Heading 1
-,** TODO Heading 2
-,*** TODO Heading 3
-,**** TODO Heading 4
-,***** TODO Heading 5
+* TODO Heading 1
+** TODO Heading 2
+*** TODO Heading 3
+**** TODO Heading 4
+***** TODO Heading 5
       :PROPERTIES:
       :BLOCKER:  ancestors
       :END:
-#+END_SRC
 
 In the above example, Heading 5 will be blocked until Heading 1,
 Heading 3, and Heading 4 are marked DONE, while Heading 2 is
@@ -432,12 +428,10 @@ ignored."
 
 Finds the heading given by OLP in FILE.  Both arguments are strings.
 
-#+BEGIN_SRC org
-,* TODO Test
+* TODO Test
   :PROPERTIES:
   :BLOCKER:  olp(\"test.org\" \"path/to/heading\")
   :END:
-#+END_SRC
 
 Test will block if the heading \"path/to/heading\" in
 \"test.org\" is not DONE."
@@ -453,12 +447,10 @@ Test will block if the heading \"path/to/heading\" in
 The `file' finder finds a single file, specified as a string.
 The returned target will be the minimum point in the file.
 
-#+BEGIN_SRC org
-,* TODO Test
+* TODO Test
   :PROPERTIES:
   :BLOCKER:  file(\"~/myfile.org\") headings?
   :END:
-#+END_SRC
 
 Here, \"Test\" will block until myfile.org is clear of headlines.
 
@@ -474,12 +466,10 @@ Note that with the default condition, `file' won't work."
 A special form of `file', `org-file' will find FILE (a string) in
 `org-directory'.
 
-#+BEGIN_SRC org
-,* TODO Test
+* TODO Test
   :PROPERTIES:
   :BLOCKER:  org-file(\"test.org\")
   :END:
-#+END_SRC
 
 Note that the file still requires an extension."
   (with-current-buffer (find-file-noselect (expand-file-name file org-directory))
