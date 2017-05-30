@@ -14,7 +14,7 @@
 #+TEXINFO_DIR_DESC: Extensible Dependencies 'N' Actions for Org Mode tasks
 
 * Copying
-Copyright (C) 2017 Ian Dunn
+Copyright (C) 2017 Free Software Foundation, Inc.
 
 #+BEGIN_QUOTE
 This program is free software: you can redistribute it and/or modify
@@ -58,7 +58,15 @@ and DONE state to indicate any state in ~org-done-keywords~.
 | seq   |  2.19 |
 | org   | 9.0.5 |
 
-Right now, the only way to install Edna is by cloning the bazaar repo:
+There are two ways to install Edna: From GNU ELPA, or from source.
+
+From ELPA:
+
+#+BEGIN_EXAMPLE
+M-x package-install org-edna
+#+END_EXAMPLE
+
+From Source:
 
 #+BEGIN_SRC shell
 bzr branch https://bzr.savannah.gnu.org/r/org-edna-el/ org-edna
@@ -68,8 +76,11 @@ make -C org-edna compile autoloads
 After that, add the following to your init file (typically .emacs):
 
 #+BEGIN_SRC emacs-lisp
+;; Only necessary if installing from source
 (add-to-list 'load-path "/full/path/to/org-edna/")
 (load "/path/to/org-edna/org-edna-autoloads.el")
+
+;; Always necessary
 (org-edna-load)
 #+END_SRC
 
