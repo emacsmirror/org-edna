@@ -36,7 +36,7 @@
 ;;; Code:
 
 (require 'org)
-(require 'subr-x)
+(eval-when-compile (require 'subr-x))
 (require 'seq)
 
 (defgroup org-edna nil
