@@ -254,6 +254,28 @@
     (should (= (length targets) 1))
     (should (equal siblings targets))))
 
+(ert-deftest org-edna-finder/next-sibling-wrap-next ()
+  (let* ((org-agenda-files `(,org-edna-test-file))
+         (current (org-id-find org-edna-test-sibling-two-id t))
+         (siblings (mapcar
+                    (lambda (uuid) (org-id-find uuid t))
+                    `(,org-edna-test-sibling-three-id)))
+         (targets (org-with-point-at current
+                    (org-edna-finder/next-sibling-wrap))))
+    (should (= (length targets) 1))
+    (should (equal siblings targets))))
+
+(ert-deftest org-edna-finder/next-sibling-wrap-wrap ()
+  (let* ((org-agenda-files `(,org-edna-test-file))
+         (current (org-id-find org-edna-test-sibling-three-id t))
+         (siblings (mapcar
+                    (lambda (uuid) (org-id-find uuid t))
+                    `(,org-edna-test-sibling-one-id)))
+         (targets (org-with-point-at current
+                    (org-edna-finder/next-sibling-wrap))))
+    (should (= (length targets) 1))
+    (should (equal siblings targets))))
+
 (ert-deftest org-edna-finder/previous-sibling ()
   (let* ((org-agenda-files `(,org-edna-test-file))
          (current (org-id-find "06aca55e-ce09-46df-80d7-5b52e55d6505" t))
@@ -374,7 +396,7 @@
       (org-edna-action/tag! nil "tag")
       (should (equal (org-get-tags) '("tag")))
       (org-edna-action/tag! nil "")
-      (should-not (org-get-tags)))))
+      (should (equal (org-get-tags) '(""))))))
 
 (ert-deftest org-edna-action-property ()
   (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))

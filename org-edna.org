@@ -404,6 +404,17 @@ argument.
 The ~next-sibling~ keyword returns the next sibling of the current heading, if
 any.
 
+*** next-sibling-wrap
+:PROPERTIES:
+:CUSTOM_ID: next-sibling-wrap
+:DESCRIPTION: Find the next sibling, wrapping around
+:END:
+
+- Syntax: next-sibling-wrap
+
+Find the next sibling of the current heading, if any.  If there isn't, wrap back
+around to the first heading in the same subtree.
+
 *** olp
 :PROPERTIES:
 :CUSTOM_ID: olp

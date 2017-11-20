@@ -241,7 +241,7 @@ is changing from a TODO state to a DONE state, run BODY."
            (error
             (if (eq (car err) 'invalid-read-syntax)
                 (org-edna--print-syntax-error (cdr err))
-              (message "Edna Error: %s" (error-message-string err)))
+              (message "Edna Error at heading %s: %s" (org-get-heading t t t) (error-message-string err)))
             (setq org-block-entry-blocking (org-get-heading))
             ;; Block
             nil))
@@ -369,6 +369,14 @@ IDS are all UUIDs as understood by `org-id-find'."
   (org-with-wide-buffer
    (and (org-get-next-sibling)
         (list (point-marker)))))
+
+(defun org-edna-finder/next-sibling-wrap ()
+  (org-with-wide-buffer
+   (if (org-goto-sibling)
+       (list (point-marker))
+     (org-up-heading-safe)
+     (org-goto-first-child)
+     (list (point-marker)))))
 
 (defun org-edna-finder/previous-sibling ()
   (org-with-wide-buffer
