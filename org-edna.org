@@ -708,6 +708,7 @@ Sets the effort of all targets according to VALUE:
 ** Conditions
 :PROPERTIES:
 :CUSTOM_ID: conditions
+:DESCRIPTION: More than just DONE headings
 :END:
 
 Edna gives you he option to specify *blocking conditions*.  Each condition is checked
@@ -805,7 +806,11 @@ match("test") !has-property?("PROP" "1")
 The above example will cause the source heading to block if any heading
 tagged "test" does *not* have the property PROP set to "1".
 ** Consideration
-Special keyword that's only valid for blockers.
+:PROPERTIES:
+:DESCRIPTION: Only some of them
+:END:
+
+"Consideration" is a special keyword that's only valid for blockers.
 
 This keyword can allow specifying only a portion of tasks to consider:
 
@@ -838,6 +843,38 @@ The above code will allow task completion if at least one of ID1, ID2, and ID3
 are complete, and at least two of ID3, ID4, ID5, and ID6 are complete.
 
 If no consideration is given, ALL is assumed.
+
+** Setting the properties
+:PROPERTIES:
+:DESCRIPTION: The easy way to set BLOCKER and TRIGGER
+:END:
+
+There are two ways to set the BLOCKER and TRIGGER properties: by hand, or the
+easy way.  You can probably guess which way we prefer.
+
+With point within the heading you want to edit, type ~M-x org-edna-edit~.  You end
+up in a buffer that looks like this:
+
+#+begin_example
+Edit blockers and triggers in this buffer under their respective sections below.
+All lines under a given section will be merged into one when saving back to
+the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'.
+
+BLOCKER
+BLOCKER STUFF HERE
+
+TRIGGER
+TIRGGER STUFF HERE
+#+end_example
+
+In here, you can edit the blocker and trigger properties for the original
+heading in a cleaner environment.  More importantly, you can complete the names
+of any valid keyword within the BLOCKER or TRIGGER sections using
+~completion-at-point~.
+
+When finished, type ~C-c C-c~ to apply the changes, or ~C-c C-k~ to throw out your
+changes.
+
 * Extending Edna
 :PROPERTIES:
 :DESCRIPTION: What else can it do?

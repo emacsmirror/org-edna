@@ -75,6 +75,7 @@ Advanced Features
 
 * Conditions::
 * Consideration::
+* Setting the properties::
 
 Conditions
 
@@ -852,6 +853,7 @@ Advanced Features
 
 * Conditions::
 * Consideration::
+* Setting the properties::
 
 
 File: org-edna.info,  Node: Conditions,  Next: Consideration,  Up: Advanced Features
@@ -861,7 +863,11 @@ Conditions
 
 Edna gives you he option to specify *blocking conditions*.  Each
 condition is checked for each of the specified targets; if one of the
-conditions returns true for that target, then that heading is blocked.
+conditions returns true for that target, then the source heading is
+blocked.
+
+   If no condition is specified, ‘!done?’ is used by default, which
+means block if any target heading isn’t done.
 
 * Menu:
 
@@ -881,7 +887,7 @@ done
 
    • Syntax: done?
 
-   Blocks the source heading if any target is DONE.
+   Blocks the source heading if any target heading is DONE.
 
 
 File: org-edna.info,  Node: headings,  Next: todo-state,  Prev: done,  Up: Conditions
@@ -892,7 +898,7 @@ headings
    • Syntax: headings?
 
    Blocks the source heading if any target belongs to a file that has an
-Org heading.
+Org heading.  This means that target does not have to be a heading.
 
      org-file("refile.org") headings?
 
@@ -906,7 +912,7 @@ todo-state
 
    • Syntax: todo-state?(STATE)
 
-   Blocks if any target has a heading with TODO state set to STATE.
+   Blocks if any target heading has TODO state set to STATE.
 
    STATE may be a string or a symbol.
 
@@ -918,11 +924,12 @@ variable-set
 
    • Syntax: variable-set?(VARIABLE VALUE)
 
-   Blocks the source heading if VARIABLE is set to VALUE.
+   Evaluate VARIABLE when visiting a target, and compare it with ‘equal’
+against VALUE. Block the source heading if VARIABLE = VALUE.
 
-   VARIABLE should be a symbol, and VALUE is any valid lisp expression
+   VARIABLE should be a symbol, and VALUE is any valid lisp expression.
 
-     self variable-set?(test-variable,12)
+     self variable-set?(test-variable 12)
 
 
 File: org-edna.info,  Node: has-property,  Next: re-search,  Prev: variable-set,  Up: Conditions
@@ -955,15 +962,15 @@ File: org-edna.info,  Node: Negating Conditions,  Prev: re-search,  Up: Conditio
 Negating Conditions
 -------------------
 
-Any condition can be negated using ’!’.
+Any condition can be negated by using ’!’ before the condition.
 
-     match("test") !has-property?("PROP","1")
+     match("test") !has-property?("PROP" "1")
 
    The above example will cause the source heading to block if any
 heading tagged “test” does *not* have the property PROP set to “1”.
 
 
-File: org-edna.info,  Node: Consideration,  Prev: Conditions,  Up: Advanced Features
+File: org-edna.info,  Node: Consideration,  Next: Setting the properties,  Prev: Conditions,  Up: Advanced Features
 
 Consideration
 =============
@@ -1000,6 +1007,36 @@ ID2, and ID3 are complete, and at least two of ID3, ID4, ID5, and ID6
 are complete.
 
    If no consideration is given, ALL is assumed.
+
+
+File: org-edna.info,  Node: Setting the properties,  Prev: Consideration,  Up: Advanced Features
+
+Setting the properties
+======================
+
+There are two ways to set the BLOCKER and TRIGGER properties: by hand,
+or the easy way.  You can probably guess which way we prefer.
+
+   With point within the heading you want to edit, type ‘M-x
+org-edna-edit’.  You end up in a buffer that looks like this:
+
+     Edit blockers and triggers in this buffer under their respective sections below.
+     All lines under a given section will be merged into one when saving back to
+     the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'.
+
+     BLOCKER
+     BLOCKER STUFF HERE
+
+     TRIGGER
+     TIRGGER STUFF HERE
+
+   In here, you can edit the blocker and trigger properties for the
+original heading in a cleaner environment.  More importantly, you can
+complete the names of any valid keyword within the BLOCKER or TRIGGER
+sections using ‘completion-at-point’.
+
+   When finished, type ‘C-c C-c’ to apply the changes, or ‘C-c C-k’ to
+throw out your changes.
 
 
 File: org-edna.info,  Node: Extending Edna,  Next: Contributing,  Prev: Advanced Features,  Up: Top
@@ -1169,61 +1206,62 @@ We can then merge that into the main development branch.
 
 Tag Table:
 Node: Top225
-Node: Copying3115
-Node: Introduction3932
-Node: Installation and Setup4880
-Node: Basic Operation5673
-Node: Blockers7524
-Node: Triggers7810
-Node: Syntax8072
-Node: Basic Features8762
-Node: Finders9065
-Node: ancestors10568
-Node: chain-find11152
-Node: children12490
-Node: descendants12889
-Node: file13399
-Node: first-child14148
-Node: ids14396
-Node: match15057
-Node: next-sibling15695
-Node: next-sibling-wrap15940
-Node: olp16242
-Node: org-file16654
-Node: parent17299
-Node: previous-sibling17485
-Node: rest-of-siblings17729
-Node: self17992
-Node: siblings18148
-Node: siblings-wrap18406
-Node: Actions18639
-Node: Scheduled/Deadline19381
-Node: TODO State20971
-Node: Archive21339
-Node: Chain Property21659
-Node: Clocking21942
-Node: Property22354
-Node: Priority22676
-Node: Tag23245
-Node: Effort23462
-Node: Advanced Features23851
-Node: Conditions24036
-Node: done24524
-Node: headings24680
-Node: todo-state25001
-Node: variable-set25264
-Node: has-property25612
-Node: re-search25881
-Node: Negating Conditions26241
-Node: Consideration26604
-Node: Extending Edna27780
-Node: Naming Conventions28270
-Node: Finders (1)28733
-Node: Actions (1)29099
-Node: Conditions (1)29564
-Node: Contributing30454
-Node: Bugs30926
-Node: Development31278
+Node: Copying3142
+Node: Introduction3959
+Node: Installation and Setup4907
+Node: Basic Operation5700
+Node: Blockers7551
+Node: Triggers7837
+Node: Syntax8099
+Node: Basic Features8789
+Node: Finders9092
+Node: ancestors10595
+Node: chain-find11179
+Node: children12517
+Node: descendants12916
+Node: file13426
+Node: first-child14175
+Node: ids14423
+Node: match15084
+Node: next-sibling15722
+Node: next-sibling-wrap15967
+Node: olp16269
+Node: org-file16681
+Node: parent17326
+Node: previous-sibling17512
+Node: rest-of-siblings17756
+Node: self18019
+Node: siblings18175
+Node: siblings-wrap18433
+Node: Actions18666
+Node: Scheduled/Deadline19408
+Node: TODO State20998
+Node: Archive21366
+Node: Chain Property21686
+Node: Clocking21969
+Node: Property22381
+Node: Priority22703
+Node: Tag23272
+Node: Effort23489
+Node: Advanced Features23878
+Node: Conditions24090
+Node: done24705
+Node: headings24869
+Node: todo-state25245
+Node: variable-set25501
+Node: has-property25930
+Node: re-search26199
+Node: Negating Conditions26559
+Node: Consideration26946
+Node: Setting the properties28153
+Node: Extending Edna29233
+Node: Naming Conventions29723
+Node: Finders (1)30186
+Node: Actions (1)30552
+Node: Conditions (1)31017
+Node: Contributing31907
+Node: Bugs32379
+Node: Development32731
 
 End Tag Table
 
