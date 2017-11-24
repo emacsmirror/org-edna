@@ -762,6 +762,211 @@ one is specified, the last will be used.
 
 
 
+;;; Popout editing
+
+(defvar org-edna-edit-original-marker nil)
+(defvar org-edna-blocker-section-marker nil)
+(defvar org-edna-trigger-section-marker nil)
+
+(defcustom org-edna-edit-buffer-name "*Org Edna Edit Blocker/Trigger*"
+  "Name of the popout buffer for editing blockers/triggers."
+  :type 'string
+  :group 'org-edna)
+
+(defun org-edna-in-edit-buffer-p ()
+  (string-equal (buffer-name) org-edna-edit-buffer-name))
+
+(defun org-edna-replace-newlines (string)
+  "Replace newlines with spaces in STRING."
+  (string-join (split-string string "\n" t) " "))
+
+(defun org-edna-edit-text-between-markers (first-marker second-marker)
+  "Collect the text between FIRST-MARKER and SECOND-MARKER."
+  (buffer-substring (marker-position first-marker)
+                    (marker-position second-marker)))
+
+(defun org-edna-edit-blocker-section-text ()
+  (when (org-edna-in-edit-buffer-p)
+    (let ((original-text (org-edna-edit-text-between-markers
+                          org-edna-blocker-section-marker
+                          org-edna-trigger-section-marker)))
+      ;; Strip the BLOCKER key
+      (when (string-match "^BLOCKER\n\\(\\(?:.*\n\\)+\\)" original-text)
+        (org-edna-replace-newlines (match-string 1 original-text))))))
+
+(defun org-edna-edit-trigger-section-text ()
+  (when (org-edna-in-edit-buffer-p)
+    (let ((original-text (org-edna-edit-text-between-markers
+                          org-edna-trigger-section-marker
+                          (point-max-marker))))
+      ;; Strip the TRIGGER key
+      (when (string-match "^TRIGGER\n\\(\\(?:.*\n\\)+\\)" original-text)
+        (org-edna-replace-newlines (match-string 1 original-text))))))
+
+(defvar org-edna-edit-map
+  (let ((map (make-sparse-keymap)))
+    (org-defkey map "\C-x\C-s"      'org-edna-edit-finish)
+    (org-defkey map "\C-c\C-s"      'org-edna-edit-finish)
+    (org-defkey map "\C-c\C-c"      'org-edna-edit-finish)
+    (org-defkey map "\C-c'"         'org-edna-edit-finish)
+    (org-defkey map "\C-c\C-q"      'org-edna-edit-abort)
+    (org-defkey map "\C-c\C-k"      'org-edna-edit-abort)
+    map))
+
+(defun org-edna-edit ()
+  "Edit the blockers and triggers for current headline in a separate buffer."
+  (interactive)
+  ;; Move to the start of the current headline
+  (let* ((heading-point (save-excursion
+                          (org-back-to-heading)
+                          (point-marker)))
+         (blocker (or (org-entry-get heading-point "BLOCKER") ""))
+         (trigger (or (org-entry-get heading-point "TRIGGER") ""))
+         (wc (current-window-configuration))
+         (sel-win (selected-window)))
+    (org-switch-to-buffer-other-window org-edna-edit-buffer-name)
+    (erase-buffer)
+    ;; Keep global-font-lock-mode from turning on font-lock-mode
+    (let ((font-lock-global-modes '(not fundamental-mode)))
+      (fundamental-mode))
+    (use-local-map org-edna-edit-map)
+    (setq-local font-lock-global-modes (list 'not major-mode))
+    (setq-local org-edna-edit-original-marker heading-point)
+    (setq-local org-window-configuration wc)
+    (setq-local org-selected-window sel-win)
+    (setq-local org-finish-function 'org-edna-edit-finish)
+    (insert (substitute-command-keys "\\<org-mode-map>\
+Edit blockers and triggers in this buffer under their respective sections below.
+All lines under a given section will be merged into one when saving back to
+the source buffer.  Finish with `\\[org-ctrl-c-ctrl-c]' or `\\[org-edit-special]'.\n\n"))
+    (setq-local org-edna-blocker-section-marker (point-marker))
+    (insert (format "BLOCKER\n%s\n\n" blocker))
+    (setq-local org-edna-trigger-section-marker (point-marker))
+    (insert (format "TRIGGER\n%s\n\n" trigger))
+
+    ;; Change syntax table to make ! and ? symbol constituents
+    (modify-syntax-entry ?! "_")
+    (modify-syntax-entry ?? "_")
+
+    ;; Set up completion
+    (add-hook 'completion-at-point-functions 'org-edna-completion-at-point nil t)))
+
+(defun org-edna-edit-finish ()
+  (interactive)
+  (let ((blocker (org-edna-edit-blocker-section-text))
+        (trigger (org-edna-edit-trigger-section-text))
+        (pos-marker org-edna-edit-original-marker)
+        (wc org-window-configuration)
+        (sel-win org-selected-window))
+    (set-window-configuration wc)
+    (select-window sel-win)
+    (goto-char pos-marker)
+    (unless (string-empty-p blocker)
+      (org-entry-put nil "BLOCKER" blocker))
+    (unless (string-empty-p trigger)
+      (org-entry-put nil "TRIGGER" trigger))
+    (kill-buffer org-edna-edit-buffer-name)))
+
+(defun org-edna-edit-abort ()
+  (interactive)
+  (let ((pos-marker org-edna-edit-original-marker)
+        (wc org-window-configuration)
+        (sel-win org-selected-window))
+    (set-window-configuration wc)
+    (select-window sel-win)
+    (goto-char pos-marker)
+    (kill-buffer org-edna-edit-buffer-name)))
+
+;;; Completion
+
+(defun org-edna-between-markers-p (point first-marker second-marker)
+  "Return non-nil if POINT is between FIRST-MARKER and SECOND-MARKER in the current buffer."
+  (and (markerp first-marker)
+       (markerp second-marker)
+       (eq (marker-buffer first-marker)
+           (marker-buffer second-marker))
+       (eq (current-buffer) (marker-buffer first-marker))
+       (<= (marker-position first-marker) point)
+       (>= (marker-position second-marker) point)))
+
+(defun org-edna-edit-in-blocker-section-p ()
+  "Return non-nil if `point' is in an edna blocker edit section."
+  (org-edna-between-markers-p (point)
+                              org-edna-blocker-section-marker
+                              org-edna-trigger-section-marker))
+
+(defun org-edna-edit-in-trigger-section-p ()
+  "Return non-nil if `point' is in an edna trigger edit section."
+  (org-edna-between-markers-p (point)
+                              org-edna-trigger-section-marker
+                              (point-max-marker)))
+
+(defun org-edna--collect-keywords (keyword-type &optional suffix)
+  (let ((suffix (or suffix ""))
+        (edna-sym-list)
+        (edna-rx (rx-to-string `(and
+                                 string-start
+                                 "org-edna-"
+                                 ,keyword-type
+                                 "/"
+                                 (submatch (one-or-more ascii))
+                                 ,suffix
+                                 string-end))))
+    (mapatoms
+     (lambda (s)
+       (when (string-match edna-rx (symbol-name s))
+         (cl-pushnew (concat (match-string-no-properties 1 (symbol-name s)) suffix)
+                     edna-sym-list))))
+    edna-sym-list))
+
+(defun org-edna--collect-finders ()
+  (org-edna--collect-keywords "finder"))
+
+(defun org-edna--collect-actions ()
+  (org-edna--collect-keywords "action" "!"))
+
+(defun org-edna--collect-conditions ()
+  (org-edna--collect-keywords "condition" "?"))
+
+(defun org-edna-completions-for-blocker ()
+  "Return a list of all allowed Edna keywords for a blocker."
+  `(,@(org-edna--collect-finders)
+    ,@(org-edna--collect-conditions)
+    "consideration"))
+
+(defun org-edna-completions-for-trigger ()
+  "Return a list of all allowed Edna keywords for a trigger."
+  `(,@(org-edna--collect-finders)
+    ,@(org-edna--collect-actions)))
+
+(defun org-edna-completion-table-function (string pred action)
+  (let ((completions (cond
+                      ;; Don't offer completion inside of arguments
+                      ((> (syntax-ppss-depth (syntax-ppss)) 0) nil)
+                      ((org-edna-edit-in-blocker-section-p)
+                       (org-edna-completions-for-blocker))
+                      ((org-edna-edit-in-trigger-section-p)
+                       (org-edna-completions-for-trigger)))))
+    (pcase action
+      (`nil
+       (try-completion string completions pred))
+      (`t
+       (all-completions string completions pred))
+      (`lambda
+        (test-completion string completions pred))
+      (`(boundaries . _) nil)
+      (`metadata
+       `(metadata . ((category . org-edna)
+                     (annotation-function . nil)
+                     (display-sort-function . identity)
+                     (cycle-sort-function . identity)))))))
+
+(defun org-edna-completion-at-point ()
+  (when-let ((bounds (bounds-of-thing-at-point 'symbol)))
+    (list (car bounds) (cdr bounds) 'org-edna-completion-table-function)))
+
+
+
 (declare-function lm-report-bug "lisp-mnt" (topic))
 
 (defun org-edna-submit-bug-report (topic)
