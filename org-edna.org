@@ -10,7 +10,7 @@
 #+OPTIONS: *:t <:t d:nil todo:nil pri:nil tags:not-in-toc
 
 #+TEXINFO_DIR_CATEGORY: Emacs
-#+TEXINFO_DIR_TITLE: Org Edna: (edna)
+#+TEXINFO_DIR_TITLE: Org Edna: (org-edna)
 #+TEXINFO_DIR_DESC: Extensible Dependencies 'N' Actions for Org Mode tasks
 
 * Copying
@@ -42,7 +42,7 @@ Edna provides an extensible means of specifying conditions which must be
 fulfilled before a task can be completed and actions to take once it is.
 
 Org Edna runs when either the BLOCKER or TRIGGER properties are set on a
-headline, and when it is changing from a TODO state to a DONE state.
+heading, and when it is changing from a TODO state to a DONE state.
 
 For brevity, we use TODO state to indicate any state in ~org-not-done-keywords~,
 and DONE state to indicate any state in ~org-done-keywords~.
@@ -124,7 +124,7 @@ Edna can handle this for you like so:
 #+END_SRC
 
 After you've put your clothes in the washer and mark the task DONE, Edna will
-schedule the following task for one hour after you set the first headline as
+schedule the following task for one hour after you set the first heading as
 done.
 
 Another example might be a checklist that you've done so many times that you do
@@ -153,8 +153,8 @@ can help:
 :DESCRIPTION: Blocking a TODO Item
 :END:
 
-A blocker indicates conditions which must be met in order for a headline to be
-marked as DONE.  Typically, this will be a list of headlines that must be marked
+A blocker indicates conditions which must be met in order for a heading to be
+marked as DONE.  Typically, this will be a list of headings that must be marked
 as DONE.
 
 ** Triggers
@@ -163,7 +163,7 @@ as DONE.
 :DESCRIPTION: Triggering actions after completing a task
 :END:
 
-A trigger is an action to take when a headline is set to done.  For example,
+A trigger is an action to take when a heading is set to done.  For example,
 scheduling another task, marking another task as TODO, or renaming a file.
 
 ** Syntax
@@ -202,7 +202,8 @@ The most basic features of Edna are *finders* and *actions*.
 :CUSTOM_ID: finders
 :END:
 A finder specifies locations from which to test conditions or perform actions.
-These locations are referred to as "targets".
+These locations are referred to as "targets".  The current heading, i.e. the one
+that is being blocked or triggered, is referred to as the "source" heading.
 
 More than one finder may be used.  In this case, the targets are merged
 together, removing any duplicates.
@@ -213,9 +214,9 @@ together, removing any duplicates.
 :CUSTOM_ID: ancestors
 :END:
 
-Syntax: ancestors
+- Syntax: ancestors
 
-The ~ancestors~ finder returns a list of the current headline's ancestors.
+The ~ancestors~ finder returns a list of the source heading's ancestors.
 
 For example:
 
@@ -239,7 +240,7 @@ In the above example, "Heading 5" will be blocked until "Heading 1", "Heading
 :DESCRIPTION: Find a target as org-depend does
 :END:
 
-Syntax: chain-find(OPTION OPTION...)
+- Syntax: chain-find(OPTION OPTION...)
 
 Identical to the chain argument in org-depend, chain-find selects its single
 target using the following method:
@@ -252,13 +253,16 @@ After this is finished, chain-find selects the first target in the list and
 returns it.
 
 One option from each of the following three categories may be used; if more than
-one is specified, the last will be used.
+one is specified, the last will be used.  Apart from that, argument order is
+irrelevant.
+
+All arguments are symbols.
 
 *Selection*
 
-- from-top:     Select siblings of the current headline, starting at the top
+- from-top:     Select siblings of the source heading, starting at the top
 - from-bottom:  As above, but from the bottom
-- from-current: Selects siblings, starting from the headline (wraps)
+- from-current: Selects siblings, starting from the heading (wraps)
 - no-wrap:      As above, but without wrapping
 
 *Filtering*
@@ -279,12 +283,12 @@ one is specified, the last will be used.
 :DESCRIPTION: Find all immediate children
 :END:
 
-Syntax: children
+- Syntax: children
 
-The ~children~ finder returns a list of the *immediate* children of the current
-headline.
+The ~children~ finder returns a list of the *immediate* children of the source
+heading.  If the source has no children, no target is returned.
 
-In order to get all levels of children of the current headline, use the
+In order to get all levels of children of the source heading, use the
 [[#descendants][descendants]] keyword instead.
 
 *** descendants
@@ -293,10 +297,9 @@ In order to get all levels of children of the current headline, use the
 :DESCRIPTION: Find all descendants
 :END:
 
-Syntax: descendants
+- Syntax: descendants
 
-The ~descendants~ finder returns a list of all descendants of the current
-headline.
+The ~descendants~ finder returns a list of all descendants of the source heading.
 
 #+BEGIN_SRC org
 ,* TODO Heading 1
@@ -323,8 +326,12 @@ DONE.
 The ~file~ finder finds a single file, specified as a string.  The returned target
 will be the minimum point in the file.
 
-Note that with the default condition, ~file~ won't work.  See [[#conditions][conditions]] for how
-to set a different condition.  For example:
+Note that this does not give a valid heading, so any conditions
+or actions that require will throw an error.  Consult the
+documentation for individual actions or conditions to determine
+which ones will and won't work.
+
+See [[#conditions][conditions]] for how to set a different condition.  For example:
 
 #+BEGIN_SRC org
 ,* TODO Test
@@ -333,27 +340,28 @@ to set a different condition.  For example:
   :END:
 #+END_SRC
 
-Here, "Test" will block until myfile.org is clear of headlines.
+Here, "Test" will block until myfile.org is clear of headings.
 
 *** first-child
 :PROPERTIES:
 :CUSTOM_ID: first-child
-:DESCRIPTION: Find the first child of a headline
+:DESCRIPTION: Find the first child of a heading
 :END:
 
 - Syntax: first-child
 
-The ~first-child~ finder returns the first child of a headline, if any.
+Return the first child of the source heading.  If the source heading has no
+children, no target is returned.
 
 *** ids
 :PROPERTIES:
-:DESCRIPTION: Find a list of headlines with given IDs
+:DESCRIPTION: Find a list of headings with given IDs
 :CUSTOM_ID: ids
 :END:
 
 - Syntax: id(ID1 ID2 ...)
 
-The ~ids~ finder will search for headlines with given IDs, using ~org-id~.  Any
+The ~ids~ finder will search for headings with given IDs, using ~org-id~.  Any
 number of UUIDs may be specified.  For example:
 
 #+BEGIN_SRC org
@@ -363,8 +371,8 @@ number of UUIDs may be specified.  For example:
   :END:
 #+END_SRC
 
-Here, "Test" will block until the headline with ID
-62209a9a-c63b-45ef-b8a8-12e47a9ceed9 and the headline with ID
+Here, "Test" will block until the heading with ID
+62209a9a-c63b-45ef-b8a8-12e47a9ceed9 and the heading with ID
 6dbd7921-a25c-4e20-b035-365677e00f30 are set to "DONE".
 
 Note that UUIDs need not be quoted; Edna will handle that for you.
@@ -401,8 +409,7 @@ argument.
 
 - Syntax: next-sibling
 
-The ~next-sibling~ keyword returns the next sibling of the current heading, if
-any.
+The ~next-sibling~ keyword returns the next sibling of the source heading, if any.
 
 *** next-sibling-wrap
 :PROPERTIES:
@@ -412,13 +419,13 @@ any.
 
 - Syntax: next-sibling-wrap
 
-Find the next sibling of the current heading, if any.  If there isn't, wrap back
+Find the next sibling of the source heading, if any.  If there isn't, wrap back
 around to the first heading in the same subtree.
 
 *** olp
 :PROPERTIES:
 :CUSTOM_ID: olp
-:DESCRIPTION: Find a headline by its outline path
+:DESCRIPTION: Find a heading by its outline path
 :END:
 
 - Syntax: olp("FILE" "OLP")
@@ -444,6 +451,10 @@ Finds the heading given by OLP in FILE.  Both arguments are strings.
 
 A special form of ~file~, ~org-file~ will find FILE in ~org-directory~.
 
+FILE is the relative path of a file in ~org-directory~.  Nested
+files are allowed, such as "my-directory/my-file.org".  The
+returned target is the minimum point of FILE.
+
 #+BEGIN_SRC org
 ,* TODO Test
   :PROPERTIES:
@@ -451,7 +462,9 @@ A special form of ~file~, ~org-file~ will find FILE in ~org-directory~.
   :END:
 #+END_SRC
 
-Note that the file still requires an extension.
+Note that the file still requires an extension; the "org" here
+just means to look in ~org-directory~, not necessarily an
+Org mode file.
 
 *** parent
 :PROPERTIES:
@@ -461,7 +474,7 @@ Note that the file still requires an extension.
 
 - Syntax: parent
 
-Returns the parent of the current headline, if any.
+Returns the parent of the source heading, if any.
 
 *** previous-sibling
 :PROPERTIES:
@@ -471,7 +484,7 @@ Returns the parent of the current headline, if any.
 
 - Syntax: previous-sibling
 
-Returns the previous sibling of the current headline on the same level.
+Returns the previous sibling of the source heading on the same level.
 
 *** rest-of-siblings
 :PROPERTIES:
@@ -481,7 +494,7 @@ Returns the previous sibling of the current headline on the same level.
 
 - Syntax: rest-of-siblings
 
-Starting from the headline following the current one, all same-level siblings
+Starting from the heading following the current one, all same-level siblings
 are returned.
 
 *** self
@@ -491,7 +504,7 @@ are returned.
 
 - Syntax: self
 
-Returns the current headline.
+Returns the source heading.
 
 *** siblings
 :PROPERTIES:
@@ -501,7 +514,8 @@ Returns the current headline.
 
 - Syntax: siblings
 
-Returns all siblings of the source heading as targets.
+Returns all siblings of the source heading as targets, starting from the first
+sibling, and ignoring the source heading.
 
 *** siblings-wrap
 :PROPERTIES:
@@ -511,7 +525,7 @@ Returns all siblings of the source heading as targets.
 
 - Syntax: siblings-wrap
 
-Finds the siblings on the same level as the current headline, wrapping when it
+Finds the siblings on the same level as the source heading, wrapping when it
 reaches the end.
 
 ** Actions
@@ -526,36 +540,41 @@ Actions must always end with '!'.
 *** Scheduled/Deadline
 :PROPERTIES:
 :CUSTOM_ID: planning
+:DESCRIPTION: Operate on planning information
 :END:
 
 - Syntax: scheduled!(OPTIONS)
 - Syntax: deadline!(OPTIONS)
 
-There are several forms that the planning keywords can take:
+Set the scheduled or deadline time of any target headings.
 
-- PLANNING("WKDY[ TIME]")
+There are several forms that the planning keywords can take.  In the following,
+PLANNING is either scheduled or deadline.
 
-  Sets PLANNING to the following weekday WKDY at TIME.  If TIME is not
-  specified, only a date will be added to the target.
+- PLANNING!("DATE[ TIME]")
 
-  WKDY is a weekday or weekday abbreviation (see ~org-read-date~)
+  Sets PLANNING to DATE at TIME.  If DATE is a weekday instead of a date, then
+  set PLANNING to the following weekday.  If TIME is not specified, only a date
+  will be added to the target.
 
-  TIME is a time string HH:MM, etc.
+  Any string recognized by ~org-read-date~ may be used for DATE.
 
-- PLANNING(rm|remove)
+  TIME is a time string, such as HH:MM.
+
+- PLANNING!(rm|remove)
 
   Remove PLANNING from all targets.  The argument to this form may be either a
   string or a symbol.
 
-- PLANNING(copy|cp)
+- PLANNING!(copy|cp)
 
-  Copy PLANNING info verbatim from the current headline to all targets.  The
+  Copy PLANNING info verbatim from the source heading to all targets.  The
   argument to this form may be either a string or a symbol.
 
-- PLANNING("[+|-][+|-]NTHING")
+- PLANNING!("[+|-|++|--]NTHING")
 
-  Increment(+) or decrement(-) source (double) or current (single) PLANNING by N
-  THINGs
+  Increment(+) or decrement(-) target's PLANNING by N THINGs relative to either
+  itself (+/-) or the current time (++/--).
 
   N is an integer
 
@@ -564,17 +583,25 @@ There are several forms that the planning keywords can take:
 Examples:
 
 scheduled!("Mon 09:00") -> Set SCHEDULED to the following Monday at 9:00
+deadline!("++1h") -> Set DEADLINE to one hour from now.
+deadline!(copy) deadline!("+1h") -> Copy the source deadline to the target, then increment it by an hour.
 *** TODO State
+:PROPERTIES:
+:CUSTOM_ID: todo!
+:DESCRIPTION: Set todo state
+:END:
 
 - Syntax: todo!(NEW-STATE)
 
-Sets the TODO state of the target headline to NEW-STATE.
+Sets the TODO state of the target heading to NEW-STATE.
 
-NEW-STATE may either be a string or a symbol denoting the new TODO state.
+NEW-STATE may either be a string or a symbol denoting the new TODO state.  It
+can also be the empty string, in which case the TODO state is removed.
 
 *** Archive
 :PROPERTIES:
 :CUSTOM_ID: archive!
+:DESCRIPTION: Archive targets
 :END:
 
 - Syntax: archive!
@@ -582,15 +609,24 @@ NEW-STATE may either be a string or a symbol denoting the new TODO state.
 Archives all targets with confirmation.
 
 Confirmation is controlled with ~org-edna-prompt-for-archive~.  If this option is
-nil, Edna will not ask before archiving the target.
+nil, Edna will not ask before archiving targets.
 
 *** Chain Property
+:PROPERTIES:
+:CUSTOM_ID: chain!
+:DESCRIPTION: Copy properties from source to targets
+:END:
 
 - Syntax: chain!("PROPERTY")
 
-Copies PROPERTY from the source entry to all targets.
+Copies PROPERTY from the source entry to all targets.  Does nothing if the
+source heading has no property PROPERTY.
 
 *** Clocking
+:PROPERTIES:
+:CUSTOM_ID: clocking
+:DESCRIPTION: Clock in or out of a target
+:END:
 
 - Syntax: clock-in!
 - Syntax: clock-out!
@@ -600,9 +636,15 @@ Clocks into or out of all targets.
 ~clock-in!~ has no special handling of targets, so be careful when specifying
 multiple targets.
 
+In contrast, ~clock-out!~ ignores its targets and only clocks out of the current
+clock, if any.
 *** Property
+:PROPERTIES:
+:CUSTOM_ID: properties
+:DESCRIPTION: Set properties of targets
+:END:
 
-- Syntax: set-property!("PROPERTY","VALUE")
+- Syntax: set-property!("PROPERTY" "VALUE")
 
 Sets the property PROPERTY on all targets to VALUE.
 
@@ -611,15 +653,34 @@ Sets the property PROPERTY on all targets to VALUE.
 Deletes the property PROPERTY from all targets.
 
 *** Priority
+:PROPERTIES:
+:CUSTOM_ID: priorities
+:DESCRIPTION: Set priorities of targets
+:END:
 
-- Syntax: set-priority!(PRIORITY)
+Sets the priority of all targets.
 
-Sets the priority of all targets to PRIORITY.  PRIORITY is processed as follows:
+- Syntax: set-priority!("PRIORITY")
 
-- If PRIORITY is a string, the first character is used as the priority
-- Any other value is passed into ~org-priority~ verbatim, so it can be 'up, 'down, or an integer
+  Set the priority to the first character of PRIORITY.
+
+- Syntax: set-priority!(up)
+
+  Cycle the target's priority up through the list of allowed priorities.
+
+- Syntax: set-priority!(down)
+
+  Cycle the target's priority down through the list of allowed priorities.
+
+- Syntax: set-priority!(P)
+
+  Set the target's priority to the character P.
 
 *** Tag
+:PROPERTIES:
+:CUSTOM_ID: tags
+:DESCRIPTION: Tags of a target
+:END:
 
 - Syntax: tag!("TAG-SPEC")
 
@@ -627,6 +688,10 @@ Tags all targets with TAG-SPEC, which is any valid tag specification,
 e.g. tag1:tag2
 
 *** Effort
+:PROPERTIES:
+:CUSTOM_ID: effort
+:DESCRIPTION: So much effort!
+:END:
 
 - Syntax: set-effort!(VALUE)
 
@@ -647,7 +712,10 @@ Sets the effort of all targets according to VALUE:
 
 Edna gives you he option to specify *blocking conditions*.  Each condition is checked
 for each of the specified targets; if one of the conditions returns true for
-that target, then that headline is blocked.
+that target, then the source heading is blocked.
+
+If no condition is specified, ~!done?~ is used by default, which means block if
+any target heading isn't done.
 
 *** done
 :PROPERTIES:
@@ -656,7 +724,7 @@ that target, then that headline is blocked.
 
 - Syntax: done?
 
-Blocks the current headline if any target is DONE.
+Blocks the source heading if any target heading is DONE.
 
 *** headings
 :PROPERTIES:
@@ -665,7 +733,8 @@ Blocks the current headline if any target is DONE.
 
 - Syntax: headings?
 
-Blocks the current headline if any target belongs to a file that has an Org heading.
+Blocks the source heading if any target belongs to a file that has an Org
+heading.  This means that target does not have to be a heading.
 
 #+BEGIN_EXAMPLE
 org-file("refile.org") headings?
@@ -680,7 +749,7 @@ The above example blocks if refile.org has any headings.
 
 - Syntax: todo-state?(STATE)
 
-Blocks if any target has a headline with TODO state set to STATE.
+Blocks if any target heading has TODO state set to STATE.
 
 STATE may be a string or a symbol.
 
@@ -689,14 +758,15 @@ STATE may be a string or a symbol.
 :CUSTOM_ID: variable-set
 :END:
 
-- Syntax: variable-set?(VARIABLE,VALUE)
+- Syntax: variable-set?(VARIABLE VALUE)
 
-Blocks the current headline if VARIABLE is set to VALUE.
+Evaluate VARIABLE when visiting a target, and compare it with ~equal~
+against VALUE.  Block the source heading if VARIABLE = VALUE.
 
-VARIABLE should be a symbol, and VALUE is any valid lisp expression
+VARIABLE should be a symbol, and VALUE is any valid lisp expression.
 
 #+BEGIN_EXAMPLE
-self variable-set?(test-variable,12)
+self variable-set?(test-variable 12)
 #+END_EXAMPLE
 
 *** has-property
@@ -704,7 +774,7 @@ self variable-set?(test-variable,12)
 :CUSTOM_ID: has-property
 :END:
 
-- Syntax: has-property?("PROPERTY","VALUE")
+- Syntax: has-property?("PROPERTY" "VALUE")
 
 Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 
@@ -716,7 +786,7 @@ Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 
 - Syntax: re-search?("REGEXP")
 
-Blocks the current headline if the regular expression REGEXP is present in any
+Blocks the source heading if the regular expression REGEXP is present in any
 of the targets.
 
 The targets are expected to be files, although this will work with other targets
@@ -726,13 +796,13 @@ as well.
 :PROPERTIES:
 :CUSTOM_ID: negate
 :END:
-Any condition can be negated using '!'.
+Any condition can be negated by using '!' before the condition.
 
 #+BEGIN_EXAMPLE
-match("test") !has-property?("PROP","1")
+match("test") !has-property?("PROP" "1")
 #+END_EXAMPLE
 
-The above example will cause the current headline to block if any headline
+The above example will cause the source heading to block if any heading
 tagged "test" does *not* have the property PROP set to "1".
 ** Consideration
 Special keyword that's only valid for blockers.
@@ -875,7 +945,7 @@ You'll also want a copy of the most recent Org Mode source:
 git clone git://orgmode.org/org-mode.git
 #+END_SRC
 
-*Bugs*
+** Bugs
 
 There are two ways to submit bug reports:
 
@@ -885,14 +955,30 @@ There are two ways to submit bug reports:
 When submitting a bug report, be sure to include the Edna form that caused the
 bug, with as much context as possible.
 
-*Development*
+** Development
 
-Submitting patches along with a bug report is the easiest way.
+If you're new to bazaar, we recommend using Emacs's built-in VC package.  It
+eases the overhead of dealing with a brand new VCS with a few standard commands.
+For more information, see the info page on it (In Emacs, this is
+C-h r m Introduction to VC RET).
+
+To contribute with bazaar, you can do the following:
+
+#+begin_src shell
+# Hack away and make your changes
+$ bzr commit -m "Changes I've made"
+$ bzr send -o file-name.txt
+#+end_src
+
+Then, use ~org-edna-submit-bug-report~ and attach "file-name.txt".  We can then
+merge that into the main development branch.
 
 There are a few rules to follow:
 
 - Verify that any new Edna keywords follow the appropriate naming conventions
 - Any new keywords should be documented
+- We operate on headings, not headlines
+  - Use one word to avoid confusion
 - Run 'make check' to verify that your mods don't break anything
 - Avoid additional or altered dependencies if at all possible
   - Exception: New versions of Org mode are allowed

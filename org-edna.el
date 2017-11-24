@@ -29,7 +29,7 @@
 ;; fulfilled before a task can be completed and actions to take once it is.
 
 ;; Org Edna runs when either the BLOCKER or TRIGGER properties are set on a
-;; headline, and when it is changing from a TODO state to a DONE state.
+;; heading, and when it is changing from a TODO state to a DONE state.
 
 ;;; History:
 
@@ -163,7 +163,7 @@ indicating whether FORM accepts actions or conditions."
         (blocking-entry)
         (consideration 'all)
         (state nil) ;; Type of operation
-        ;; Keep track of the current headline
+        ;; Keep track of the current heading
         (last-entry (point-marker))
         (pos 0))
     (while (< pos (length form))
@@ -295,6 +295,8 @@ Remove Edna's workers from `org-trigger-hook' and
 (defun org-edna-finder/match (match-spec &optional scope skip)
   "Find entries using Org matching.
 
+Edna Syntax: match(\"MATCH-SPEC\" SCOPE SKIP)
+
 MATCH-SPEC may be any valid match string; it is passed straight
 into `org-map-entries'.
 
@@ -316,15 +318,28 @@ SCOPE defaults to agenda, and SKIP defaults to nil.
 
 ;; ID finder
 (defun org-edna-finder/ids (&rest ids)
-  "Find a list of headlines with given IDs.
+  "Find a list of headings with given IDs.
 
-IDS are all UUIDs as understood by `org-id-find'."
+Edna Syntax: ids(ID1 ID2 ...)
+
+Each ID is a UUID as understood by `org-id-find'.
+
+Note that in the edna syntax, the IDs don't need to be quoted."
   (mapcar (lambda (id) (org-id-find id 'marker)) ids))
 
 (defun org-edna-finder/self ()
+  "Finder for the current heading.
+
+Edna Syntax: self"
   (list (point-marker)))
 
 (defun org-edna-finder/siblings ()
+  "Finder for all siblings of the source heading.
+
+Edna Syntax: siblings
+
+Siblings are returned in order, starting from the first heading,
+and ignoring the source heading."
   (org-with-wide-buffer
    (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
          (markers))
@@ -338,6 +353,12 @@ IDS are all UUIDs as understood by `org-id-find'."
      (nreverse markers))))
 
 (defun org-edna-finder/siblings-wrap ()
+  "Finder for all siblings of the source heading.
+
+Edna Syntax: siblings-wrap
+
+Siblings are returned in order, starting from the first heading
+after the source heading and wrapping when it reaches the end."
   (org-with-wide-buffer
    (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
          (markers))
@@ -356,6 +377,12 @@ IDS are all UUIDs as understood by `org-id-find'."
      (nreverse markers))))
 
 (defun org-edna-finder/rest-of-siblings ()
+  "Finder for the siblings after the source heading.
+
+Edna Syntax: rest-of-siblings
+
+Siblings are returned in order, starting from the first heading
+after the source heading."
   (org-with-wide-buffer
    (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
          (markers))
@@ -366,11 +393,23 @@ IDS are all UUIDs as understood by `org-id-find'."
      (nreverse markers))))
 
 (defun org-edna-finder/next-sibling ()
+  "Finder for the next sibling after the source heading.
+
+Edna Syntax: next-sibling
+
+If the source heading is the last of its siblings, no target is
+returned."
   (org-with-wide-buffer
    (and (org-get-next-sibling)
         (list (point-marker)))))
 
 (defun org-edna-finder/next-sibling-wrap ()
+  "Finder for the next sibling after the source heading.
+
+Edna Syntax: next-sibling-wrap
+
+If the source heading is the last of its siblings, its first
+sibling is returned."
   (org-with-wide-buffer
    (if (org-goto-sibling)
        (list (point-marker))
@@ -379,16 +418,32 @@ IDS are all UUIDs as understood by `org-id-find'."
      (list (point-marker)))))
 
 (defun org-edna-finder/previous-sibling ()
+  "Finder for the first sibling before the source heading.
+
+Edna Syntax: previous-sibling
+
+If the source heading is the first of its siblings, no target is
+returned."
   (org-with-wide-buffer
    (and (org-get-last-sibling)
         (list (point-marker)))))
 
 (defun org-edna-finder/first-child ()
+  "Return the first child of the source heading.
+
+Edna Syntax: first-child
+
+If the source heading has no children, no target is returned."
   (org-with-wide-buffer
    (and (org-goto-first-child)
         (list (point-marker)))))
 
 (defun org-edna-finder/children ()
+  "Finder for the immediate children of the source heading.
+
+Edna Syntax: children
+
+If the source has no children, no target is returned."
   (org-with-wide-buffer
    (let ((markers))
      (org-goto-first-child)
@@ -398,18 +453,32 @@ IDS are all UUIDs as understood by `org-id-find'."
      (nreverse markers))))
 
 (defun org-edna-finder/parent ()
+  "Finder for the parent of the source heading.
+
+Edna Syntax: parent
+
+If the source heading is a top-level heading, no target is
+returned."
   (org-with-wide-buffer
    (and (org-up-heading-safe)
         (list (point-marker)))))
 
 (defun org-edna-finder/descendants ()
+  "Finder for all descendants of the source heading.
+
+Edna Syntax: descendants
+
+This is ALL descendants of the source heading, across all
+levels.  This also includes the source heading."
   (org-with-wide-buffer
    (org-map-entries
     (lambda nil (point-marker))
     nil 'tree)))
 
 (defun org-edna-finder/ancestors ()
-  "Find a list of ancestors.
+  "Finder for the ancestors of the source heading.
+
+Edna Syntax: ancestors
 
 Example:
 
@@ -432,9 +501,12 @@ ignored."
      (nreverse markers))))
 
 (defun org-edna-finder/olp (file olp)
-  "Find a headline by its outline path.
+  "Finder for heading by its outline path.
 
-Finds the heading given by OLP in FILE.  Both arguments are strings.
+Edna Syntax: olp(\"FILE\" \"OLP\")
+
+Finds the heading given by OLP in FILE.  Both arguments are
+strings.  OLP is an outline path.  Example:
 
 * TODO Test
   :PROPERTIES:
@@ -450,41 +522,58 @@ Test will block if the heading \"path/to/heading\" in
 ;; TODO: Clean up the buffer when it's finished
 
 (defun org-edna-finder/file (file)
-  "Find a file by name.
+  "Finder for a file by its name.
 
-The `file' finder finds a single file, specified as a string.
-The returned target will be the minimum point in the file.
+Edna Syntax: file(\"FILE\")
+
+FILE is the full path to the desired file.  The returned target
+will be the minimum point in the file.
 
 * TODO Test
   :PROPERTIES:
   :BLOCKER:  file(\"~/myfile.org\") headings?
   :END:
 
-Here, \"Test\" will block until myfile.org is clear of headlines.
+Here, \"Test\" will block until myfile.org is clear of headings.
 
-Note that with the default condition, `file' won't work."
+Note that this does not give a valid heading, so any conditions
+or actions that require will throw an error.  Consult the
+documentation for individual actions or conditions to determine
+which ones will and won't work."
   ;; If there isn't a buffer visiting file, then there's no point in having a
   ;; marker to the start of the file, so use `find-file-noselect'.
   (with-current-buffer (find-file-noselect file)
     (list (point-min-marker))))
 
 (defun org-edna-finder/org-file (file)
-  "Find a file in `org-directory'.
+  "Finder for FILE in `org-directory'.
 
-A special form of `file', `org-file' will find FILE (a string) in
-`org-directory'.
+Edna Syntax: org-file(\"FILE\")
+
+FILE is the relative path of a file in `org-directory'.  Nested
+files are allowed, such as \"my-directory/my-file.org\".  The
+returned target is the minimum point of FILE.
 
 * TODO Test
   :PROPERTIES:
   :BLOCKER:  org-file(\"test.org\")
   :END:
 
-Note that the file still requires an extension."
+Note that the file still requires an extension; the \"org\" here
+just means to look in `org-directory', not necessarily an
+`org-mode' file.
+
+Note that this does not give a valid heading, so any conditions
+or actions that require will throw an error.  Consult the
+documentation for individual actions or conditions to determine
+which ones will and won't work."
   (with-current-buffer (find-file-noselect (expand-file-name file org-directory))
     (list (point-min-marker))))
 
 (defun org-edna-finder/chain-find (&rest options)
   "Find a target as org-depend does.
+
+Edna Syntax: chain-find(OPTION OPTION...)
 
 Identical to the chain argument in org-depend, chain-find selects its single
 target using the following method:
@@ -493,17 +582,20 @@ target using the following method:
 2. Filters the targets from Step 1
 3. Sorts the targets from Step 2
 
-After this is finished, chain-find selects the first target in the list and
-returns it.
+After this is finished, chain-find selects the first target in
+the list and returns it.
 
-One option from each of the following three categories may be used; if more than
-one is specified, the last will be used.
+One option from each of the following three categories may be
+used; if more than one is specified, the last will be used.
+Apart from that, argument order is irrelevant.
+
+All arguments are symbols.
 
 *Selection*
 
-- from-top:     Select siblings of the current headline, starting at the top
+- from-top:     Select siblings of the current heading, starting at the top
 - from-bottom:  As above, but from the bottom
-- from-current: Selects siblings, starting from the headline (wraps)
+- from-current: Selects siblings, starting from the heading (wraps)
 - no-wrap:      As above, but without wrapping
 
 *Filtering*
@@ -583,13 +675,24 @@ one is specified, the last will be used.
 
 
 ;; Set TODO state
-(defun org-edna-action/todo! (last-entry new-state)
-  (ignore last-entry)
+(defun org-edna-action/todo! (_last-entry new-state)
+  "Action to set a target heading's TODO state to NEW-STATE.
+
+Edna Syntax: todo!(NEW-STATE)
+Edna Syntax: todo!(\"NEW-STATE\")
+
+NEW-STATE may either be a symbol or a string.  If it is a symbol,
+the symbol name is used for the new state.  Otherwise, it is a
+string for the new state, or \"\" to remove the state."
   (org-todo (if (stringp new-state) new-state (symbol-name new-state))))
 
 ;; Set planning info
 
 (defun org-edna--mod-timestamp (time-stamp n what)
+  "Modify the timestamp TIME-STAMP by N WHATs.
+
+N is an integer.  WHAT can be `day', `month', `year', `minute',
+`second'."
   (with-temp-buffer
     (insert time-stamp)
     (goto-char (point-min))
@@ -597,9 +700,13 @@ one is specified, the last will be used.
     (buffer-string)))
 
 (defun org-edna--get-planning-info (what)
+  "Get the planning info for WHAT.
+
+WHAT is either 'scheduled or 'deadline."
   (org-entry-get nil (if (eq what 'scheduled) "SCHEDULED" "DEADLINE")))
 
 (defun org-edna--handle-planning (type last-entry args)
+  "Handle planning of type TYPE."
   ;; Need case-fold-search enabled so org-read-date-get-relative will recognize "M"
   (let* ((case-fold-search t)
          (arg (nth 0 args))
@@ -643,51 +750,155 @@ one is specified, the last will be used.
         (org--deadline-or-schedule nil type new-ts))))))
 
 (defun org-edna-action/scheduled! (last-entry &rest args)
+  "Action to set the scheduled time of a target heading based on ARGS.
+
+Edna Syntax: scheduled!(\"DATE[ TIME]\")       [1]
+Edna Syntax: scheduled!(rm|remove)             [2]
+Edna Syntax: scheduled!(cp|copy)               [3]
+Edna Syntax: scheduled!(\"[+|-|++|--]NTHING\") [4]
+
+In form 1, schedule the target for the given date and time.  If
+DATE is a weekday instead of a date, schedule the target for the
+following weekday.  If it is a date, schedule it for that date
+exactly.  TIME is a time string, such as HH:MM.  If it isn't
+specified, only a date will be applied to the target.  Any string
+recognized by `org-read-date' may be used.
+
+Form 2 will remove the scheduled time from the target.
+
+Form 3 will copy the scheduled time from LAST-ENTRY (the current
+heading) to the target.
+
+Form 4 increments(+) or decrements(-) the target's scheduled time
+by N THINGS relative to either itself (+/-) or the current
+time (++/--).  THING is one of y (years), m (months), d (days),
+h (hours), or M (minutes), and N is an integer."
   (org-edna--handle-planning 'scheduled last-entry args))
 
 (defun org-edna-action/deadline! (last-entry &rest args)
+  "Action to set the deadline time of a target heading based on ARGS.
+
+Edna Syntax: deadline!(\"DATE[ TIME]\")       [1]
+Edna Syntax: deadline!(rm|remove)             [2]
+Edna Syntax: deadline!(cp|copy)               [3]
+Edna Syntax: deadline!(\"[+|-|++|--]NTHING\") [4]
+
+In form 1, set the deadline the target for the given date and
+time.  If DATE is a weekday instead of a date, set the deadline
+the target for the following weekday.  If it is a date, set the
+deadline it for that date exactly.  TIME is a time string, such
+as HH:MM.  If it isn't specified, only a date will be applied to
+the target.  Any string recognized by `org-read-date' may be
+used.
+
+Form 2 will remove the deadline time from the target.
+
+Form 3 will copy the deadline time from LAST-ENTRY (the current
+heading) to the target.
+
+Form 4 increments(+) or decrements(-) the target's deadline time
+by N THINGS relative to either itself (+/-) or the current
+time (++/--).  THING is one of y (years), m (months), d (days),
+h (hours), or M (minutes), and N is an integer."
   (org-edna--handle-planning 'deadline last-entry args))
 
-(defun org-edna-action/tag! (last-entry tags)
-  (ignore last-entry)
+(defun org-edna-action/tag! (_last-entry tags)
+  "Action to set the tags of a target heading to TAGS.
+
+Edna Syntax: tag!(\"TAGS\")
+
+TAGS is a valid tag specification, such as \":aa:bb:cc:\"."
   (org-set-tags-to tags))
 
-(defun org-edna-action/set-property! (last-entry property value)
-  (ignore last-entry)
+(defun org-edna-action/set-property! (_last-entry property value)
+  "Action to set the property PROPERTY of a target heading to VALUE.
+
+Edna Syntax: set-property!(\"PROPERTY\" \"VALUE\")
+
+PROPERTY and VALUE are both strings.  PROPERTY must be a valid
+org mode property."
   (org-entry-put nil property value))
 
-(defun org-edna-action/delete-property! (last-entry property)
-  (ignore last-entry)
+(defun org-edna-action/delete-property! (_last-entry property)
+  "Action to delete a property from a target heading.
+
+Edna Syntax: delete-property!(\"PROPERTY\")
+
+PROPERTY must be a valid org mode property."
   (org-entry-delete nil property))
 
-(defun org-edna-action/clock-in! (last-entry)
-  (ignore last-entry)
+(defun org-edna-action/clock-in! (_last-entry)
+  "Action to clock into a target heading.
+
+Edna Syntax: clock-in!"
   (org-clock-in))
 
-(defun org-edna-action/clock-out! (last-entry)
-  (ignore last-entry)
+(defun org-edna-action/clock-out! (_last-entry)
+  "Action to clock out from the current clocked heading.
+
+Edna Syntax: clock-out!
+
+Note that this will not necessarily clock out of the target, but
+the actual running clock."
   (org-clock-out))
 
-(defun org-edna-action/set-priority! (last-entry priority-action)
-  "PRIORITY-ACTION is passed straight to `org-priority'."
-  (ignore last-entry)
+(defun org-edna-action/set-priority! (_last-entry priority-action)
+  "Action to set the priority of a target heading.
+
+Edna Syntax: set-priority!(\"PRIORITY-STRING\") [1]
+Edna Syntax: set-priority!(up)                  [2]
+Edna Syntax: set-priority!(down)                [3]
+Edna Syntax: set-priority!(P)                   [4]
+
+Form 1 sets the priority to PRIORITY-STRING, so PRIORITY-STRING
+must be a valid priority string, such as \"A\" or \"E\".  It may
+also be the string \" \", which removes the priority from the
+target.
+
+Form 2 cycles the target's priority up through the list of
+allowed priorities.
+
+Form 3 cycles the target's priority down through the list of
+allowed priorities.
+
+Form 4: Set the target's priority to the character P."
   (org-priority (if (stringp priority-action)
                     (string-to-char priority-action)
                   priority-action)))
 
-(defun org-edna-action/set-effort! (last-entry value)
-  (ignore last-entry)
+(defun org-edna-action/set-effort! (_last-entry value)
+  "Action to set the effort of a target heading.
+
+Edna Syntax: set-effort!(VALUE)     [1]
+Edna Syntax: set-effort!(increment) [2]
+
+For form 1, set the effort based on VALUE.  If VALUE is a string,
+it's converted to an integer.  Otherwise, the integer is used as
+the raw value for the effort.
+
+For form 2, increment the effort to the next allowed value."
   (if (eq value 'increment)
       (org-set-effort nil value)
     (org-set-effort value nil)))
 
-(defun org-edna-action/archive! (last-entry)
-  (ignore last-entry)
+(defun org-edna-action/archive! (_last-entry)
+  "Action to archive a target heading.
+
+Edna Syntax: archive!
+
+If `org-edna-prompt-for-archive', prompt before archiving the
+entry."
   (if org-edna-prompt-for-archive
       (org-archive-subtree-default-with-confirmation)
     (org-archive-subtree-default)))
 
 (defun org-edna-action/chain! (last-entry property)
+  "Action to copy a property to a target heading.
+
+Edna Syntax: chain!(\"PROPERTY\")
+
+Copy PROPERTY from the source heading to the target heading.
+Does nothing if the source heading has no property PROPERTY."
   (when-let ((old-prop (org-entry-get last-entry property)))
     (org-entry-put nil property old-prop)))
 
@@ -706,6 +917,30 @@ one is specified, the last will be used.
 ;; This means that we want to take the exclusive-or of condition and neg.
 
 (defun org-edna-condition/done? (neg)
+  "Condition to check if all target headings are in the DONE state.
+
+Edna Syntax: done?
+
+DONE state is determined by the local value of
+`org-done-keywords'.
+
+Example:
+
+* TODO Heading
+  :PROPERTIES:
+  :BLOCKER: match(\"target\") done?
+  :END:
+
+Here, \"Heading\" will block if all targets tagged \"target\" are
+in a DONE state.
+
+* TODO Heading 2
+  :PROPERTIES:
+  :BLOCKER: match(\"target\") !done?
+  :END:
+
+Here, \"Heading 2\" will block if all targets tagged \"target\"
+are not in a DONE state."
   (when-let ((condition
               (if neg
                   (member (org-entry-get nil "TODO") org-not-done-keywords)
@@ -713,27 +948,59 @@ one is specified, the last will be used.
     (org-get-heading)))
 
 (defun org-edna-condition/todo-state? (neg state)
+  "Condition to check if all target headings have the TODO state STATE.
+
+Edna Syntax: todo-state?(\"STATE\")
+
+Block the source heading if all target headings have TODO state
+STATE.  STATE must be a valid TODO state string."
   (let ((condition (string-equal (org-entry-get nil "TODO") state)))
     (when (org-xor condition neg)
       (org-get-heading))))
 
 ;; Block if there are headings
 (defun org-edna-condition/headings? (neg)
+  "Condition to check if a target has headings in its file.
+
+Edna Syntax: headings?
+
+Block the source heading if any headings can be found in its
+file.  This means that target does not have to be a heading."
   (let ((condition (not (seq-empty-p (org-map-entries (lambda nil t))))))
     (when (org-xor condition neg)
       (buffer-name))))
 
 (defun org-edna-condition/variable-set? (neg var val)
+  "Condition to check if a variable is set in a target.
+
+Edna Syntax: variable-set?(VAR VAL)
+
+Evaluate VAR when visiting a target, and compare it with `equal'
+against VAL.  Block the source heading if VAR = VAL.
+
+Target does not have to be a heading."
   (let ((condition (equal (symbol-value var) val)))
     (when (org-xor condition neg)
       (format "%s %s= %s" var (if neg "!" "=") val))))
 
 (defun org-edna-condition/has-property? (neg prop val)
+  "Condition to check if a target heading has property PROP = VAL.
+
+Edna Syntax: has-property?(\"PROP\" \"VAL\")
+
+Block if the target heading has the property PROP set to VAL,
+both of which must be strings."
   (let ((condition (string-equal (org-entry-get nil prop) val)))
     (when (org-xor condition neg)
       (org-get-heading))))
 
 (defun org-edna-condition/re-search? (neg match)
+  "Condition to check for a regular expression in a target's file.
+
+Edna Syntax: re-search?(\"MATCH\")
+
+Block if regular expression MATCH can be found in target's file,
+starting from target's position."
   (let ((condition (re-search-forward match nil t)))
     (when (org-xor condition neg)
       (format "%s %s in %s" (if neg "Did Not Find" "Found") match (buffer-name)))))
@@ -741,6 +1008,15 @@ one is specified, the last will be used.
 
 
 (defun org-edna-handle-consideration (consideration blocks)
+  "Handle consideration CONSIDERATION.
+
+Edna Syntax: consideration(all) [1]
+Edna Syntax: consideration(N)   [2]
+Edna Syntax: consideration(P)   [3]
+
+Form 1: consider all targets when evaluating conditions.
+Form 2: consider the condition met if only N of the targets pass.
+Form 3: consider the condition met if only P% of the targets pass."
   (let ((first-block (seq-find #'identity blocks))
         (total-blocks (seq-length blocks)))
     (pcase consideration
@@ -814,9 +1090,9 @@ one is specified, the last will be used.
     map))
 
 (defun org-edna-edit ()
-  "Edit the blockers and triggers for current headline in a separate buffer."
+  "Edit the blockers and triggers for current heading in a separate buffer."
   (interactive)
-  ;; Move to the start of the current headline
+  ;; Move to the start of the current heading
   (let* ((heading-point (save-excursion
                           (org-back-to-heading)
                           (point-marker)))
