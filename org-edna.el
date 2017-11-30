@@ -1195,7 +1195,7 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'")
                                  string-end))))
     (mapatoms
      (lambda (s)
-       (when (string-match edna-rx (symbol-name s))
+       (when (and (string-match edna-rx (symbol-name s)) (fboundp s))
          (cl-pushnew (concat (match-string-no-properties 1 (symbol-name s)) suffix)
                      edna-sym-list))))
     edna-sym-list))
