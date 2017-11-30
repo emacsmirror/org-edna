@@ -39,6 +39,12 @@
 (eval-when-compile (require 'subr-x))
 (require 'seq)
 
+;; Compatibility for Emacs < 26.1
+(unless (fboundp 'if-let*)
+  (defalias 'if-let* 'if-let))
+(unless (fboundp 'when-let*)
+  (defalias 'when-let* 'when-let))
+
 (defgroup org-edna nil
   "Extensible Dependencies 'N' Actions"
   :group 'org)
@@ -145,12 +151,12 @@ function."
 (defun org-edna--handle-condition (func mod args targets consideration)
   "Handle a condition."
   ;; Check the condition at each target
-  (when-let ((blocks
-              (mapcar
-               (lambda (entry-marker)
-                 (org-with-point-at entry-marker
-                   (apply func mod args)))
-               targets)))
+  (when-let* ((blocks
+               (mapcar
+                (lambda (entry-marker)
+                  (org-with-point-at entry-marker
+                    (apply func mod args)))
+                targets)))
     ;; Apply consideration
     (org-edna-handle-consideration consideration blocks)))
 
@@ -256,7 +262,7 @@ See `org-edna-run' for CHANGE-PLIST explanation.
 
 This shouldn't be run from outside of `org-trigger-hook'."
   (org-edna-run change-plist
-    (when-let ((form (org-entry-get pos "TRIGGER" org-edna-use-inheritance)))
+    (when-let* ((form (org-entry-get pos "TRIGGER" org-edna-use-inheritance)))
       (org-edna-process-form form 'action))))
 
 (defun org-edna-blocker-function (change-plist)
@@ -266,7 +272,7 @@ See `org-edna-run' for CHANGE-PLIST explanation.
 
 This shouldn't be run from outside of `org-blocker-hook'."
   (org-edna-run change-plist
-    (if-let ((form (org-entry-get pos "BLOCKER" org-edna-use-inheritance)))
+    (if-let* ((form (org-entry-get pos "BLOCKER" org-edna-use-inheritance)))
         (org-edna-process-form form 'condition)
       t)))
 
@@ -899,7 +905,7 @@ Edna Syntax: chain!(\"PROPERTY\")
 
 Copy PROPERTY from the source heading to the target heading.
 Does nothing if the source heading has no property PROPERTY."
-  (when-let ((old-prop (org-entry-get last-entry property)))
+  (when-let* ((old-prop (org-entry-get last-entry property)))
     (org-entry-put nil property old-prop)))
 
 
@@ -941,10 +947,10 @@ in a DONE state.
 
 Here, \"Heading 2\" will block if all targets tagged \"target\"
 are not in a DONE state."
-  (when-let ((condition
-              (if neg
-                  (member (org-entry-get nil "TODO") org-not-done-keywords)
-                (member (org-entry-get nil "TODO") org-done-keywords))))
+  (when-let* ((condition
+               (if neg
+                   (member (org-entry-get nil "TODO") org-not-done-keywords)
+                 (member (org-entry-get nil "TODO") org-done-keywords))))
     (org-get-heading)))
 
 (defun org-edna-condition/todo-state? (neg state)
@@ -1237,7 +1243,7 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'")
                      (cycle-sort-function . identity)))))))
 
 (defun org-edna-completion-at-point ()
-  (when-let ((bounds (bounds-of-thing-at-point 'symbol)))
+  (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
     (list (car bounds) (cdr bounds) 'org-edna-completion-table-function)))
 
 
