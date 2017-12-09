@@ -1119,7 +1119,7 @@ Form 3: consider the condition met if only P% of the targets pass."
     (setq-local org-finish-function 'org-edna-edit-finish)
     (insert "Edit blockers and triggers in this buffer under their respective sections below.
 All lines under a given section will be merged into one when saving back to
-the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'")
+the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
     (setq-local org-edna-blocker-section-marker (point-marker))
     (insert (format "BLOCKER\n%s\n\n" blocker))
     (setq-local org-edna-trigger-section-marker (point-marker))
