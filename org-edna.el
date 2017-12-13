@@ -1183,16 +1183,16 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
                               (point-max-marker)))
 
 (defun org-edna--collect-keywords (keyword-type &optional suffix)
-  (let ((suffix (or suffix ""))
-        (edna-sym-list)
-        (edna-rx (rx-to-string `(and
-                                 string-start
-                                 "org-edna-"
-                                 ,keyword-type
-                                 "/"
-                                 (submatch (one-or-more ascii))
-                                 ,suffix
-                                 string-end))))
+  (let* ((suffix (or suffix ""))
+         (edna-sym-list)
+         (edna-rx (rx-to-string `(and
+                                  string-start
+                                  "org-edna-"
+                                  ,keyword-type
+                                  "/"
+                                  (submatch (one-or-more ascii))
+                                  ,suffix
+                                  string-end))))
     (mapatoms
      (lambda (s)
        (when (and (string-match edna-rx (symbol-name s)) (fboundp s))
