@@ -711,14 +711,269 @@ N is an integer.  WHAT can be `day', `month', `year', `minute',
 WHAT is either 'scheduled or 'deadline."
   (org-entry-get nil (if (eq what 'scheduled) "SCHEDULED" "DEADLINE")))
 
+;; Silence the byte-compiler
+(defvar parse-time-weekdays)
+(defvar parse-time-months)
+
+(defun org-edna--read-date-get-relative (s today default)
+  "Like `org-read-date-get-relative' but with a few additions.
+
+S is a string with the form [+|-|++|--][N]THING.
+
+THING may be any of the following:
+
+- A weekday (WEEKDAY), in which case the number of days from
+  either TODAY or DEFAULT to the next WEEKDAY will be computed.
+  If N is given, jump forward that many occurrences of WEEKDAY
+
+- The string \"weekday\" or \"wkdy\", in which jump forward X
+  days to land on a weekday.  If a weekend is found instead, move
+  in the direction given (+/-) until a weekday is found.
+
+S may also end with [+|-][DAY].  DAY may be either a weekday
+string, such as Monday, Tue, or Friday, or the strings
+\"weekday\", \"wkdy\", \"weekend\", or \"wknd\".  The former
+indicates that the time should land on the given day of the week,
+while the latter group indicates that the time should land on
+that type, either a weekday or a weekend.  The [+|-] in this
+string indicates that the time should be incremented or
+decremented to find the target day.
+
+Return shift list (N what def-flag) to get to the desired date
+WHAT       is \"M\", \"h\", \"d\", \"w\", \"m\", or \"y\" for minute, hour, day, week, month, year.
+N          is the number of WHATs to shift.
+DEF-FLAG   is t when a double ++ or -- indicates shift relative to
+           the DEFAULT date rather than TODAY.
+
+Examples:
+
+\"+1d +wkdy\" finds the number of days to move ahead in order to
+find a weekday.  This is the same as \"+1wkdy\", and returns
+\(N \"d\" nil).
+
+\"+5d -wkdy\" means move forward 5 days, then backward until a
+weekday is found.  Returns (N \"d\" nil).
+
+\"+1m +wknd\" means move forward one month, then forward until a
+weekend is found.  Returns (N \"d\" nil), since day precision is
+required."
+  (require 'parse-time)
+  (let* ((case-fold-search t) ;; ignore case when matching, so we get any
+         ;; capitalization of weekday names
+         (weekdays (mapcar 'car parse-time-weekdays))
+         ;; type-strings maps the type of thing to the index in decoded time
+         ;; (see `decode-time')
+         (type-strings '(("M" . 1)
+                         ("h" . 2)
+                         ("d" . 3)
+                         ("w" . 3)
+                         ("m" . 4)
+                         ("y" . 5)))
+         (regexp (rx-to-string
+                  `(and string-start
+                        (submatch (repeat 0 2 (in ?+ ?-)))
+                        (submatch (zero-or-more digit))
+                        (submatch (or (any ,@(mapcar 'car type-strings))
+                                      "weekday" "wkdy"
+                                      ,@weekdays)
+                                  word-end)
+                        (zero-or-one
+                         (submatch (and (one-or-more " ")
+                                        (submatch (zero-or-one (in ?+ ?-)))
+                                        (submatch (or "weekday" "wkdy"
+                                                      "weekend" "wknd"
+                                                      ,@weekdays)
+                                                  word-end))))
+                        string-end))))
+    (when (string-match regexp s)
+      (let* ((dir (if (> (match-end 1) (match-beginning 1))
+		      (string-to-char (substring (match-string 1 s) -1))
+		    ?+))
+	     (rel (and (match-end 1) (= 2 (- (match-end 1) (match-beginning 1)))))
+	     (n (if (match-end 2) (string-to-number (match-string 2 s)) 1))
+	     (what (if (match-end 3) (match-string 3 s) "d"))
+	     (wday1 (cdr (assoc (downcase what) parse-time-weekdays)))
+	     (date (if rel default today))
+	     (wday (nth 6 (decode-time date)))
+             ;; Are we worrying about where we land?
+             (have-landing (match-end 4))
+             (landing-direction (string-to-char
+                                 (if (and have-landing (match-end 5))
+                                     (match-string 5 s)
+                                   "+")))
+             (landing-type (when have-landing (match-string 6 s)))
+	     delta ret)
+        (setq
+         ret
+         (pcase what
+           ;; Shorthand for +Nd +wkdy or -Nd -wkdy
+           ((or "weekday" "wkdy")
+            ;; Determine where we land after N days
+            (let* ((del (* n (if (= dir ?-) -1 1)))
+                   (end-day (mod (+ del wday) 7)))
+              (while (member end-day calendar-weekend-days)
+                (let ((d (if (= dir ?-) -1 1)))
+                  (cl-incf del d)
+                  (setq end-day (mod (+ end-day d) 7))))
+              (list del "d" rel)))
+           ((pred (lambda (arg) (member arg (mapcar 'car type-strings))))
+            (list (* n (if (= dir ?-) -1 1)) what rel))
+           ((pred (lambda (arg) (member arg weekdays)))
+            (setq delta (mod (+ 7 (- wday1 wday)) 7))
+	    (when (= delta 0) (setq delta 7))
+	    (when (= dir ?-)
+	      (setq delta (- delta 7))
+	      (when (= delta 0) (setq delta -7)))
+	    (when (> n 1) (setq delta (+ delta (* (1- n) (if (= dir ?-) -7 7)))))
+	    (list delta "d" rel))))
+         (if (or (not have-landing)
+                 (member what '("M" "h"))) ;; Don't change landing for minutes or hours
+            ret ;; Don't worry about landing, just return
+          (pcase-let* ((`(,del ,what _) ret)
+                       (mod-index (cdr (assoc what type-strings)))
+                       ;; Increment the appropriate entry in the original decoded time
+                       (raw-landing-time
+                        (let ((tmp (copy-sequence (decode-time date))))
+                          (cl-incf (seq-elt tmp mod-index)
+                                   ;; We increment the days by 7 when we have weeks
+                                   (if (string-equal what "w") (* 7 del) del))
+                          tmp))
+                       (encoded-landing-time (apply 'encode-time raw-landing-time))
+                       ;; Get the initial time difference in days, rounding down
+                       ;; (it should be something like 3.0, so it won't matter)
+                       (time-diff (truncate
+                                   (/ (float-time (time-subtract encoded-landing-time
+                                                                 date))
+                                      86400))) ;; seconds in a day
+                       ;; Decoded landing time
+                       (landing-time (decode-time encoded-landing-time))
+                       ;; Numeric Landing direction
+                       (l-dir (if (= landing-direction ?-) -1 1))
+                       ;; Current numeric day of the week on which we end
+                       (end-day (nth 6 landing-time))
+                       ;; Numeric days of the week on which we are allowed to land
+                       (allowed-targets
+                        (pcase landing-type
+                          ((or "weekday" "wkdy")
+                           (seq-difference (number-sequence 0 6) calendar-weekend-days))
+                          ((or "weekend" "wknd")
+                           calendar-weekend-days)
+                          ((pred (lambda (arg) (member arg weekdays)))
+                           (list (cdr (assoc (downcase landing-type) parse-time-weekdays)))))))
+            ;; While we aren't looking at a valid day, move one day in the l-dir
+            ;; direction.
+            (while (not (member end-day allowed-targets))
+              (cl-incf time-diff l-dir)
+              (setq end-day (mod (+ end-day l-dir) 7)))
+            (list time-diff "d" rel)))))))
+
+(defun org-edna--float-time (arg this-time default)
+  "Read a float time string from ARG.
+
+A float time argument string is as follows:
+
+float [+|-|++|--]?N DAYNAME[ MONTH[ DAY]]
+
+N is an integer
+DAYNAME is either an integer day of the week, or a weekday string
+
+MONTH may be a month string or an integer.  Use 0 for the
+following or previous month.
+
+DAY is an optional integer.  If not given, it will be 1 (for
+forward) or the last day of MONTH (backward)."
+  (require 'parse-time)
+  (let* ((case-fold-search t)
+         (weekdays (mapcar 'car parse-time-weekdays))
+         (month-names (mapcar 'car parse-time-months))
+         (regexp (rx-to-string
+                  `(and string-start
+                        "float "
+                        ;; First argument, N
+                        (submatch (repeat 0 2 (in ?+ ?-)))
+                        (submatch word-start (one-or-more digit) word-end)
+                        " "
+                        ;; Second argument, weekday digit or string
+                        (submatch word-start
+                                  (or (in (?0 . ?6)) ;; Weekday digit
+                                      ,@weekdays)
+                                  word-end)
+                        ;; Third argument, month digit or string
+                        (zero-or-one
+                         " " (submatch word-start
+                                       (or (repeat 1 2 digit)
+                                           ,@month-names)
+                                       word-end)
+                         ;; Fourth argument, day in month
+                         (zero-or-one
+                          " "
+                          (submatch word-start
+                                    (repeat 1 2 digit)
+                                    word-end)))))))
+    (when (string-match regexp arg)
+      (pcase-let* ((inc (match-string 1 arg))
+                   (dir (if (not (string-empty-p inc)) ;; non-empty string
+		            (string-to-char (substring inc -1))
+		          ?+))
+	           (rel (= (length inc) 2))
+                   (numeric-dir (if (= dir ?+) 1 -1))
+                   (nth (* (string-to-number (match-string 2 arg)) numeric-dir))
+                   (dayname (let* ((tmp (match-string 3 arg))
+                                   (day (cdr (assoc (downcase tmp) parse-time-weekdays))))
+                              (or day (string-to-number tmp))))
+                   (month (if-let* ((tmp (match-string 4 arg)))
+                              (or (cdr (assoc (downcase tmp) parse-time-months))
+                                  (string-to-number tmp))
+                            0))
+                   (day (if (match-end 5) (string-to-number (match-string 5 arg)) 0))
+                   (ts (if rel default this-time))
+                   (`(_ _ _ ,dec-day ,dec-month ,dec-year _ _ _) (decode-time ts))
+                   ;; If month isn't given, use the 1st of the following (or previous) month
+                   ;; If month is given, use the 1st (or day, if given) of that
+                   ;; following month
+                   (month-given (not (= month 0)))
+                   ;; If day isn't provided, pass nil to
+                   ;; `calendar-nth-named-absday' so it can handle it.
+                   (act-day (if (not (= day 0)) day nil))
+                   (`(,act-month ,act-year)
+                    (if (not month-given)
+                        ;; Month wasn't given, so start at the following or previous month.
+                        (list (+ dec-month (if (= dir ?+) 1 -1)) dec-year)
+                      ;; Month was given, so adjust the year accordingly
+                      (cond
+                       ;; If month is after dec-month and we're incrementing,
+                       ;; keep year
+                       ((and (> month dec-month) (= dir ?+))
+                        (list month dec-year))
+                       ;; If month is before or the same as dec-month, and we're
+                       ;; incrementing, increment year.
+                       ((and (<= month dec-month) (= dir ?+))
+                        (list month (1+ dec-year)))
+                       ;; We're moving backwards, but month is after, so
+                       ;; decrement year.
+                       ((and (>= month dec-month) (= dir ?-))
+                        (list month (1- dec-year)))
+                       ;; We're moving backwards, and month is backward, so
+                       ;; leave it.
+                       ((and (< month dec-month) (= dir ?-))
+                        (list month dec-year)))))
+                   (abs-days-now (calendar-absolute-from-gregorian `(,dec-month
+                                                                     ,dec-day
+                                                                     ,dec-year)))
+                   (abs-days-then (calendar-nth-named-absday nth dayname
+                                                             act-month
+                                                             act-year
+                                                             act-day)))
+        (message "act day = %s" act-day)
+        ;; Return the same arguments as `org-edna--read-date-get-relative' above.
+        (list (- abs-days-then abs-days-now) "d" rel)))))
+
 (defun org-edna--handle-planning (type last-entry args)
   "Handle planning of type TYPE."
-  ;; Need case-fold-search enabled so org-read-date-get-relative will recognize "M"
-  (let* ((case-fold-search t)
-         (arg (nth 0 args))
+  (let* ((arg (nth 0 args))
          (last-ts (org-with-point-at last-entry (org-edna--get-planning-info type)))
          (this-ts (org-edna--get-planning-info type))
-         (this-time (and this-ts (org-parse-time-string this-ts)))
+         (this-time (and this-ts (org-time-string-to-time this-ts)))
          (current (org-current-time))
          (current-ts (format-time-string (org-time-stamp-format t) current))
          (type-map '(("y" . year)
@@ -734,11 +989,16 @@ WHAT is either 'scheduled or 'deadline."
         (error "Tried to copy but last entry doesn't have a timestamp"))
       ;; Copy old time verbatim
       (org-add-planning-info type last-ts))
+     ((string-match-p "\\`float " arg)
+      (pcase-let* ((`(,n ,what-string ,def) (org-edna--float-time arg this-time current))
+                   (ts (if def current-ts this-ts))
+                   (what (cdr (assoc-string what-string type-map))))
+        (org--deadline-or-schedule nil type (org-edna--mod-timestamp ts n what))))
      ((string-match-p "\\`[+-]" arg)
       ;; Starts with a + or -, so assume we're incrementing a timestamp
       ;; We support hours and minutes, so this must be supported separately,
       ;; since org-read-date-analyze doesn't
-      (pcase-let* ((`(,n ,what-string ,def) (org-read-date-get-relative arg this-time current))
+      (pcase-let* ((`(,n ,what-string ,def) (org-edna--read-date-get-relative arg this-time current))
                    (ts (if def current-ts this-ts))
                    (what (cdr (assoc-string what-string type-map))))
         (org--deadline-or-schedule nil type (org-edna--mod-timestamp ts n what))))
@@ -758,10 +1018,11 @@ WHAT is either 'scheduled or 'deadline."
 (defun org-edna-action/scheduled! (last-entry &rest args)
   "Action to set the scheduled time of a target heading based on ARGS.
 
-Edna Syntax: scheduled!(\"DATE[ TIME]\")       [1]
-Edna Syntax: scheduled!(rm|remove)             [2]
-Edna Syntax: scheduled!(cp|copy)               [3]
-Edna Syntax: scheduled!(\"[+|-|++|--]NTHING\") [4]
+Edna Syntax: scheduled!(\"DATE[ TIME]\")                                [1]
+Edna Syntax: scheduled!(rm|remove)                                      [2]
+Edna Syntax: scheduled!(cp|copy)                                        [3]
+Edna Syntax: scheduled!(\"[+|-|++|--]NTHING[ [+|-]LANDING]\")           [4]
+Edna Syntax: scheduled!(\"float [+|-|++|--]?N DAYNAME [ DAY[ MONTH]]\") [5]
 
 In form 1, schedule the target for the given date and time.  If
 DATE is a weekday instead of a date, schedule the target for the
@@ -778,16 +1039,33 @@ heading) to the target.
 Form 4 increments(+) or decrements(-) the target's scheduled time
 by N THINGS relative to either itself (+/-) or the current
 time (++/--).  THING is one of y (years), m (months), d (days),
-h (hours), or M (minutes), and N is an integer."
+h (hours), or M (minutes), and N is an integer.
+
+Form 4 may also include a \"landing\" specification.  This is
+either (a) a day of the week (\"Sun\", \"friday\", etc.), (b)
+\"weekday\" or \"wkdy\", or (c) \"weekend\" or \"wknd\".
+
+If (a), then the target date will be adjusted forward (+) or
+backward (-) to find the closest target day of the week.
+Form (b) will adjust the target time to find a weekday, and (c)
+does the same, but for weekends.
+
+Form 5 handles \"float\" time, named for `diary-float'.  This
+form will set the target's scheduled time to the date of the Nth
+DAYNAME after/before MONTH DAY.  MONTH may be a month string or
+an integer.  Use 0 or leave blank for the following or previous
+month.  DAY is an optional integer.  If not given, it will be
+1 (for forward) or the last day of MONTH (backward)."
   (org-edna--handle-planning 'scheduled last-entry args))
 
 (defun org-edna-action/deadline! (last-entry &rest args)
   "Action to set the deadline time of a target heading based on ARGS.
 
-Edna Syntax: deadline!(\"DATE[ TIME]\")       [1]
-Edna Syntax: deadline!(rm|remove)             [2]
-Edna Syntax: deadline!(cp|copy)               [3]
-Edna Syntax: deadline!(\"[+|-|++|--]NTHING\") [4]
+Edna Syntax: deadline!(\"DATE[ TIME]\")                                [1]
+Edna Syntax: deadline!(rm|remove)                                      [2]
+Edna Syntax: deadline!(cp|copy)                                        [3]
+Edna Syntax: deadline!(\"[+|-|++|--]NTHING[ [+|-]LANDING]\")           [4]
+Edna Syntax: deadline!(\"float [+|-|++|--]?N DAYNAME [ DAY[ MONTH]]\") [5]
 
 In form 1, set the deadline the target for the given date and
 time.  If DATE is a weekday instead of a date, set the deadline
@@ -805,7 +1083,23 @@ heading) to the target.
 Form 4 increments(+) or decrements(-) the target's deadline time
 by N THINGS relative to either itself (+/-) or the current
 time (++/--).  THING is one of y (years), m (months), d (days),
-h (hours), or M (minutes), and N is an integer."
+h (hours), or M (minutes), and N is an integer.
+
+Form 4 may also include a \"landing\" specification.  This is
+either (a) a day of the week (\"Sun\", \"friday\", etc.), (b)
+\"weekday\" or \"wkdy\", or (c) \"weekend\" or \"wknd\".
+
+If (a), then the target date will be adjusted forward (+) or
+backward (-) to find the closest target day of the week.
+Form (b) will adjust the target time to find a weekday, and (c)
+does the same, but for weekends.
+
+Form 5 handles \"float\" time, named for `diary-float'.  This
+form will set the target's scheduled time to the date of the Nth
+DAYNAME after/before MONTH DAY.  MONTH may be a month string or
+an integer.  Use 0 or leave blank for the following or previous
+month.  DAY is an optional integer.  If not given, it will be
+1 (for forward) or the last day of MONTH (backward)."
   (org-edna--handle-planning 'deadline last-entry args))
 
 (defun org-edna-action/tag! (_last-entry tags)

@@ -352,7 +352,6 @@
       (should (not (org-entry-get nil "SCHEDULED"))))))
 
 (ert-deftest org-edna-action-scheduled/cp ()
-  ;; Override `current-time' so we can get a deterministic value
   (let* ((org-agenda-files `(,org-edna-test-file))
          (target (org-id-find "0d491588-7da3-43c5-b51a-87fbd34f79f7" t))
          (source (org-id-find "97e6b0f0-40c4-464f-b760-6e5ca9744eb5" t))
@@ -372,20 +371,113 @@
              (org-agenda-files `(,org-edna-test-file))
              (target (org-id-find "97e6b0f0-40c4-464f-b760-6e5ca9744eb5" t)))
     (org-with-point-at target
-      ;; Time started at Jan 15, 2000
+      ;; Time starts at Jan 15, 2000
+      (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-15 Sat 00:00>"))
       ;; Increment 1 minute
       (org-edna-action/scheduled! nil "+1M")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:01>"))
+      ;; Decrement 1 minute
       (org-edna-action/scheduled! nil "-1M")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:00>"))
+      ;; +1 day
       (org-edna-action/scheduled! nil "+1d")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-16 Sun 00:00>"))
+      ;; +1 hour from current time
       (org-edna-action/scheduled! nil "++1h")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 01:00>"))
+      ;; Back to Saturday
+      (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-15 Sat 00:00>"))
+      ;; -1 day to Friday
+      (org-edna-action/scheduled! nil "-1d")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-14 Fri 00:00>"))
+      ;; Increment two days to the next weekday
+      (org-edna-action/scheduled! nil "+2wkdy")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-17 Mon 00:00>"))
+      ;; Increment one day, expected to land on a weekday
+      (org-edna-action/scheduled! nil "+1wkdy")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-18 Tue 00:00>"))
+      ;; Move forward 8 days, then backward until we find a weekend
+      (org-edna-action/scheduled! nil "+8d -wknd")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-23 Sun 00:00>"))
+      ;; Move forward one week, then forward until we find a weekday
+      ;; (org-edna-action/scheduled! nil "+1w +wkdy")
+      ;; (should (string-equal (org-entry-get nil "SCHEDULED")
+      ;;                       "<2000-01-31 Mon 00:00>"))
+      ;; Back to Saturday for other tests
+      (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-15 Sat 00:00>")))))
+
+(ert-deftest org-edna-action-scheduled/landing ()
+  "Test landing arguments to scheduled increment."
+  ;; Override `current-time' so we can get a deterministic value
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-id-find "97e6b0f0-40c4-464f-b760-6e5ca9744eb5" t)))
+    (org-with-point-at target
+      ;; Time starts at Jan 15, 2000
+      (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-15 Sat 00:00>"))
+      ;; Move forward 10 days, then backward until we find a weekend
+      (org-edna-action/scheduled! nil "+10d -wknd")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-23 Sun 00:00>"))
+      ;; Move forward one week, then forward until we find a weekday
+      (org-edna-action/scheduled! nil "+1w +wkdy")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-31 Mon 00:00>"))
+      ;; Back to Saturday for other tests
+      (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-15 Sat 00:00>")))))
+
+(ert-deftest org-edna-action-scheduled/float ()
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-id-find "97e6b0f0-40c4-464f-b760-6e5ca9744eb5" t)))
+    (org-with-point-at target
+      ;; Time starts at Jan 15, 2000
+      (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-01-15 Sat 00:00>"))
+      ;; The third Tuesday of next month (Feb 15th)
+      (org-edna-action/scheduled! nil "float 3 Tue")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-02-15 Tue 00:00>"))
+      ;; The second Friday of the following May (May 12th)
+      (org-edna-action/scheduled! nil "float 2 5 May")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-05-12 Fri 00:00>"))
+      ;; Move forward to the second Wednesday of the next month (June 14th)
+      (org-edna-action/scheduled! nil "float 2 Wednesday")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-06-14 Wed 00:00>"))
+      ;; Move forward to the first Thursday in the following Jan (Jan 4th, 2001)
+      (org-edna-action/scheduled! nil "float 1 4 Jan")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2001-01-04 Thu 00:00>"))
+      ;; The fourth Monday in Feb, 2000 (Feb 28th)
+      (org-edna-action/scheduled! nil "float ++4 monday")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-02-28 Mon 00:00>"))
+      ;; The second Monday after Mar 12th, 2000 (Mar 20th)
+      (org-edna-action/scheduled! nil "float 2 monday Mar 12")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2000-03-20 Mon 00:00>"))
+      ;; Back to Saturday for other tests
       (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:00>")))))

@@ -73,9 +73,9 @@ Actions
 
 Advanced Features
 
-* Conditions::
-* Consideration::
-* Setting the properties::
+* Conditions::                   More than just DONE headings
+* Consideration::                Only some of them
+* Setting the properties::       The easy way to set BLOCKER and TRIGGER
 
 Conditions
 
@@ -705,22 +705,68 @@ following, PLANNING is either scheduled or deadline.
      Copy PLANNING info verbatim from the source heading to all targets.
      The argument to this form may be either a string or a symbol.
 
-   • PLANNING!(“[+|-|++|–]NTHING”)
+   • PLANNING!(“[+|-|++|–]NTHING[ [+|-]LANDING]”)
 
      Increment(+) or decrement(-) target’s PLANNING by N THINGs relative
      to either itself (+/-) or the current time (++/–).
 
      N is an integer
 
-     THING is one of y (years), m (months), d (days), h (hours), or M
-     (minutes)
+     THING is one of y (years), m (months), d (days), h (hours), M
+     (minutes), a (case-insensitive) day of the week or its
+     abbreviation, or the strings “weekday” or “wkdy”.
+
+     If a day of the week is given as THING, move forward or backward N
+     weeks to find that day of the week.
+
+     If one of “weekday” or “wkdy” is given as THING, move forward or
+     backward N days, moving forward or backward to the next weekday.
+
+     This form may also include a “landing” specifier to control where
+     in the week the final date lands.  LANDING may be one of the
+     following:
+
+        • A day of the week, which means adjust the final date forward
+          (+) or backward (-) to land on that day of the week.
+
+        • One of “weekday” or “wkdy”, which means adjust the target date
+          to the closest weekday.
+
+        • One of “weekend” or “wknd”, which means adjust the target date
+          to the closest weekend.
+
+   • PLANNING!(“float [+|-|++|–]N DAYNAME[ MONTH[ DAY]]”)
+
+     Set time to the date of the Nth DAYNAME before/after MONTH DAY, as
+     per ‘diary-float’.
+
+     N is an integer.
+
+     DAYNAME may be either an integer, where 0=Sunday, 1=Monday, etc.,
+     or a string for that day.
+
+     MONTH may be an integer, 1-12, or a month’s string.  If MONTH is
+     empty, the following (+) or previous (-) month relative to the
+     target’s time (+/-) or the current time (++/–).
+
+     DAY is an integer, or empty or 0 to use the first of the month (+)
+     or the last of the month (-).
 
    Examples:
 
-   scheduled!(“Mon 09:00”) -> Set SCHEDULED to the following Monday at
-9:00 deadline!(“++1h”) -> Set DEADLINE to one hour from now.
-deadline!(copy) deadline!(“+1h”) -> Copy the source deadline to the
-target, then increment it by an hour.
+   • scheduled!(“Mon 09:00”) -> Set SCHEDULED to the following Monday at
+     9:00
+   • deadline!(“++2h”) -> Set DEADLINE to two hours from now.
+   • deadline!(copy) deadline!(“+1h”) -> Copy the source deadline to the
+     target, then increment it by an hour.
+   • scheduled!(“+1wkdy”) -> Set SCHEDULED to the next weekday
+   • scheduled!(“+1d +wkdy”) -> Same as above
+   • deadline!(“+1m -wkdy”) -> Set SCHEDULED up one month, but move
+     backward to find a weekend
+   • scheduled!(“float 2 Tue Feb”) -> Set SCHEDULED to the second
+     Tuesday in the following February
+   • scheduled!(“float 3 Thu”) -> Set SCHEDULED to the third Thursday in
+     the following month
 
 
 File: org-edna.info,  Node: TODO State,  Next: Archive,  Prev: Scheduled/Deadline,  Up: Actions
@@ -851,9 +897,9 @@ Advanced Features
 
 * Menu:
 
-* Conditions::
-* Consideration::
-* Setting the properties::
+* Conditions::                   More than just DONE headings
+* Consideration::                Only some of them
+* Setting the properties::       The easy way to set BLOCKER and TRIGGER
 
 
 File: org-edna.info,  Node: Conditions,  Next: Consideration,  Up: Advanced Features
@@ -975,7 +1021,7 @@ File: org-edna.info,  Node: Consideration,  Next: Setting the properties,  Prev:
 Consideration
 =============
 
-Special keyword that’s only valid for blockers.
+“Consideration” is a special keyword that’s only valid for blockers.
 
    This keyword can allow specifying only a portion of tasks to
 consider:
@@ -1206,62 +1252,62 @@ We can then merge that into the main development branch.
 
 Tag Table:
 Node: Top225
-Node: Copying3142
-Node: Introduction3959
-Node: Installation and Setup4907
-Node: Basic Operation5700
-Node: Blockers7551
-Node: Triggers7837
-Node: Syntax8099
-Node: Basic Features8789
-Node: Finders9092
-Node: ancestors10595
-Node: chain-find11179
-Node: children12517
-Node: descendants12916
-Node: file13426
-Node: first-child14175
-Node: ids14423
-Node: match15084
-Node: next-sibling15722
-Node: next-sibling-wrap15967
-Node: olp16269
-Node: org-file16681
-Node: parent17326
-Node: previous-sibling17512
-Node: rest-of-siblings17756
-Node: self18019
-Node: siblings18175
-Node: siblings-wrap18433
-Node: Actions18666
-Node: Scheduled/Deadline19408
-Node: TODO State20998
-Node: Archive21366
-Node: Chain Property21686
-Node: Clocking21969
-Node: Property22381
-Node: Priority22703
-Node: Tag23272
-Node: Effort23489
-Node: Advanced Features23878
-Node: Conditions24090
-Node: done24705
-Node: headings24869
-Node: todo-state25245
-Node: variable-set25501
-Node: has-property25930
-Node: re-search26199
-Node: Negating Conditions26559
-Node: Consideration26946
-Node: Setting the properties28153
-Node: Extending Edna29233
-Node: Naming Conventions29723
-Node: Finders (1)30186
-Node: Actions (1)30552
-Node: Conditions (1)31017
-Node: Contributing31907
-Node: Bugs32379
-Node: Development32731
+Node: Copying3268
+Node: Introduction4085
+Node: Installation and Setup5033
+Node: Basic Operation5826
+Node: Blockers7677
+Node: Triggers7963
+Node: Syntax8225
+Node: Basic Features8915
+Node: Finders9218
+Node: ancestors10721
+Node: chain-find11305
+Node: children12643
+Node: descendants13042
+Node: file13552
+Node: first-child14301
+Node: ids14549
+Node: match15210
+Node: next-sibling15848
+Node: next-sibling-wrap16093
+Node: olp16395
+Node: org-file16807
+Node: parent17452
+Node: previous-sibling17638
+Node: rest-of-siblings17882
+Node: self18145
+Node: siblings18301
+Node: siblings-wrap18559
+Node: Actions18792
+Node: Scheduled/Deadline19534
+Node: TODO State23109
+Node: Archive23477
+Node: Chain Property23797
+Node: Clocking24080
+Node: Property24492
+Node: Priority24814
+Node: Tag25383
+Node: Effort25600
+Node: Advanced Features25989
+Node: Conditions26327
+Node: done26942
+Node: headings27106
+Node: todo-state27482
+Node: variable-set27738
+Node: has-property28167
+Node: re-search28436
+Node: Negating Conditions28796
+Node: Consideration29183
+Node: Setting the properties30415
+Node: Extending Edna31495
+Node: Naming Conventions31985
+Node: Finders (1)32448
+Node: Actions (1)32814
+Node: Conditions (1)33279
+Node: Contributing34169
+Node: Bugs34641
+Node: Development34993
 
 End Tag Table
 
