@@ -339,152 +339,452 @@ Note that in the edna syntax, the IDs don't need to be quoted."
 Edna Syntax: self"
   (list (point-marker)))
 
-(defun org-edna-finder/siblings ()
-  "Finder for all siblings of the source heading.
-
-Edna Syntax: siblings
-
-Siblings are returned in order, starting from the first heading,
-and ignoring the source heading."
+(defun org-edna-first-sibling ()
+  "Return a marker to the first child of the current level."
   (org-with-wide-buffer
-   (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
-         (markers))
-     (org-up-heading-safe)
-     (org-goto-first-child)
-     (unless (equal (point) self)
-       (push (point-marker) markers))
-     (while (org-get-next-sibling)
-       (unless (equal (point) self)
-         (push (point-marker) markers)))
-     (nreverse markers))))
+   (org-up-heading-safe)
+   (org-goto-first-child)
+   (point-marker)))
 
-(defun org-edna-finder/siblings-wrap ()
-  "Finder for all siblings of the source heading.
-
-Edna Syntax: siblings-wrap
-
-Siblings are returned in order, starting from the first heading
-after the source heading and wrapping when it reaches the end."
+(defun org-edna-last-sibling ()
+  "Return a marker to the first child of the current level."
+  ;; Unfortunately, we have to iterate through every heading on this level to
+  ;; find the first one.
   (org-with-wide-buffer
-   (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
-         (markers))
-     ;; Go from this heading to the end
-     (save-excursion
-       (while (org-get-next-sibling)
-         (unless (equal (point) self)
-           (push (point-marker) markers))))
-     ;; Go to the first heading
-     (org-up-heading-safe)
-     (org-goto-first-child)
-     (save-excursion
-       (while (not (equal (point) self))
-         (push (point-marker) markers)
-         (org-get-next-sibling)))
-     (nreverse markers))))
+   (while (org-goto-sibling)
+     ;; Do nothing, just keep going down
+     )
+   (point-marker)))
 
-(defun org-edna-finder/rest-of-siblings ()
-  "Finder for the siblings after the source heading.
+(defun org-edna-goto-sibling (&optional previous wrap)
+  "Move to the next sibling on the same level as the current heading."
+  (let ((next (save-excursion
+                (if previous (org-get-last-sibling) (org-get-next-sibling)))))
+    (cond
+     ;; We have a sibling, so go to it and return non-nil
+     (next (goto-char next))
+     ;; We have no sibling, and we're not wrapping, so return nil
+     ((not wrap) nil)
+     (t
+      ;; Go to the first child if going forward, or the last if going backward,
+      ;; and return non-nil.
+      (goto-char
+       (if previous
+           (org-edna-last-sibling)
+         (org-edna-first-sibling)))
+      t))))
 
-Edna Syntax: rest-of-siblings
-
-Siblings are returned in order, starting from the first heading
-after the source heading."
+(defun org-edna-self-marker ()
+  "Return a marker to the current heading."
   (org-with-wide-buffer
-   (let ((self (and (ignore-errors (org-back-to-heading t)) (point)))
-         (markers))
-     ;; Go from this heading to the end
-     (while (org-get-next-sibling)
-       (unless (equal (point) self)
-         (push (point-marker) markers)))
-     (nreverse markers))))
+   (and (ignore-errors (org-back-to-heading t) (point-marker)))))
 
-(defun org-edna-finder/next-sibling ()
-  "Finder for the next sibling after the source heading.
+(defun org-edna-collect-current-level (start backward wrap include-point)
+  "Collect the headings on the current level.
 
-Edna Syntax: next-sibling
+START is a point or marker from which to start collection.
 
-If the source heading is the last of its siblings, no target is
-returned."
-  (org-with-wide-buffer
-   (and (org-get-next-sibling)
-        (list (point-marker)))))
+BACKWARDS means go backward through the level instead of forward.
 
-(defun org-edna-finder/next-sibling-wrap ()
-  "Finder for the next sibling after the source heading.
+If WRAP is non-nil, wrap around when the end of the current level
+is reached.
 
-Edna Syntax: next-sibling-wrap
-
-If the source heading is the last of its siblings, its first
-sibling is returned."
-  (org-with-wide-buffer
-   (if (org-goto-sibling)
-       (list (point-marker))
-     (org-up-heading-safe)
-     (org-goto-first-child)
-     (list (point-marker)))))
-
-(defun org-edna-finder/previous-sibling ()
-  "Finder for the first sibling before the source heading.
-
-Edna Syntax: previous-sibling
-
-If the source heading is the first of its siblings, no target is
-returned."
-  (org-with-wide-buffer
-   (and (org-get-last-sibling)
-        (list (point-marker)))))
-
-(defun org-edna-finder/first-child ()
-  "Return the first child of the source heading.
-
-Edna Syntax: first-child
-
-If the source heading has no children, no target is returned."
-  (org-with-wide-buffer
-   (and (org-goto-first-child)
-        (list (point-marker)))))
-
-(defun org-edna-finder/children ()
-  "Finder for the immediate children of the source heading.
-
-Edna Syntax: children
-
-If the source has no children, no target is returned."
+If INCLUDE-START is non-nil, include the current point."
   (org-with-wide-buffer
    (let ((markers))
-     (org-goto-first-child)
-     (push (point-marker) markers)
-     (while (org-get-next-sibling)
+     (goto-char start)
+     ;; Handle including point
+     (when include-point
+       (push (point-marker) markers))
+     (while (and (org-edna-goto-sibling backward wrap)
+                 (not (equal (point-marker) start)))
        (push (point-marker) markers))
      (nreverse markers))))
 
-(defun org-edna-finder/parent ()
+(defun org-edna-collect-ancestors (&optional with-self)
+  (let ((markers))
+    (when with-self
+      (push (point-marker) markers))
+    (org-with-wide-buffer
+     (while (org-up-heading-safe)
+       (push (point-marker) markers)))
+    (nreverse markers)))
+
+(defun org-edna-collect-descendants (&optional with-self)
+  (let ((targets
+         (org-with-wide-buffer
+          (org-map-entries
+           (lambda nil (point-marker))
+           nil 'tree))))
+    ;; Remove the first one (self) if we didn't want self
+    (unless with-self
+      (pop targets))
+    targets))
+
+(defun org-edna-entry-has-tags-p (&rest tags)
+  "Returns non-nil if the current entry has any tags in TAGS."
+  (when-let* ((entry-tags (org-get-tags-at)))
+    (seq-intersection tags entry-tags)))
+
+(defun org-edna-finder/relatives (&rest options)
+  "Find some relative of the current heading.
+
+Edna Syntax: relatives(OPTION OPTION...)
+Edna Syntax: chain-find(OPTION OPTION...)
+
+Identical to the chain argument in org-depend, relatives selects
+its single target using the following method:
+
+1. Creates a list of possible targets
+2. Filters the targets from Step 1
+3. Sorts the targets from Step 2
+
+One option from each of the following three categories may be
+used; if more than one is specified, the last will be used.
+Filtering is the exception to this; each filter argument adds to
+the current filter.  Apart from that, argument order is
+irrelevant.
+
+The chain-find finder is also provided for backwards
+compatibility, and for similarity to org-depend.
+
+All arguments are symbols, unless noted otherwise.
+
+*Selection*
+
+- from-top:             Select siblings of the current heading, starting at the top
+- from-bottom:          As above, but from the bottom
+- from-current:         Selects siblings, starting from the heading (wraps)
+- no-wrap:              As above, but without wrapping
+- forward-no-wrap:      Find entries on the same level, going forward
+- forward-wrap:         As above, but wrap when the end is reached
+- backward-no-wrap:     Find entries on the same level, going backward
+- backward-wrap:        As above, but wrap when the start is reached
+- walk-up:              Walk up the tree, excluding self
+- walk-up-with-self:    As above, but including self
+- walk-down:            Recursively walk down the tree, excluding self
+- walk-down-with-self:  As above, but including self
+- step-down:            Collect headings from one level down
+
+*Filtering*
+
+- todo-only:          Select only targets with TODO state set that isn't a DONE state
+- todo-and-done-only: Select all targets with a TODO state set
+- no-comments:        Skip commented headings
+- no-archive:         Skip archived headings
+- NUMBER:             Only use that many headings, starting from the first one
+                      If passed 0, use all headings
+                      If <0, omit that many headings from the end
+- \"+tag\":           Only select headings with given tag
+- \"-tag\":           Only select headings without tag
+- \"REGEX\":          select headings whose titles match REGEX
+
+*Sorting*
+
+- no-sort:         Remove other sorting in affect
+- reverse-sort:    Reverse other sorts (stacks with other sort methods)
+- random-sort:     Sort in a random order
+- priority-up:     Sort by priority, highest first
+- priority-down:   Same, but lowest first
+- effort-up:       Sort by effort, highest first
+- effort-down:     Sort by effort, lowest first
+- scheduled-up:    Scheduled time, farthest first
+- scheduled-down:  Scheduled time, closest first
+- deadline-up:     Deadline time, farthest first
+- deadline-down:   Deadline time, closest first
+"
+  (let (targets
+        sortfun
+        reverse-sort
+        (idx 0) ;; By default, use all entries
+        filterfuns ;; No filtering by default
+        ;; From org-depend.el:
+        ;; (and (not todo-and-done-only)
+        ;;      (member (second item) org-done-keywords))
+        )
+    (dolist (opt options)
+      (pcase opt
+        ('from-top
+         (setq targets (org-edna-collect-current-level (org-edna-first-sibling) nil nil t)))
+        ('from-bottom
+         (setq targets (org-edna-collect-current-level (org-edna-last-sibling) t nil t)))
+        ((or 'from-current 'forward-wrap)
+         (setq targets (org-edna-collect-current-level (org-edna-self-marker) nil t nil)))
+        ((or 'no-wrap 'forward-no-wrap)
+         (setq targets (org-edna-collect-current-level (org-edna-self-marker) nil nil nil)))
+        ('backward-no-wrap
+         (setq targets (org-edna-collect-current-level (org-edna-self-marker) t nil nil)))
+        ('backward-wrap
+         (setq targets (org-edna-collect-current-level (org-edna-self-marker) t t nil)))
+        ('walk-up
+         (setq targets (org-edna-collect-ancestors nil)))
+        ('walk-up-with-self
+         (setq targets (org-edna-collect-ancestors t)))
+        ('walk-down
+         (setq targets (org-edna-collect-descendants nil)))
+        ('walk-down-with-self
+         (setq targets (org-edna-collect-descendants t)))
+        ('step-down
+         (setq targets
+               (org-with-wide-buffer
+                (org-goto-first-child)
+                (org-edna-collect-current-level (org-edna-self-marker) nil nil t))))
+        ('todo-only
+         ;; Remove any entry without a TODO keyword, or with a DONE keyword
+         (cl-pushnew
+          (lambda (target)
+            (let ((kwd (org-entry-get target "TODO")))
+              (or (not kwd)
+                  (member kwd org-done-keywords))))
+          filterfuns
+          :test 'equal))
+        ('todo-and-done-only
+         ;; Remove any entry without a TODO keyword
+         (cl-pushnew
+          (lambda (target)
+            (not (org-entry-get target "TODO")))
+          filterfuns :test 'equal))
+        ((pred numberp)
+         (setq idx opt))
+        ((and (pred stringp)
+              (pred (lambda (opt) (string-match-p "^\\+" opt))))
+         (cl-pushnew
+          (lambda (target)
+            ;; This is a function that will return non-nil if the entry should
+            ;; be removed, so remove those entries that don't have the tag
+            (org-with-point-at target
+              (not (org-edna-entry-has-tags-p (string-remove-prefix "+" opt)))))
+          filterfuns :test 'equal))
+        ((and (pred stringp)
+              (pred (lambda (opt) (string-match-p "^\\-" opt))))
+         (cl-pushnew
+          (lambda (target)
+            ;; This is a function that will return non-nil if the entry should
+            ;; be removed, so remove those entries that DO have the tag
+            (org-with-point-at target
+              (org-edna-entry-has-tags-p (string-remove-prefix "-" opt))))
+          filterfuns :test 'equal))
+        ((pred stringp)
+         (cl-pushnew
+          (lambda (target)
+            ;; Return non-nil if entry doesn't match the regular expression, so
+            ;; it will be removed.
+            (not (string-match-p opt
+                               (org-with-point-at target
+                                 (org-get-heading t t t t)))))
+          filterfuns :test 'equal))
+        ('no-comment
+         (cl-pushnew
+          (lambda (target)
+            (org-with-point-at target
+              (org-in-commented-heading-p)))
+          filterfuns :test 'equal))
+        ('no-archive
+         (cl-pushnew
+          (lambda (target)
+            (org-with-point-at target
+              (org-edna-entry-has-tags-p org-archive-tag)))
+          filterfuns :test 'equal))
+        ('no-sort
+         (setq sortfun nil
+               reverse-sort nil))
+        ('random-sort
+         (setq sortfun
+               (lambda (_rhs _lhs)
+                 (let ((l (random 100))
+                       (r (random 100)))
+                   (< l r)))))
+        ('reverse-sort
+         (setq reverse-sort t))
+        ('priority-up
+         ;; A is highest priority, but assigned the lowest value, so we need to
+         ;; reverse the sort here.
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((priority-lhs (org-entry-get lhs "PRIORITY"))
+                       (priority-rhs (org-entry-get rhs "PRIORITY")))
+                   (string-lessp priority-lhs priority-rhs)))))
+        ('priority-down
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((priority-lhs (org-entry-get lhs "PRIORITY"))
+                       (priority-rhs (org-entry-get rhs "PRIORITY")))
+                   (not (string-lessp priority-lhs priority-rhs))))))
+        ('effort-up
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((effort-lhs (org-duration-to-minutes (org-entry-get lhs "EFFORT")))
+                       (effort-rhs (org-duration-to-minutes (org-entry-get rhs "EFFORT"))))
+                   (not (< effort-lhs effort-rhs))))))
+        ('effort-down
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((effort-lhs (org-duration-to-minutes (org-entry-get lhs "EFFORT")))
+                       (effort-rhs (org-duration-to-minutes (org-entry-get rhs "EFFORT"))))
+                   (< effort-lhs effort-rhs)))))
+        ('scheduled-up
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((time-lhs (org-get-scheduled-time lhs))
+                       (time-rhs (org-get-scheduled-time rhs)))
+                   (not (time-less-p time-lhs time-rhs))))))
+        ('scheduled-down
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((time-lhs (org-get-scheduled-time lhs))
+                       (time-rhs (org-get-scheduled-time rhs)))
+                   (time-less-p time-lhs time-rhs)))))
+        ('deadline-up
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((time-lhs (org-get-deadline-time lhs))
+                       (time-rhs (org-get-deadline-time rhs)))
+                   (not (time-less-p time-lhs time-rhs))))))
+        ('deadline-down
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((time-lhs (org-get-deadline-time lhs))
+                       (time-rhs (org-get-deadline-time rhs)))
+                   (time-less-p time-lhs time-rhs)))))))
+    (setq filterfuns (nreverse filterfuns))
+    (when (and targets sortfun)
+      (setq targets (seq-sort sortfun targets)))
+    (dolist (filterfun filterfuns)
+      (setq targets (seq-remove filterfun targets)))
+    (when reverse-sort
+      (setq targets (nreverse targets)))
+    (when (and targets (/= idx 0))
+      (if (> idx (seq-length targets))
+          (message "Edna relatives finder got index %s out of bounds of target size; ignoring" idx)
+        (setq targets (seq-subseq targets 0 idx))))
+    targets))
+
+(defalias 'org-edna-finder/chain-find 'org-edna-finder/relatives)
+
+(defun org-edna-finder/siblings (&rest options)
+  "Finder for all siblings of the source heading.
+
+Edna Syntax: siblings(OPTIONS...)
+
+Siblings are returned in order, starting from the first heading.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 'from-top options))
+
+(defun org-edna-finder/rest-of-siblings (&rest options)
+  "Finder for the siblings after the source heading.
+
+Edna Syntax: rest-of-siblings(OPTIONS...)
+
+Siblings are returned in order, starting from the first heading
+after the source heading.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 'forward-no-wrap options))
+
+(defun org-edna-finder/rest-of-siblings-wrap (&rest options)
+  "Finder for all siblings of the source heading.
+
+Edna Syntax: rest-of-siblings-wrap(OPTIONS...)
+
+Siblings are returned in order, starting from the first heading
+after the source heading and wrapping when it reaches the end.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 'forward-wrap options))
+
+(defalias 'org-edna-finder/siblings-wrap 'org-edna-finder/rest-of-siblings-wrap)
+
+(defun org-edna-finder/next-sibling (&rest options)
+  "Finder for the next sibling after the source heading.
+
+Edna Syntax: next-sibling(OPTIONS...)
+
+If the source heading is the last of its siblings, no target is
+returned.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 1 'forward-no-wrap options))
+
+(defun org-edna-finder/next-sibling-wrap (&rest options)
+  "Finder for the next sibling after the source heading.
+
+Edna Syntax: next-sibling-wrap(OPTIONS...)
+
+If the source heading is the last of its siblings, its first
+sibling is returned.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 1 'forward-wrap options))
+
+(defun org-edna-finder/previous-sibling (&rest options)
+  "Finder for the first sibling before the source heading.
+
+Edna Syntax: previous-sibling(OPTIONS...)
+
+If the source heading is the first of its siblings, no target is
+returned.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 1 'backward-no-wrap options))
+
+(defun org-edna-finder/previous-sibling-wrap (&rest options)
+  "Finder for the first sibling before the source heading.
+
+Edna Syntax: previous-sibling-wrap(OPTIONS...)
+
+If the source heading is the first of its siblings, no target is
+returned.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 1 'backward-wrap options))
+
+(defun org-edna-finder/first-child (&rest options)
+  "Return the first child of the source heading.
+
+Edna Syntax: first-child(OPTIONS...)
+
+If the source heading has no children, no target is returned.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 1 'step-down options))
+
+(defun org-edna-finder/children (&rest options)
+  "Finder for the immediate children of the source heading.
+
+Edna Syntax: children(OPTIONS...)
+
+If the source has no children, no target is returned.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 'step-down options))
+
+(defun org-edna-finder/parent (&rest options)
   "Finder for the parent of the source heading.
 
-Edna Syntax: parent
+Edna Syntax: parent(OPTIONS...)
 
 If the source heading is a top-level heading, no target is
-returned."
-  (org-with-wide-buffer
-   (and (org-up-heading-safe)
-        (list (point-marker)))))
+returned.
 
-(defun org-edna-finder/descendants ()
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 1 'walk-up options))
+
+(defun org-edna-finder/descendants (&rest options)
   "Finder for all descendants of the source heading.
 
-Edna Syntax: descendants
+Edna Syntax: descendants(OPTIONS...)
 
 This is ALL descendants of the source heading, across all
-levels.  This also includes the source heading."
-  (org-with-wide-buffer
-   (org-map-entries
-    (lambda nil (point-marker))
-    nil 'tree)))
+levels.  This also includes the source heading.
 
-(defun org-edna-finder/ancestors ()
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 'walk-down options))
+
+(defun org-edna-finder/ancestors (&rest options)
   "Finder for the ancestors of the source heading.
 
-Edna Syntax: ancestors
+Edna Syntax: ancestors(OPTIONS...)
 
 Example:
 
@@ -499,12 +799,10 @@ Example:
 
 In the above example, Heading 5 will be blocked until Heading 1,
 Heading 3, and Heading 4 are marked DONE, while Heading 2 is
-ignored."
-  (org-with-wide-buffer
-   (let ((markers))
-     (while (org-up-heading-safe)
-       (push (point-marker) markers))
-     (nreverse markers))))
+ignored.
+
+See `org-edna-finder/relatives' for the OPTIONS argument."
+  (apply 'org-edna-finder/relatives 'walk-up options))
 
 (defun org-edna-finder/olp (file olp)
   "Finder for heading by its outline path.
@@ -576,108 +874,6 @@ which ones will and won't work."
   (with-current-buffer (find-file-noselect (expand-file-name file org-directory))
     (list (point-min-marker))))
 
-(defun org-edna-finder/chain-find (&rest options)
-  "Find a target as org-depend does.
-
-Edna Syntax: chain-find(OPTION OPTION...)
-
-Identical to the chain argument in org-depend, chain-find selects its single
-target using the following method:
-
-1. Creates a list of possible targets
-2. Filters the targets from Step 1
-3. Sorts the targets from Step 2
-
-After this is finished, chain-find selects the first target in
-the list and returns it.
-
-One option from each of the following three categories may be
-used; if more than one is specified, the last will be used.
-Apart from that, argument order is irrelevant.
-
-All arguments are symbols.
-
-*Selection*
-
-- from-top:     Select siblings of the current heading, starting at the top
-- from-bottom:  As above, but from the bottom
-- from-current: Selects siblings, starting from the heading (wraps)
-- no-wrap:      As above, but without wrapping
-
-*Filtering*
-
-- todo-only:          Select only targets with TODO state set that isn't a DONE state
-- todo-and-done-only: Select all targets with a TODO state set
-
-*Sorting*
-
-- priority-up:   Sort by priority, highest first
-- priority-down: Same, but lowest first
-- effort-up:     Sort by effort, highest first
-- effort-down:   Sort by effort, lowest first"
-  ;; sortfun - function to use to sort elements
-  ;; filterfun - Function to use to filter elements
-  ;; Both should handle positioning point
-  (let (targets
-        sortfun
-        ;; From org-depend.el:
-        ;; (and (not todo-and-done-only)
-        ;;      (member (second item) org-done-keywords))
-        (filterfun (lambda (target)
-                     (member (org-entry-get target "TODO") org-done-keywords))))
-    (dolist (opt options)
-      (pcase opt
-        ('from-top
-         (setq targets (org-edna-finder/siblings)))
-        ('from-bottom
-         (setq targets (seq-reverse (org-edna-finder/siblings))))
-        ('from-current
-         (setq targets (org-edna-finder/siblings-wrap)))
-        ('no-wrap
-         (setq targets (org-edna-finder/rest-of-siblings)))
-        ('todo-only
-         ;; Remove any entry without a TODO keyword, or with a DONE keyword
-         (setq filterfun
-               (lambda (target)
-                 (let ((kwd (org-entry-get target "TODO")))
-                   (or (not kwd)
-                       (member kwd org-done-keywords))))))
-        ('todo-and-done-only
-         ;; Remove any entry without a TODO keyword
-         (setq filterfun
-               (lambda (target)
-                 (not (org-entry-get target "TODO")))))
-        ('priority-up
-         (setq sortfun
-               (lambda (lhs rhs)
-                 (let ((priority-lhs (org-entry-get lhs "PRIORITY"))
-                       (priority-rhs (org-entry-get rhs "PRIORITY")))
-                   (not (string-lessp priority-lhs priority-rhs))))))
-        ('priority-down
-         (setq sortfun
-               (lambda (lhs rhs)
-                 (let ((priority-lhs (org-entry-get lhs "PRIORITY"))
-                       (priority-rhs (org-entry-get rhs "PRIORITY")))
-                   (string-lessp priority-lhs priority-rhs)))))
-        ('effort-up
-         (setq sortfun
-               (lambda (lhs rhs)
-                 (let ((effort-lhs (org-duration-to-minutes (org-entry-get lhs "EFFORT")))
-                       (effort-rhs (org-duration-to-minutes (org-entry-get rhs "EFFORT"))))
-                   (not (< effort-lhs effort-rhs))))))
-        ('effort-down
-         (setq sortfun
-               (lambda (lhs rhs)
-                 (let ((effort-lhs (org-duration-to-minutes (org-entry-get lhs "EFFORT")))
-                       (effort-rhs (org-duration-to-minutes (org-entry-get rhs "EFFORT"))))
-                   (< effort-lhs effort-rhs)))))))
-    (when (and targets sortfun)
-      (setq targets (seq-sort sortfun targets)))
-    (when (and targets filterfun)
-      (setq targets (seq-remove filterfun targets)))
-    (when targets
-      (list (seq-elt 0 targets)))))
-
 
 
 ;; Set TODO state
@@ -748,8 +944,7 @@ DEF-FLAG   is t when a double ++ or -- indicates shift relative to
 Examples:
 
 \"+1d +wkdy\" finds the number of days to move ahead in order to
-find a weekday.  This is the same as \"+1wkdy\", and returns
-\(N \"d\" nil).
+find a weekday.  This is the same as \"+1wkdy\", and returns (N \"d\" nil).
 
 \"+5d -wkdy\" means move forward 5 days, then backward until a
 weekday is found.  Returns (N \"d\" nil).
@@ -964,7 +1159,6 @@ forward) or the last day of MONTH (backward)."
                                                              act-month
                                                              act-year
                                                              act-day)))
-        (message "act day = %s" act-day)
         ;; Return the same arguments as `org-edna--read-date-get-relative' above.
         (list (- abs-days-then abs-days-now) "d" rel)))))
 
