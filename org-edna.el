@@ -1195,6 +1195,9 @@ forward) or the last day of MONTH (backward)."
       (pcase-let* ((`(,n ,what-string ,def) (org-edna--read-date-get-relative arg this-time current))
                    (ts (if def current-ts this-ts))
                    (what (cdr (assoc-string what-string type-map))))
+        ;; Ensure that the source timestamp exists
+        (unless ts
+          (error "Tried to increment a non-existent timestamp"))
         (org--deadline-or-schedule nil type (org-edna--mod-timestamp ts n what))))
      (t
       ;; For everything else, assume `org-read-date-analyze' can handle it
