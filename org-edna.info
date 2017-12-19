@@ -20,6 +20,7 @@ Org Edna
 * Advanced Features::
 * Extending Edna::               What else can it do?
 * Contributing::                 I wanna help!
+* Changelog::                    List of changes by version
 
 — The Detailed Node Listing —
 
@@ -77,7 +78,7 @@ Advanced Features
 
 * Conditions::                   More than just DONE headings
 * Consideration::                Only some of them
-* Setting the properties::       The easy way to set BLOCKER and TRIGGER
+* Setting the Properties::       The easy way to set BLOCKER and TRIGGER
 
 Conditions
 
@@ -101,6 +102,19 @@ Contributing
 
 * Bugs::
 * Development::
+* Documentation::                Improving the documentation
+
+Changelog
+
+* 1.0beta2: 10beta2.
+
+1.0beta2
+
+* Added interactive keyword editor with completion::
+* New uses of schedule! and deadline!::
+* New ``relatives'' finder::
+* New finders::
+
 
 
 
@@ -991,7 +1005,7 @@ Advanced Features
 
 * Conditions::                   More than just DONE headings
 * Consideration::                Only some of them
-* Setting the properties::       The easy way to set BLOCKER and TRIGGER
+* Setting the Properties::       The easy way to set BLOCKER and TRIGGER
 
 
 File: org-edna.info,  Node: Conditions,  Next: Consideration,  Up: Advanced Features
@@ -1108,7 +1122,7 @@ Any condition can be negated by using ’!’ before the condition.
 heading tagged “test” does *not* have the property PROP set to “1”.
 
 
-File: org-edna.info,  Node: Consideration,  Next: Setting the properties,  Prev: Conditions,  Up: Advanced Features
+File: org-edna.info,  Node: Consideration,  Next: Setting the Properties,  Prev: Conditions,  Up: Advanced Features
 
 Consideration
 =============
@@ -1147,9 +1161,9 @@ are complete.
    If no consideration is given, ALL is assumed.
 
 
-File: org-edna.info,  Node: Setting the properties,  Prev: Consideration,  Up: Advanced Features
+File: org-edna.info,  Node: Setting the Properties,  Prev: Consideration,  Up: Advanced Features
 
-Setting the properties
+Setting the Properties
 ======================
 
 There are two ways to set the BLOCKER and TRIGGER properties: by hand,
@@ -1274,7 +1288,7 @@ get our result.
 blocked.
 
 
-File: org-edna.info,  Node: Contributing,  Prev: Extending Edna,  Up: Top
+File: org-edna.info,  Node: Contributing,  Next: Changelog,  Prev: Extending Edna,  Up: Top
 
 Contributing
 ************
@@ -1294,6 +1308,7 @@ We are all happy for any help you may provide.
 
 * Bugs::
 * Development::
+* Documentation::                Improving the documentation
 
 
 File: org-edna.info,  Node: Bugs,  Next: Development,  Up: Contributing
@@ -1310,7 +1325,7 @@ There are two ways to submit bug reports:
 caused the bug, with as much context as possible.
 
 
-File: org-edna.info,  Node: Development,  Prev: Bugs,  Up: Contributing
+File: org-edna.info,  Node: Development,  Next: Documentation,  Prev: Bugs,  Up: Contributing
 
 Development
 ===========
@@ -1340,68 +1355,153 @@ We can then merge that into the main development branch.
    • Avoid additional or altered dependencies if at all possible
         • Exception: New versions of Org mode are allowed
 
+
+File: org-edna.info,  Node: Documentation,  Prev: Development,  Up: Contributing
+
+Documentation
+=============
+
+Documentation is always helpful to us.  Please be sure to do the
+following after making any changes:
+
+  1. Update the info page in the repository with ‘C-c C-e i i’
+  2. If you’re updating the HTML documentation, switch to a theme that
+     can easily be read on a white background; we recommend the
+     “adwaita” theme
+
+
+File: org-edna.info,  Node: Changelog,  Prev: Contributing,  Up: Top
+
+Changelog
+*********
+
+* Menu:
+
+* 1.0beta2: 10beta2.
+
+
+File: org-edna.info,  Node: 10beta2,  Up: Changelog
+
+1.0beta2
+========
+
+Big release here, with three new features.
+
+* Menu:
+
+* Added interactive keyword editor with completion::
+* New uses of schedule! and deadline!::
+* New ``relatives'' finder::
+* New finders::
+
+
+File: org-edna.info,  Node: Added interactive keyword editor with completion,  Next: New uses of schedule! and deadline!,  Up: 10beta2
+
+Added interactive keyword editor with completion
+------------------------------------------------
+
+See *note Setting the Properties:: for how to do that
+
+
+File: org-edna.info,  Node: New uses of schedule! and deadline!,  Next: New ``relatives'' finder,  Prev: Added interactive keyword editor with completion,  Up: 10beta2
+
+New uses of schedule! and deadline!
+-----------------------------------
+
+   • New “float” form that mimics diary-float
+   • New “landing” addition to “+1d” and friends to force planning
+     changes to land on a certain day or type of day (weekend/weekday)
+   • See *note Scheduled/Deadline:: for details
+
+
+File: org-edna.info,  Node: New ``relatives'' finder,  Next: New finders,  Prev: New uses of schedule! and deadline!,  Up: 10beta2
+
+New “relatives” finder
+----------------------
+
+   • Renamed from chain-find with tons of new keywords
+   • Modified all other relative finders (previous-sibling, first-child,
+     etc.)  to use the same keywords
+   • See *note relatives:: for details
+
+
+File: org-edna.info,  Node: New finders,  Prev: New ``relatives'' finder,  Up: 10beta2
+
+New finders
+-----------
+
+   • *note previous-sibling-wrap::
+   • *note rest-of-siblings-wrap::
+
 
 
 Tag Table:
 Node: Top225
-Node: Copying3409
-Node: Introduction4226
-Node: Installation and Setup5174
-Node: Basic Operation5967
-Node: Blockers7818
-Node: Triggers8104
-Node: Syntax8366
-Node: Basic Features9056
-Node: Finders9359
-Node: ancestors11124
-Node: children11718
-Node: descendants12128
-Node: file12650
-Node: first-child13399
-Node: ids13659
-Node: match14320
-Node: next-sibling14958
-Node: next-sibling-wrap15215
-Node: olp15529
-Node: org-file15941
-Node: parent16586
-Node: previous-sibling16784
-Node: previous-sibling-wrap17045
-Node: relatives17324
-Node: rest-of-siblings20945
-Node: rest-of-siblings-wrap21230
-Node: self21579
-Node: siblings21740
-Node: siblings-wrap21977
-Node: Actions22281
-Node: Scheduled/Deadline23023
-Node: TODO State26598
-Node: Archive26966
-Node: Chain Property27286
-Node: Clocking27569
-Node: Property27981
-Node: Priority28303
-Node: Tag28872
-Node: Effort29089
-Node: Advanced Features29478
-Node: Conditions29816
-Node: done30431
-Node: headings30595
-Node: todo-state30971
-Node: variable-set31227
-Node: has-property31656
-Node: re-search31925
-Node: Negating Conditions32285
-Node: Consideration32672
-Node: Setting the properties33904
-Node: Extending Edna34984
-Node: Naming Conventions35474
-Node: Finders (1)35937
-Node: Actions (1)36303
-Node: Conditions (1)36768
-Node: Contributing37658
-Node: Bugs38130
-Node: Development38482
+Node: Copying3713
+Node: Introduction4530
+Node: Installation and Setup5478
+Node: Basic Operation6271
+Node: Blockers8122
+Node: Triggers8408
+Node: Syntax8670
+Node: Basic Features9360
+Node: Finders9663
+Node: ancestors11428
+Node: children12022
+Node: descendants12432
+Node: file12954
+Node: first-child13703
+Node: ids13963
+Node: match14624
+Node: next-sibling15262
+Node: next-sibling-wrap15519
+Node: olp15833
+Node: org-file16245
+Node: parent16890
+Node: previous-sibling17088
+Node: previous-sibling-wrap17349
+Node: relatives17628
+Node: rest-of-siblings21249
+Node: rest-of-siblings-wrap21534
+Node: self21883
+Node: siblings22044
+Node: siblings-wrap22281
+Node: Actions22585
+Node: Scheduled/Deadline23327
+Node: TODO State26902
+Node: Archive27270
+Node: Chain Property27590
+Node: Clocking27873
+Node: Property28285
+Node: Priority28607
+Node: Tag29176
+Node: Effort29393
+Node: Advanced Features29782
+Node: Conditions30120
+Node: done30735
+Node: headings30899
+Node: todo-state31275
+Node: variable-set31531
+Node: has-property31960
+Node: re-search32229
+Node: Negating Conditions32589
+Node: Consideration32976
+Node: Setting the Properties34208
+Node: Extending Edna35288
+Node: Naming Conventions35778
+Node: Finders (1)36241
+Node: Actions (1)36607
+Node: Conditions (1)37072
+Node: Contributing37962
+Node: Bugs38513
+Node: Development38865
+Node: Documentation40018
+Node: Changelog40463
+Node: 10beta240587
+Node: Added interactive keyword editor with completion40853
+Node: New uses of schedule! and deadline!41145
+Node: New ``relatives'' finder41640
+Node: New finders42036
 
 End Tag Table
 
