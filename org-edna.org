@@ -1136,9 +1136,23 @@ There are a few rules to follow:
 - Run 'make check' to verify that your mods don't break anything
 - Avoid additional or altered dependencies if at all possible
   - Exception: New versions of Org mode are allowed
+
+** Documentation
+:PROPERTIES:
+:CUSTOM_ID: docs
+:DESCRIPTION: Improving the documentation
+:END:
+
+Documentation is always helpful to us.  Please be sure to do the following after
+making any changes:
+
+1. Update the info page in the repository with ~C-c C-e i i~
+2. If you're updating the HTML documentation, switch to a theme that can easily
+   be read on a white background; we recommend the "adwaita" theme
+
 * Changelog
 ** 1.0beta2
-Big release here
+Big release here, with three new features.
 
 *** Added interactive keyword editor with completion
 See [[#setting_keywords][Setting the Properties]] for how to do that
@@ -1150,3 +1164,5 @@ See [[#setting_keywords][Setting the Properties]] for how to do that
 *** New "relatives" finder
 - Renamed from chain-find with tons of new keywords
 - Modified all other relative finders (previous-sibling, first-child, etc.) to use the same keywords
+
+*** New finders: previous-sibling-wrap and rest-of-siblings-wrap
