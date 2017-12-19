@@ -960,10 +960,10 @@ are complete, and at least two of ID3, ID4, ID5, and ID6 are complete.
 
 If no consideration is given, ALL is assumed.
 
-** Setting the properties
+** Setting the Properties
 :PROPERTIES:
 :DESCRIPTION: The easy way to set BLOCKER and TRIGGER
-:CUSTOM_ID: xsetting_keywords
+:CUSTOM_ID: setting_keywords
 :END:
 
 There are two ways to set the BLOCKER and TRIGGER properties: by hand, or the
