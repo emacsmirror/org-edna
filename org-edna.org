@@ -963,6 +963,7 @@ If no consideration is given, ALL is assumed.
 ** Setting the properties
 :PROPERTIES:
 :DESCRIPTION: The easy way to set BLOCKER and TRIGGER
+:CUSTOM_ID: xsetting_keywords
 :END:
 
 There are two ways to set the BLOCKER and TRIGGER properties: by hand, or the
@@ -1135,3 +1136,17 @@ There are a few rules to follow:
 - Run 'make check' to verify that your mods don't break anything
 - Avoid additional or altered dependencies if at all possible
   - Exception: New versions of Org mode are allowed
+* Changelog
+** 1.0beta2
+Big release here
+
+*** Added interactive keyword editor with completion
+See [[#setting_keywords][Setting the Properties]] for how to do that
+
+*** New uses of schedule! and deadline!
+- New "float" form that mimics diary-float
+- New "landing" addition to "+1d" and friends to force planning changes to land on a certain day or type of day (weekend/weekday)
+
+*** New "relatives" finder
+- Renamed from chain-find with tons of new keywords
+- Modified all other relative finders (previous-sibling, first-child, etc.) to use the same keywords
