@@ -78,6 +78,7 @@ Advanced Features
 
 * Conditions::                   More than just DONE headings
 * Consideration::                Only some of them
+* Conditional Forms::            If/Then/Else
 * Setting the Properties::       The easy way to set BLOCKER and TRIGGER
 
 Conditions
@@ -106,7 +107,16 @@ Contributing
 
 Changelog
 
+* 1.0beta3: 10beta3.
 * 1.0beta2: 10beta2.
+
+1.0beta3
+
+* Conditional Forms: Conditional Forms (1).
+* Overhauled Internal Parsing::
+* Fixed consideration keywords::
+* Added 'any consideration::
+
 
 1.0beta2
 
@@ -1005,6 +1015,7 @@ Advanced Features
 
 * Conditions::                   More than just DONE headings
 * Consideration::                Only some of them
+* Conditional Forms::            If/Then/Else
 * Setting the Properties::       The easy way to set BLOCKER and TRIGGER
 
 
@@ -1122,12 +1133,15 @@ Any condition can be negated by using ’!’ before the condition.
 heading tagged “test” does *not* have the property PROP set to “1”.
 
 
-File: org-edna.info,  Node: Consideration,  Next: Setting the Properties,  Prev: Conditions,  Up: Advanced Features
+File: org-edna.info,  Node: Consideration,  Next: Conditional Forms,  Prev: Conditions,  Up: Advanced Features
 
 Consideration
 =============
 
 “Consideration” is a special keyword that’s only valid for blockers.
+
+   This says “Allow a task to complete if CONSIDERATION of its targets
+pass the given condition”.
 
    This keyword can allow specifying only a portion of tasks to
 consider:
@@ -1135,19 +1149,23 @@ consider:
   1. consider(PERCENT)
   2. consider(NUMBER)
   3. consider(all) (Default)
+  4. consider(any)
 
    (1) tells the blocker to only consider some portion of the targets.
 If at least PERCENT of them are in a DONE state, allow the task to be
-set to DONE. PERCENT must be a decimal.
+set to DONE. PERCENT must be a decimal, and doesn’t need to include a
+%-sign.
 
    (2) tells the blocker to only consider NUMBER of the targets.
 
    (3) tells the blocker to consider all following targets.
 
-   A consideration must be specified before the targets to which it
+   (4) tells the blocker to allow passage if any of the targets pass.
+
+   A consideration must be specified before the conditions to which it
 applies:
 
-     consider(0.5) siblings consider(all) match("find_me")
+     consider(0.5) siblings match("find_me") consider(all) !done?
 
    The above code will allow task completion if at least half the
 siblings are complete, and all tasks tagged “find_me” are complete.
@@ -1160,8 +1178,81 @@ are complete.
 
    If no consideration is given, ALL is assumed.
 
+   Both “consider” and “consideration” are valid keywords; they both
+mean the same thing.
+
 
-File: org-edna.info,  Node: Setting the Properties,  Prev: Consideration,  Up: Advanced Features
+File: org-edna.info,  Node: Conditional Forms,  Next: Setting the Properties,  Prev: Consideration,  Up: Advanced Features
+
+Conditional Forms
+=================
+
+Let’s say you’ve got the following checklist:
+
+     * TODO Nightly
+       DEADLINE: <2017-12-22 Fri 22:00 +1d>
+       :PROPERTIES:
+       :ID:       12345
+       :BLOCKER:  match("nightly")
+       :TRIGGER:  match("nightly") todo!(TODO)
+       :END:
+     * TODO Prepare Tomorrow's Lunch                                     :nightly:
+     * TODO Lock Back Door                                               :nightly:
+     * TODO Feed Dog                                                     :nightly:
+
+   You don’t know in what order you want to perform each task, nor
+should it matter.  However, you also want the parent heading, “Nightly”,
+to be marked as DONE when you’re finished with the last task.
+
+   There are two solutions to this: 1.  Have each task attempt to mark
+“Nightly” as DONE, which will spam blocking messages after each task.
+
+   The second is to use conditional forms.  Conditional forms are
+simple; it’s just if/then/else/endif:
+
+     if CONDITION then THEN else ELSE endif
+
+   Here’s how that reads:
+
+   “If CONDITION would not block, execute THEN. Otherwise, execute
+ELSE.”
+
+   For our nightly entries, this looks as follows:
+
+     * TODO Prepare Tomorrow's Lunch                                     :nightly:
+       :PROPERTIES:
+       :TRIGGER:  if match("nightly") then ids(12345) todo!(DONE) endif
+       :END:
+
+   Thus, we replicate our original blocking condition on all of them, so
+it won’t trigger the original until the last one is marked DONE.
+
+   Occasionally, you may find that you’d rather execute a form if the
+condition *would* block.  There are two options.
+
+   The first is confusing: use ‘consider(any)’.  This will tell Edna to
+pass so long as one of the targets meets the condition.  This is the
+opposite of Edna’s standard operation, which only allows passage if all
+targets meet the condition.
+
+     * TODO Prepare Tomorrow's Lunch                                     :nightly:
+       :PROPERTIES:
+       :TRIGGER:  if consider(any) match("nightly") then ids(12345) todo!(DONE) endif
+       :END:
+
+   The second is a lot easier to understand: just switch the then and
+else clauses:
+
+     * TODO Prepare Tomorrow's Lunch                                     :nightly:
+       :PROPERTIES:
+       :TRIGGER:  if match("nightly") then else ids(12345) todo!(DONE) endif
+       :END:
+
+   The conditional block tells it to evaluate that section.  Thus, you
+can conditionally add targets, or conditionally check conditions.
+
+
+File: org-edna.info,  Node: Setting the Properties,  Prev: Conditional Forms,  Up: Advanced Features
 
 Setting the Properties
 ======================
@@ -1377,10 +1468,56 @@ Changelog
 
 * Menu:
 
+* 1.0beta3: 10beta3.
 * 1.0beta2: 10beta2.
 
 
-File: org-edna.info,  Node: 10beta2,  Up: Changelog
+File: org-edna.info,  Node: 10beta3,  Next: 10beta2,  Up: Changelog
+
+1.0beta3
+========
+
+HUGE addition here
+
+* Menu:
+
+* Conditional Forms: Conditional Forms (1).
+* Overhauled Internal Parsing::
+* Fixed consideration keywords::
+* Added 'any consideration::
+
+
+File: org-edna.info,  Node: Conditional Forms (1),  Next: Overhauled Internal Parsing,  Up: 10beta3
+
+Conditional Forms
+-----------------
+
+   • See *note Conditional Forms:: for more information
+
+
+File: org-edna.info,  Node: Overhauled Internal Parsing,  Next: Fixed consideration keywords,  Prev: Conditional Forms (1),  Up: 10beta3
+
+Overhauled Internal Parsing
+---------------------------
+
+
+File: org-edna.info,  Node: Fixed consideration keywords,  Next: Added 'any consideration,  Prev: Overhauled Internal Parsing,  Up: 10beta3
+
+Fixed consideration keywords
+----------------------------
+
+   • Both consider and consideration are accepted now
+
+
+File: org-edna.info,  Node: Added 'any consideration,  Prev: Fixed consideration keywords,  Up: 10beta3
+
+Added ’any consideration
+------------------------
+
+   • Allows passage if just one target is fulfilled
+
+
+File: org-edna.info,  Node: 10beta2,  Prev: 10beta3,  Up: Changelog
 
 1.0beta2
 ========
@@ -1400,7 +1537,7 @@ File: org-edna.info,  Node: Added interactive keyword editor with completion,  N
 Added interactive keyword editor with completion
 ------------------------------------------------
 
-See *note Setting the Properties:: for how to do that
+   • See *note Setting the Properties:: for how to do that
 
 
 File: org-edna.info,  Node: New uses of schedule! and deadline!,  Next: New ``relatives'' finder,  Prev: Added interactive keyword editor with completion,  Up: 10beta2
@@ -1437,71 +1574,77 @@ New finders
 
 Tag Table:
 Node: Top225
-Node: Copying3713
-Node: Introduction4530
-Node: Installation and Setup5478
-Node: Basic Operation6271
-Node: Blockers8122
-Node: Triggers8408
-Node: Syntax8670
-Node: Basic Features9360
-Node: Finders9663
-Node: ancestors11428
-Node: children12022
-Node: descendants12432
-Node: file12954
-Node: first-child13703
-Node: ids13963
-Node: match14624
-Node: next-sibling15262
-Node: next-sibling-wrap15519
-Node: olp15833
-Node: org-file16245
-Node: parent16890
-Node: previous-sibling17088
-Node: previous-sibling-wrap17349
-Node: relatives17628
-Node: rest-of-siblings21249
-Node: rest-of-siblings-wrap21534
-Node: self21883
-Node: siblings22044
-Node: siblings-wrap22281
-Node: Actions22585
-Node: Scheduled/Deadline23327
-Node: TODO State26902
-Node: Archive27270
-Node: Chain Property27590
-Node: Clocking27873
-Node: Property28285
-Node: Priority28607
-Node: Tag29176
-Node: Effort29393
-Node: Advanced Features29782
-Node: Conditions30120
-Node: done30735
-Node: headings30899
-Node: todo-state31275
-Node: variable-set31531
-Node: has-property31960
-Node: re-search32229
-Node: Negating Conditions32589
-Node: Consideration32976
-Node: Setting the Properties34208
-Node: Extending Edna35288
-Node: Naming Conventions35778
-Node: Finders (1)36241
-Node: Actions (1)36607
-Node: Conditions (1)37072
-Node: Contributing37962
-Node: Bugs38513
-Node: Development38865
-Node: Documentation40018
-Node: Changelog40463
-Node: 10beta240587
-Node: Added interactive keyword editor with completion40853
-Node: New uses of schedule! and deadline!41145
-Node: New ``relatives'' finder41640
-Node: New finders42036
+Node: Copying3930
+Node: Introduction4747
+Node: Installation and Setup5695
+Node: Basic Operation6488
+Node: Blockers8339
+Node: Triggers8625
+Node: Syntax8887
+Node: Basic Features9577
+Node: Finders9880
+Node: ancestors11645
+Node: children12239
+Node: descendants12649
+Node: file13171
+Node: first-child13920
+Node: ids14180
+Node: match14841
+Node: next-sibling15479
+Node: next-sibling-wrap15736
+Node: olp16050
+Node: org-file16462
+Node: parent17107
+Node: previous-sibling17305
+Node: previous-sibling-wrap17566
+Node: relatives17845
+Node: rest-of-siblings21466
+Node: rest-of-siblings-wrap21751
+Node: self22100
+Node: siblings22261
+Node: siblings-wrap22498
+Node: Actions22802
+Node: Scheduled/Deadline23544
+Node: TODO State27119
+Node: Archive27487
+Node: Chain Property27807
+Node: Clocking28090
+Node: Property28502
+Node: Priority28824
+Node: Tag29393
+Node: Effort29610
+Node: Advanced Features29999
+Node: Conditions30383
+Node: done30998
+Node: headings31162
+Node: todo-state31538
+Node: variable-set31794
+Node: has-property32223
+Node: re-search32492
+Node: Negating Conditions32852
+Node: Consideration33239
+Node: Conditional Forms34808
+Node: Setting the Properties37464
+Node: Extending Edna38548
+Node: Naming Conventions39038
+Node: Finders (1)39501
+Node: Actions (1)39867
+Node: Conditions (1)40332
+Node: Contributing41222
+Node: Bugs41773
+Node: Development42125
+Node: Documentation43278
+Node: Changelog43723
+Node: 10beta343868
+Node: Conditional Forms (1)44126
+Node: Overhauled Internal Parsing44325
+Node: Fixed consideration keywords44522
+Node: Added 'any consideration44781
+Node: 10beta244996
+Node: Added interactive keyword editor with completion45278
+Node: New uses of schedule! and deadline!45577
+Node: New ``relatives'' finder46072
+Node: New finders46468
 
 End Tag Table
 

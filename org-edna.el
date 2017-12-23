@@ -7,7 +7,7 @@
 ;; Keywords: convenience, text, org
 ;; URL: https://savannah.nongnu.org/projects/org-edna-el/
 ;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
-;; Version: 1.0beta2
+;; Version: 1.0beta3
 
 ;; This file is part of GNU Emacs.
 
@@ -62,29 +62,40 @@ properties used during actions or conditions."
   :group 'org-edna
   :type 'boolean)
 
-(defmacro org-edna--syntax-error (msg form pos)
+;;; Form Parsing
+
+;; 3 types of "forms" here
+;;
+;; 1. String form; this is what you see in a BLOCKER or TRIGGER property
+;; 2. Edna sexp form; this is the intermediary form, and form used in org-edna-form
+;; 3. Lisp form; a form that can be evaluated by Emacs
+
+(defmacro org-edna--syntax-error (msg form error-form)
   "Signal an Edna syntax error.
 
 MSG will be reported to the user and should describe the error.
 FORM is the form that generated the error.
-POS is the position in FORM at which the error occurred."
-  `(signal 'invalid-read-syntax (list :msg ,msg :form ,form :pos ,pos)))
+ERROR-FORM is the sub-form in FORM at which the error occurred."
+  `(signal 'invalid-read-syntax (list :msg ,msg :form ,form :error-form ,error-form)))
 
 (defun org-edna--print-syntax-error (error-plist)
   "Prints the syntax error from ERROR-PLIST."
-  (let ((msg (plist-get error-plist :msg))
-        (form (plist-get error-plist :form))
-        (pos (plist-get error-plist :pos)))
+  (let* ((msg (plist-get error-plist :msg))
+         (form (plist-get error-plist :form))
+         (error-form (plist-get error-plist :error-form))
+         (pos (string-match-p (symbol-name (car error-form)) form)))
     (message
      "Org Edna Syntax Error: %s\n%s\n%s"
      msg form (concat (make-string pos ?\ ) "^"))))
 
 (defun org-edna--transform-arg (arg)
-  "Transform ARG.
+  "Transform argument ARG.
 
 Currently, the following are handled:
 
-- UUIDs (as determined by `org-uuidgen-p') are converted to strings"
+- UUIDs (as determined by `org-uuidgen-p') are converted to strings
+
+Everything else is returned as is."
   (pcase arg
     ((and (pred symbolp)
           (let (pred org-uuidgen-p) (symbol-name arg)))
@@ -92,44 +103,33 @@ Currently, the following are handled:
     (_
      arg)))
 
-(defun org-edna-parse-form (form &optional start)
-  "Parse Edna form FORM starting at position START."
-  (setq start (or start 0))
-  (pcase-let* ((`(,token . ,pos) (read-from-string form start))
-               (modifier nil)
-               (args nil))
-    (unless token
-      (org-edna--syntax-error "Invalid Token" form start))
-    ;; Check for either end of string or an opening parenthesis
-    (unless (or (equal pos (length form))
-                (equal (string-match-p "\\s-" form pos) pos)
-                (equal (string-match-p "(" form pos) pos))
-      (org-edna--syntax-error "Invalid character in form" form pos))
-    ;; Parse arguments if we have any
-    (when (equal (string-match-p "(" form pos) pos)
-      (pcase-let* ((`(,new-args . ,new-pos) (read-from-string form pos)))
-        (setq pos new-pos
-              args (mapcar #'org-edna--transform-arg new-args))))
-    ;; Check for a modifier
-    (when (string-match "^\\([!]\\)\\(.*\\)" (symbol-name token))
-      (setq modifier (intern (match-string 1 (symbol-name token))))
-      (setq token    (intern (match-string 2 (symbol-name token)))))
-    ;; Move across any whitespace
-    (when (string-match "\\s-+" form pos)
-      (setq pos (match-end 0)))
-    (list token args modifier pos)))
+(defun org-edna-break-modifier (token)
+  "Break TOKEN into a modifier and base token.
+
+A modifier is a single character.
+
+Return (MODIFIER . TOKEN), even if MODIFIER is nil."
+  (if token
+      (let (modifier)
+        (when (string-match "^\\([!]\\)\\(.*\\)" (symbol-name token))
+          (setq modifier (intern (match-string 1 (symbol-name token))))
+          (setq token    (intern (match-string 2 (symbol-name token)))))
+        (cons modifier token))
+    ;; Still return something
+    '(nil . nil)))
 
 (defun org-edna--function-for-key (key)
   "Determine the Edna function for KEY.
 
 KEY should be a symbol, the keyword for which to find the Edna
-function."
+function.
+
+If KEY is an invalid Edna keyword, then return nil."
   (cond
-   ;; Just return nil if it's not a symbol; `org-edna-process-form' will handle
-   ;; the rest
+   ;; Just return nil if it's not a symbol
    ((or (not key)
         (not (symbolp key))))
-   ((eq key 'consideration)
+   ((memq key '(consideration consider))
     ;; Function is ignored here
     (cons 'consideration 'identity))
    ((string-suffix-p "!" (symbol-name key))
@@ -148,8 +148,170 @@ function."
       (when (fboundp func-sym)
         (cons 'finder func-sym))))))
 
+(defun org-edna-parse-string-form (form &optional start)
+  "Parse Edna string form FORM starting at position START.
+
+Return (SEXP-FORM POS)
+
+SEXP-FORM is the sexp form of FORM starting at START.
+POS is the position in FORM where parsing ended."
+  (setq start (or start 0))
+  (pcase-let* ((`(,token . ,pos) (read-from-string form start))
+               (args nil))
+    (unless token
+      (org-edna--syntax-error "Invalid Token" form start))
+    ;; Check for either end of string or an opening parenthesis
+    (unless (or (equal pos (length form))
+                (equal (string-match-p "\\s-" form pos) pos)
+                (equal (string-match-p "(" form pos) pos))
+      (org-edna--syntax-error "Invalid character in form" form pos))
+    ;; Parse arguments if we have any
+    (when (equal (string-match-p "(" form pos) pos)
+      (pcase-let* ((`(,new-args . ,new-pos) (read-from-string form pos)))
+        (setq pos new-pos
+              args (mapcar #'org-edna--transform-arg new-args))))
+    ;; Move across any whitespace
+    (when (string-match "\\s-+" form pos)
+      (setq pos (match-end 0)))
+    (list (cons token args) pos)))
+
+(defun org-edna--convert-form (string &optional pos)
+  "Convert string form STRING into a flat sexp form.
+
+POS is the position in STRING from which to start conversion.
+
+Returns (FLAT-FORM END-POS) where
+
+FLAT-FORM is the flat sexp form
+END-POS is the position in STRING where parsing ended.
+
+Example:
+
+siblings todo!(TODO) => ((siblings) (todo! TODO))"
+  (let ((pos (or pos 0))
+        final-form)
+    (while (< pos (length string))
+      (pcase-let* ((`(,form ,new-pos) (org-edna-parse-string-form string pos)))
+        (setq final-form (append final-form (list form)))
+        (setq pos new-pos)))
+    (cons final-form pos)))
+
+(defun org-edna--normalize-sexp-form (form action-or-condition &optional from-string)
+  "Normalize flat sexp form FORM into a full edna sexp form.
+
+ACTION-OR-CONDITION is either 'action or 'condition, indicating
+which of the two types is allowed in FORM.
+
+FROM-STRING is used internally, and is non-nil if FORM was
+originally a string.
+
+Returns (NORMALIZED-FORM REMAINING-FORM), where REMAINING-FORM is
+the remainder of FORM after the current scope was parsed."
+  (let* ((remaining-form (copy-sequence form))
+         (state 'finder)
+         final-form
+         need-break)
+    (while (and remaining-form (not need-break))
+      (let ((current-form (pop remaining-form)))
+        (pcase (car current-form)
+          ('if
+              ;; Check the car of each r*-form for the expected
+              ;; ending.  If it doesn't match, throw an error.
+              (let (cond-form then-form else-form have-else)
+                (pcase-let* ((`(,temp-form ,r-form)
+                              (org-edna--normalize-sexp-form
+                               remaining-form
+                               ;; Only allow conditions in cond forms
+                               'condition
+                               from-string)))
+                  ;; Use car-safe to catch r-form = nil
+                  (unless (equal (car-safe r-form) '(then))
+                    (org-edna--syntax-error
+                     "Malformed if-construct; expected then terminator"
+                     from-string current-form))
+                  (setq cond-form temp-form
+                        remaining-form (cdr r-form)))
+                (pcase-let* ((`(,temp-form ,r-form)
+                              (org-edna--normalize-sexp-form remaining-form
+                                                             action-or-condition
+                                                             from-string)))
+                  (unless (member (car-safe r-form) '((else) (endif)))
+                    (org-edna--syntax-error
+                     "Malformed if-construct; expected else or endif terminator"
+                     from-string current-form))
+                  (setq have-else (equal (car r-form) '(else))
+                        then-form temp-form
+                        remaining-form (cdr r-form)))
+                (when have-else
+                  (pcase-let* ((`(,temp-form ,r-form)
+                                (org-edna--normalize-sexp-form remaining-form
+                                                               action-or-condition
+                                                               from-string)))
+                    (unless (equal (car-safe r-form) '(endif))
+                      (org-edna--syntax-error "Malformed if-construct; expected endif terminator"
+                                              from-string current-form))
+                    (setq else-form temp-form
+                          remaining-form (cdr r-form))))
+                (push `(if ,cond-form ,then-form ,else-form) final-form)))
+          ((or 'then 'else 'endif)
+           (setq need-break t)
+           ;; Push the object back on remaining-form so the if knows where we are
+           (setq remaining-form (cons current-form remaining-form)))
+          (_
+           ;; Determine the type of the form
+           ;; If we need to change state, return from this scope
+           (pcase-let* ((`(,type . ,func) (org-edna--function-for-key (car current-form))))
+             (unless (and type func)
+               (org-edna--syntax-error "Unrecognized Form"
+                                       from-string current-form))
+             (pcase type
+               ('finder
+                (unless (memq state '(finder consideration))
+                  ;; We changed back to finders, so we need to start a new scope
+                  (setq need-break t)))
+               ('action
+                (unless (eq action-or-condition 'action)
+                  (org-edna--syntax-error "Actions aren't allowed in this context"
+                                          from-string current-form)))
+               ('condition
+                (unless (eq action-or-condition 'condition)
+                  (org-edna--syntax-error "Conditions aren't allowed in this context"
+                                          from-string current-form))))
+             ;; Update state
+             (setq state type)
+             (if need-break ;; changing state
+                 ;; Keep current-form on remaining-form so we have it for the
+                 ;; next scope, since we didn't process it here.
+                 (setq remaining-form (cons current-form remaining-form))
+               (push current-form final-form)))))))
+    (when (and (eq state 'finder)
+               (eq action-or-condition 'condition))
+      ;; Finders have to have something at the end, so we need to add that
+      ;; something.  No default actions, so this must be a blocker.
+      (push '(!done?) final-form))
+    (list (nreverse final-form) remaining-form)))
+
+(defun org-edna-string-form-to-sexp-form (string-form action-or-condition)
+  "Parse string form STRING-FORM into an Edna sexp form.
+
+ACTION-OR-CONDITION is either 'action or 'condition, indicating
+which of the two types is allowed in STRING-FORM."
+  (car
+   (org-edna--normalize-sexp-form
+    (car (org-edna--convert-form string-form))
+    action-or-condition
+    string-form)))
+
 (defun org-edna--handle-condition (func mod args targets consideration)
-  "Handle a condition."
+  "Handle a condition.
+
+FUNC is the condition function.
+MOD is the modifier to pass to FUNC.
+ARGS are any arguments to pass to FUNC.
+TARGETS is a list of targets on which to operate.
+CONSIDERATION is the consideration symbol, if any."
+  (when (seq-empty-p targets)
+    (message "Warning: Condition specified without targets"))
   ;; Check the condition at each target
   (when-let* ((blocks
                (mapcar
@@ -160,69 +322,112 @@ function."
     ;; Apply consideration
     (org-edna-handle-consideration consideration blocks)))
 
-(defun org-edna-process-form (form action-or-condition)
-  "Process FORM.
+(defun org-edna--add-targets (old-targets new-targets)
+  "Add targets in NEW-TARGETS to OLD-TARGETS.
 
-ACTION-OR-CONDITION is a symbol, either 'action or 'condition,
-indicating whether FORM accepts actions or conditions."
-  (let ((targets)
-        (blocking-entry)
-        (consideration 'all)
-        (state nil) ;; Type of operation
-        ;; Keep track of the current heading
-        (last-entry (point-marker))
-        (pos 0))
-    (while (< pos (length form))
-      (pcase-let* ((`(,key ,args ,mod ,new-pos) (org-edna-parse-form form pos))
-                   (`(,type . ,func) (org-edna--function-for-key key)))
-        (unless (and key type func)
-          (org-edna--syntax-error "Unrecognized Form" form pos))
-        (pcase type
-          ('finder
-           (unless (eq state 'finder)
-             ;; We just executed some actions, so reset the entries.
-             (setq targets nil))
-           (setq state 'finder)
-           (let ((markers (apply func args)))
-             (setq targets (seq-uniq `(,@targets ,@markers)))))
-          ('action
-           (unless (eq action-or-condition 'action)
-             (org-edna--syntax-error "Actions aren't allowed in this context" form pos))
-           (unless targets
-             (message "Warning: Action specified without targets"))
-           (setq state 'action)
-           (dolist (target targets)
-             (org-with-point-at target
-               (apply func last-entry args))))
-          ('condition
-           (unless (eq action-or-condition 'condition)
-             (org-edna--syntax-error "Conditions aren't allowed in this context" form pos))
-           (unless targets
-             (message "Warning: Condition specified without targets"))
-           (setq state 'condition)
-           (setq blocking-entry
-                 (or blocking-entry  ;; We're already blocking
-                     (org-edna--handle-condition func mod args targets consideration))))
-          ('consideration
-           (unless (= (length args) 1)
-             (org-edna--syntax-error "Consideration requires a single argument" form pos))
-           ;; Consideration must be at the start of the targets, so clear out
-           ;; any old targets.
-           (setq targets nil
-                 consideration (nth 0 args))))
-        (setq pos new-pos)))
-    ;; We exhausted the input string, but didn't find a condition when we were
-    ;; expecting one.
-    (when (and (eq action-or-condition 'condition) ;; Looking for conditions
-               (eq state 'finder)                  ;; but haven't found any
-               (not blocking-entry))                 ;; ever
-      (setq blocking-entry
-            (org-edna--handle-condition 'org-edna-condition/done?
-                                        t nil targets consideration)))
-    ;; Only blockers care about the return value, and this will be non-nil if
-    ;; the entry should be blocked.
-    (setq org-block-entry-blocking blocking-entry)
-    (not blocking-entry)))
+Neither argument is modified."
+  (seq-uniq (append old-targets new-targets)))
+
+(defun org-edna--handle-action (action targets last-entry args)
+  "Process ACTION on TARGETS.
+
+LAST-ENTRY is the source entry.
+ARGS is a list of arguments to pass to ACTION."
+  (when (seq-empty-p targets)
+    (message "Warning: Action specified without targets"))
+  (dolist (target targets)
+    (org-with-point-at target
+      (apply action last-entry args))))
+
+(defun org-edna--expand-single-sexp-form (single-form
+                                          target-var
+                                          consideration-var
+                                          blocking-var)
+  "Expand sexp form SINGLE-FORM into a Lisp form.
+
+TARGET-VAR, BLOCKING-VAR, and CONSIDERATION-VAR are symbols that
+correspond to internal variables."
+  (pcase-let* ((`(,mkey . ,args) single-form)
+               (`(,mod . ,key)   (org-edna-break-modifier mkey))
+               (`(,type . ,func) (org-edna--function-for-key key)))
+    (pcase type
+      ('finder
+       `(setq ,target-var (org-edna--add-targets ,target-var (,func ,@args))))
+      ('action
+       `(org-edna--handle-action ',func ,target-var (point-marker) ',args))
+      ('condition
+       `(setq ,blocking-var (or ,blocking-var
+                                (org-edna--handle-condition ',func ',mod ',args
+                                                            ,target-var
+                                                            ,consideration-var))))
+      ('consideration
+       `(setq ,consideration-var ,(nth 0 args))))))
+
+(defun org-edna--expand-sexp-form (form &optional
+                                        use-old-scope
+                                        old-target-var
+                                        old-consideration-var
+                                        old-blocking-var)
+  "Expand sexp form FORM into a Lisp form.
+
+USE-OLD-SCOPE, OLD-TARGET-VAR, OLD-CONSIDERATION-VAR, and
+OLD-BLOCKING-VAR are used internally."
+  (when form
+    ;; We inherit the original targets, consideration, and blocking-entry when
+    ;; we create a new scope in an if-construct.
+    (let* ((target-var (if use-old-scope old-target-var (cl-gentemp "targets")))
+           (consideration-var (if use-old-scope
+                                  old-consideration-var
+                                (cl-gentemp "consideration")))
+           (blocking-var (if use-old-scope
+                             old-blocking-var
+                           (cl-gentemp "blocking-entry")))
+           ;; These won't be used if use-old-scope is non-nil
+           (let-binds `((,target-var ,old-target-var)
+                        (,consideration-var ,old-consideration-var)
+                        (,blocking-var ,old-blocking-var)))
+           (wrapper-form (if use-old-scope
+                             '(progn)
+                           `(let (,@let-binds)))))
+      (pcase form
+        (`(if ,cond ,then . ,else)
+         ;; Don't pass the old variables into the condition form; it should be
+         ;; evaluated on its own to avoid clobbering the old targets.
+         `(if (not ,(org-edna--expand-sexp-form cond))
+              ,(org-edna--expand-sexp-form
+                then
+                '(progn)
+                old-target-var old-consideration-var old-blocking-var)
+            ,(when else
+               (org-edna--expand-sexp-form
+                ;; else is wrapped in a list, so take the first argument
+                (car else)
+                '(progn)
+                old-target-var old-consideration-var old-blocking-var))))
+        ((pred (lambda (arg) (symbolp (car arg))))
+         (org-edna--expand-single-sexp-form
+          form old-target-var old-consideration-var old-blocking-var))
+        (_
+         ;; List of forms
+         ;; Only use new variables if we're asked to
+         `(,@wrapper-form
+           ,@(mapcar
+              (lambda (f) (org-edna--expand-sexp-form
+                      f '(progn) target-var consideration-var blocking-var))
+              form)))))))
+
+(defun org-edna-eval-sexp-form (sexp-form)
+  "Evaluate Edna sexp form SEXP-FORM."
+  (eval
+   (org-edna--expand-sexp-form sexp-form)))
+
+(defun org-edna-process-form (string-form action-or-condition)
+  "Process STRING-FORM.
+
+ACTION-OR-CONDITION is either 'action or 'condition, indicating
+which of the two types is allowed in STRING-FORM."
+  (org-edna-eval-sexp-form
+   (org-edna-string-form-to-sexp-form string-form action-or-condition)))
 
 
 
@@ -273,7 +478,8 @@ See `org-edna-run' for CHANGE-PLIST explanation.
 This shouldn't be run from outside of `org-blocker-hook'."
   (org-edna-run change-plist
     (if-let* ((form (org-entry-get pos "BLOCKER" org-edna-use-inheritance)))
-        (org-edna-process-form form 'condition)
+        ;; Return nil if there is no blocking entry
+        (not (setq org-block-entry-blocking (org-edna-process-form form 'condition)))
       t)))
 
 ;;;###autoload
@@ -324,7 +530,7 @@ SCOPE defaults to agenda, and SKIP defaults to nil.
 
 ;; ID finder
 (defun org-edna-finder/ids (&rest ids)
-  "Find a list of headings with given IDs.
+  "Find a list of headings with given IDS.
 
 Edna Syntax: ids(ID1 ID2 ...)
 
@@ -357,7 +563,11 @@ Edna Syntax: self"
    (point-marker)))
 
 (defun org-edna-goto-sibling (&optional previous wrap)
-  "Move to the next sibling on the same level as the current heading."
+  "Move to the next sibling on the same level as the current heading.
+
+If PREVIOUS is non-nil, go to the previous sibling.
+f WRAP is non-nil, wrap around when the beginning (or end) is
+reached."
   (let ((next (save-excursion
                 (if previous (org-get-last-sibling) (org-get-next-sibling)))))
     (cond
@@ -384,12 +594,12 @@ Edna Syntax: self"
 
 START is a point or marker from which to start collection.
 
-BACKWARDS means go backward through the level instead of forward.
+BACKWARD means go backward through the level instead of forward.
 
 If WRAP is non-nil, wrap around when the end of the current level
 is reached.
 
-If INCLUDE-START is non-nil, include the current point."
+If INCLUDE-POINT is non-nil, include the current point."
   (org-with-wide-buffer
    (let ((markers))
      (goto-char start)
@@ -402,6 +612,12 @@ If INCLUDE-START is non-nil, include the current point."
      (nreverse markers))))
 
 (defun org-edna-collect-ancestors (&optional with-self)
+  "Collect the ancestors of the current subtree.
+
+If WITH-SELF is non-nil, include the current subtree in the list
+of ancestors.
+
+Return a list of markers for the ancestors."
   (let ((markers))
     (when with-self
       (push (point-marker) markers))
@@ -411,6 +627,12 @@ If INCLUDE-START is non-nil, include the current point."
     (nreverse markers)))
 
 (defun org-edna-collect-descendants (&optional with-self)
+  "Collect the descendants of the current subtree.
+
+If WITH-SELF is non-nil, include the current subtree in the list
+of descendants.
+
+Return a list of markers for the descendants."
   (let ((targets
          (org-with-wide-buffer
           (org-map-entries
@@ -422,7 +644,7 @@ If INCLUDE-START is non-nil, include the current point."
     targets))
 
 (defun org-edna-entry-has-tags-p (&rest tags)
-  "Returns non-nil if the current entry has any tags in TAGS."
+  "Return non-nil if the current entry has any tags in TAGS."
   (when-let* ((entry-tags (org-get-tags-at)))
     (seq-intersection tags entry-tags)))
 
@@ -491,8 +713,7 @@ All arguments are symbols, unless noted otherwise.
 - scheduled-up:    Scheduled time, farthest first
 - scheduled-down:  Scheduled time, closest first
 - deadline-up:     Deadline time, farthest first
-- deadline-down:   Deadline time, closest first
-"
+- deadline-down:   Deadline time, closest first"
   (let (targets
         sortfun
         reverse-sort
@@ -1021,8 +1242,8 @@ required."
 	      (when (= delta 0) (setq delta -7)))
 	    (when (> n 1) (setq delta (+ delta (* (1- n) (if (= dir ?-) -7 7)))))
 	    (list delta "d" rel))))
-         (if (or (not have-landing)
-                 (member what '("M" "h"))) ;; Don't change landing for minutes or hours
+        (if (or (not have-landing)
+                (member what '("M" "h"))) ;; Don't change landing for minutes or hours
             ret ;; Don't worry about landing, just return
           (pcase-let* ((`(,del ,what _) ret)
                        (mod-index (cdr (assoc what type-strings)))
@@ -1076,7 +1297,10 @@ MONTH may be a month string or an integer.  Use 0 for the
 following or previous month.
 
 DAY is an optional integer.  If not given, it will be 1 (for
-forward) or the last day of MONTH (backward)."
+forward) or the last day of MONTH (backward).
+
+Time is computed relative to either THIS-TIME (+/-) or
+DEFAULT (++/--)."
   (require 'parse-time)
   (let* ((case-fold-search t)
          (weekdays (mapcar 'car parse-time-weekdays))
@@ -1163,7 +1387,10 @@ forward) or the last day of MONTH (backward)."
         (list (- abs-days-then abs-days-now) "d" rel)))))
 
 (defun org-edna--handle-planning (type last-entry args)
-  "Handle planning of type TYPE."
+  "Handle planning of type TYPE.
+
+LAST-ENTRY is a marker to the source entry.
+ARGS is a list of arguments; currently, only the first is used."
   (let* ((arg (nth 0 args))
          (last-ts (org-with-point-at last-entry (org-edna--get-planning-info type)))
          (this-ts (org-edna--get-planning-info type))
@@ -1508,19 +1735,37 @@ starting from target's position."
 (defun org-edna-handle-consideration (consideration blocks)
   "Handle consideration CONSIDERATION.
 
-Edna Syntax: consideration(all) [1]
-Edna Syntax: consideration(N)   [2]
-Edna Syntax: consideration(P)   [3]
+Edna Syntax: consider(all) [1]
+Edna Syntax: consider(N)   [2]
+Edna Syntax: consider(P)   [3]
+Edna Syntax: consider(any) [4]
 
 Form 1: consider all targets when evaluating conditions.
 Form 2: consider the condition met if only N of the targets pass.
-Form 3: consider the condition met if only P% of the targets pass."
-  (let ((first-block (seq-find #'identity blocks))
-        (total-blocks (seq-length blocks)))
+Form 3: consider the condition met if only P% of the targets pass.
+Form 4: consider the condition met if any target meets it
+
+If CONSIDERATION is nil, default to 'all.
+
+The \"consideration\" keyword is also provided.  It functions the
+same as \"consider\"."
+  ;; BLOCKS is a list of blocking entries; if one isn't blocked, its entry will
+  ;; be nil.
+  (let ((consideration (or consideration 'all))
+        (first-block (seq-find #'identity blocks))
+        (total-blocks (seq-length blocks))
+        (fulfilled (seq-count #'not blocks)))
     (pcase consideration
       ('all
        ;; All of them must be fulfilled, so find the first one that isn't.
        first-block)
+      ('any
+       ;; Any of them can be fulfilled, so find the first one that is
+       (if (> fulfilled 0)
+           ;; Have one fulfilled
+           nil
+         ;; None of them are fulfilled
+         first-block))
       ((pred integerp)
        ;; A fixed number of them must be fulfilled, so check how many aren't.
        (let* ((fulfilled (seq-count #'not blocks)))
@@ -1548,6 +1793,7 @@ Form 3: consider the condition met if only P% of the targets pass."
   :group 'org-edna)
 
 (defun org-edna-in-edit-buffer-p ()
+  "Return non-nil if inside the Edna edit buffer."
   (string-equal (buffer-name) org-edna-edit-buffer-name))
 
 (defun org-edna-replace-newlines (string)
@@ -1560,6 +1806,7 @@ Form 3: consider the condition met if only P% of the targets pass."
                     (marker-position second-marker)))
 
 (defun org-edna-edit-blocker-section-text ()
+  "Collect the BLOCKER section text from an edit buffer."
   (when (org-edna-in-edit-buffer-p)
     (let ((original-text (org-edna-edit-text-between-markers
                           org-edna-blocker-section-marker
@@ -1569,6 +1816,7 @@ Form 3: consider the condition met if only P% of the targets pass."
         (org-edna-replace-newlines (match-string 1 original-text))))))
 
 (defun org-edna-edit-trigger-section-text ()
+  "Collect the TRIGGER section text from an edit buffer."
   (when (org-edna-in-edit-buffer-p)
     (let ((original-text (org-edna-edit-text-between-markers
                           org-edna-trigger-section-marker
@@ -1625,6 +1873,7 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
     (add-hook 'completion-at-point-functions 'org-edna-completion-at-point nil t)))
 
 (defun org-edna-edit-finish ()
+  "Finish an Edna property edit."
   (interactive)
   (let ((blocker (org-edna-edit-blocker-section-text))
         (trigger (org-edna-edit-trigger-section-text))
@@ -1641,6 +1890,7 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
     (kill-buffer org-edna-edit-buffer-name)))
 
 (defun org-edna-edit-abort ()
+  "Abort an Edna property edit."
   (interactive)
   (let ((pos-marker org-edna-edit-original-marker)
         (wc org-window-configuration)
@@ -1675,6 +1925,9 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
                               (point-max-marker)))
 
 (defun org-edna--collect-keywords (keyword-type &optional suffix)
+  "Collect known Edna keywords of type KEYWORD-TYPE.
+
+SUFFIX is an additional suffix to use when matching keywords."
   (let* ((suffix (or suffix ""))
          (edna-sym-list)
          (edna-rx (rx-to-string `(and
@@ -1693,12 +1946,15 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
     edna-sym-list))
 
 (defun org-edna--collect-finders ()
+  "Return a list of finder keywords."
   (org-edna--collect-keywords "finder"))
 
 (defun org-edna--collect-actions ()
+  "Return a list of action keywords."
   (org-edna--collect-keywords "action" "!"))
 
 (defun org-edna--collect-conditions ()
+  "Return a list of condition keywords."
   (org-edna--collect-keywords "condition" "?"))
 
 (defun org-edna-completions-for-blocker ()
@@ -1713,6 +1969,10 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
     ,@(org-edna--collect-actions)))
 
 (defun org-edna-completion-table-function (string pred action)
+  "Completion table function for Edna keywords.
+
+See `minibuffer-completion-table' for description of STRING,
+PRED, and ACTION."
   (let ((completions (cond
                       ;; Don't offer completion inside of arguments
                       ((> (syntax-ppss-depth (syntax-ppss)) 0) nil)
@@ -1735,6 +1995,7 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
                      (cycle-sort-function . identity)))))))
 
 (defun org-edna-completion-at-point ()
+  "Complete the Edna keyword at point."
   (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
     (list (car bounds) (cdr bounds) 'org-edna-completion-table-function)))
 
@@ -1743,6 +2004,9 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
 (declare-function lm-report-bug "lisp-mnt" (topic))
 
 (defun org-edna-submit-bug-report (topic)
+  "Submit a bug report to the Edna developers.
+
+TOPIC is the topic for the bug report."
   (interactive "sTopic: ")
   (require 'lisp-mnt)
   (let* ((src-file (locate-library "org-edna.el" t))

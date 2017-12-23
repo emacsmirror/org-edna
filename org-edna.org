@@ -928,24 +928,30 @@ tagged "test" does *not* have the property PROP set to "1".
 
 "Consideration" is a special keyword that's only valid for blockers.
 
+This says "Allow a task to complete if CONSIDERATION of its targets pass the
+given condition".
+
 This keyword can allow specifying only a portion of tasks to consider:
 
 1. consider(PERCENT)
 2. consider(NUMBER)
 3. consider(all) (Default)
+4. consider(any)
 
 (1) tells the blocker to only consider some portion of the targets.  If at least
 PERCENT of them are in a DONE state, allow the task to be set to DONE.  PERCENT
-must be a decimal.
+must be a decimal, and doesn't need to include a %-sign.
 
 (2) tells the blocker to only consider NUMBER of the targets.
 
 (3) tells the blocker to consider all following targets.
 
-A consideration must be specified before the targets to which it applies:
+(4) tells the blocker to allow passage if any of the targets pass.
+
+A consideration must be specified before the conditions to which it applies:
 
 #+BEGIN_EXAMPLE
-consider(0.5) siblings consider(all) match("find_me")
+consider(0.5) siblings match("find_me") consider(all) !done?
 #+END_EXAMPLE
 
 The above code will allow task completion if at least half the siblings are
@@ -959,6 +965,86 @@ The above code will allow task completion if at least one of ID1, ID2, and ID3
 are complete, and at least two of ID3, ID4, ID5, and ID6 are complete.
 
 If no consideration is given, ALL is assumed.
+
+Both "consider" and "consideration" are valid keywords; they both mean the same
+thing.
+
+** Conditional Forms
+:PROPERTIES:
+:CUSTOM_ID: conditional_forms
+:DESCRIPTION: If/Then/Else
+:END:
+
+Let's say you've got the following checklist:
+
+#+begin_src org
+,* TODO Nightly
+  DEADLINE: <2017-12-22 Fri 22:00 +1d>
+  :PROPERTIES:
+  :ID:       12345
+  :BLOCKER:  match("nightly")
+  :TRIGGER:  match("nightly") todo!(TODO)
+  :END:
+,* TODO Prepare Tomorrow's Lunch                                     :nightly:
+,* TODO Lock Back Door                                               :nightly:
+,* TODO Feed Dog                                                     :nightly:
+#+end_src
+
+You don't know in what order you want to perform each task, nor should it
+matter.  However, you also want the parent heading, "Nightly", to be marked as
+DONE when you're finished with the last task.
+
+There are two solutions to this: 1. Have each task attempt to mark "Nightly" as
+DONE, which will spam blocking messages after each task.
+
+The second is to use conditional forms.  Conditional forms are simple; it's just
+if/then/else/endif:
+
+#+begin_quote
+if CONDITION then THEN else ELSE endif
+#+end_quote
+
+Here's how that reads:
+
+"If CONDITION would not block, execute THEN.  Otherwise, execute ELSE."
+
+For our nightly entries, this looks as follows:
+
+#+begin_src org
+,* TODO Prepare Tomorrow's Lunch                                     :nightly:
+  :PROPERTIES:
+  :TRIGGER:  if match("nightly") then ids(12345) todo!(DONE) endif
+  :END:
+#+end_src
+
+Thus, we replicate our original blocking condition on all of them, so it won't
+trigger the original until the last one is marked DONE.
+
+Occasionally, you may find that you'd rather execute a form if the condition
+*would* block.  There are two options.
+
+The first is confusing: use ~consider(any)~.  This will tell Edna to pass so
+long as one of the targets meets the condition.  This is the opposite of Edna's
+standard operation, which only allows passage if all targets meet the condition.
+
+#+begin_src org
+,* TODO Prepare Tomorrow's Lunch                                     :nightly:
+  :PROPERTIES:
+  :TRIGGER:  if consider(any) match("nightly") then ids(12345) todo!(DONE) endif
+  :END:
+#+end_src
+
+The second is a lot easier to understand: just switch the then and else clauses:
+
+#+begin_src org
+,* TODO Prepare Tomorrow's Lunch                                     :nightly:
+  :PROPERTIES:
+  :TRIGGER:  if match("nightly") then else ids(12345) todo!(DONE) endif
+  :END:
+#+end_src
+
+The conditional block tells it to evaluate that section.  Thus, you can
+conditionally add targets, or conditionally check conditions.
 
 ** Setting the Properties
 :PROPERTIES:
@@ -991,7 +1077,6 @@ of any valid keyword within the BLOCKER or TRIGGER sections using
 
 When finished, type ~C-c C-c~ to apply the changes, or ~C-c C-k~ to throw out your
 changes.
-
 * Extending Edna
 :PROPERTIES:
 :DESCRIPTION: What else can it do?
@@ -1149,16 +1234,24 @@ making any changes:
 1. Update the info page in the repository with ~C-c C-e i i~
 2. If you're updating the HTML documentation, switch to a theme that can easily
    be read on a white background; we recommend the "adwaita" theme
-
 * Changelog
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.0beta3
+HUGE addition here
+*** Conditional Forms
+- See [[#conditional_forms][Conditional Forms]] for more information
+*** Overhauled Internal Parsing
+*** Fixed consideration keywords
+- Both consider and consideration are accepted now
+*** Added 'any consideration
+- Allows passage if just one target is fulfilled
 ** 1.0beta2
 Big release here, with three new features.
 
 *** Added interactive keyword editor with completion
-See [[#setting_keywords][Setting the Properties]] for how to do that
+- See [[#setting_keywords][Setting the Properties]] for how to do that
 
 *** New uses of schedule! and deadline!
 - New "float" form that mimics diary-float
