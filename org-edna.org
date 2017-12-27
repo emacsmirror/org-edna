@@ -1238,6 +1238,10 @@ making any changes:
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.0beta4
+Just some bug fixes from the new form parsing.
+*** Fixed multiple forms getting incorrect targets
+*** Fixed multiple forms not evaluating
 ** 1.0beta3
 HUGE addition here
 *** Conditional Forms

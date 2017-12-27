@@ -7,7 +7,7 @@
 ;; Keywords: convenience, text, org
 ;; URL: https://savannah.nongnu.org/projects/org-edna-el/
 ;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
-;; Version: 1.0beta3
+;; Version: 1.0beta4
 
 ;; This file is part of GNU Emacs.
 
@@ -291,16 +291,32 @@ the remainder of FORM after the current scope was parsed."
       (push '(!done?) final-form))
     (list (nreverse final-form) remaining-form)))
 
+(defun org-edna--normalize-all-forms (form-list action-or-condition &optional from-string)
+  "Normalize all forms in flat form list FORM-LIST.
+
+ACTION-OR-CONDITION is either 'action or 'condition, indicating
+which of the two types is allowed in FORM.
+
+FROM-STRING is used internally, and is non-nil if FORM was
+originally a string."
+  (pcase-let* ((`(,final-form ,rem-form) (org-edna--normalize-sexp-form form-list action-or-condition from-string)))
+    (setq final-form (list final-form))
+    (while rem-form
+      (pcase-let* ((`(,new-form ,r-form)
+                    (org-edna--normalize-sexp-form rem-form action-or-condition from-string)))
+        (setq final-form (append final-form (list new-form))
+              rem-form r-form)))
+    final-form))
+
 (defun org-edna-string-form-to-sexp-form (string-form action-or-condition)
   "Parse string form STRING-FORM into an Edna sexp form.
 
 ACTION-OR-CONDITION is either 'action or 'condition, indicating
 which of the two types is allowed in STRING-FORM."
-  (car
-   (org-edna--normalize-sexp-form
-    (car (org-edna--convert-form string-form))
-    action-or-condition
-    string-form)))
+  (org-edna--normalize-all-forms
+   (car (org-edna--convert-form string-form))
+   action-or-condition
+   string-form))
 
 (defun org-edna--handle-condition (func mod args targets consideration)
   "Handle a condition.
@@ -396,13 +412,13 @@ OLD-BLOCKING-VAR are used internally."
          `(if (not ,(org-edna--expand-sexp-form cond))
               ,(org-edna--expand-sexp-form
                 then
-                '(progn)
+                t
                 old-target-var old-consideration-var old-blocking-var)
             ,(when else
                (org-edna--expand-sexp-form
                 ;; else is wrapped in a list, so take the first argument
                 (car else)
-                '(progn)
+                t
                 old-target-var old-consideration-var old-blocking-var))))
         ((pred (lambda (arg) (symbolp (car arg))))
          (org-edna--expand-single-sexp-form
@@ -413,7 +429,7 @@ OLD-BLOCKING-VAR are used internally."
          `(,@wrapper-form
            ,@(mapcar
               (lambda (f) (org-edna--expand-sexp-form
-                      f '(progn) target-var consideration-var blocking-var))
+                      f nil target-var consideration-var blocking-var))
               form)))))))
 
 (defun org-edna-eval-sexp-form (sexp-form)

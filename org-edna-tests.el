@@ -151,39 +151,39 @@
          (sexp (org-edna-string-form-to-sexp-form input-string 'condition)))
     (should (equal
              sexp
-             '((self)
-               (!done?))))))
+             '(((self)
+                (!done?)))))))
 
 (ert-deftest org-edna-form-to-sexp-arguments ()
   (let* ((input-string "match(\"checklist\") todo!(TODO)")
          (sexp (org-edna-string-form-to-sexp-form input-string 'action)))
     (should (equal
              sexp
-             '((match "checklist")
-               (todo! TODO))))))
+             '(((match "checklist")
+               (todo! TODO)))))))
 
 (ert-deftest org-edna-form-to-sexp-if-no-else ()
   (let* ((input-string "if match(\"checklist\") done? then self todo!(TODO) endif")
          (sexp (org-edna-string-form-to-sexp-form input-string 'action)))
     (should (equal
              sexp
-             '((if ((match "checklist")
-                    (done?))
-                   ((self)
-                    (todo! TODO))
-                 nil))))))
+             '(((if ((match "checklist")
+                     (done?))
+                    ((self)
+                     (todo! TODO))
+                  nil)))))))
 
 (ert-deftest org-edna-form-to-sexp-if-else ()
   (let* ((input-string "if match(\"checklist\") done? then self todo!(TODO) else siblings todo!(DONE) endif")
          (sexp (org-edna-string-form-to-sexp-form input-string 'action)))
     (should (equal
              sexp
-             '((if ((match "checklist")
-                    (done?))
-                   ((self)
-                    (todo! TODO))
-                 ((siblings)
-                  (todo! DONE))))))))
+             '(((if ((match "checklist")
+                      (done?))
+                    ((self)
+                     (todo! TODO))
+                  ((siblings)
+                   (todo! DONE)))))))))
 
 (ert-deftest org-edna-expand-sexp-form ()
   ;; Override cl-gentemp so we have a repeatable test
@@ -224,21 +224,24 @@
                      (consideration1 nil)
                      (blocking-entry1 nil))
                  ;; Don't need a new set of variables
-                 (progn
-                   (setq targets1
-                         (org-edna--add-targets targets1
+                 (let ((targets2 targets1)
+                       (consideration2 consideration1)
+                       (blocking-entry2 blocking-entry1))
+                   (setq targets2
+                         (org-edna--add-targets targets2
                                                 (org-edna-finder/match "checklist")))
                    (org-edna--handle-action 'org-edna-action/todo!
-                                            targets1
+                                            targets2
                                             (point-marker)
                                             '(DONE)))
-                 ;; No new set of variables here either
-                 (progn
-                   (setq targets1
-                         (org-edna--add-targets targets1
+                 (let ((targets5 targets1)
+                       (consideration5 consideration1)
+                       (blocking-entry5 blocking-entry1))
+                   (setq targets5
+                         (org-edna--add-targets targets5
                                                 (org-edna-finder/siblings)))
                    (org-edna--handle-action 'org-edna-action/todo!
-                                            targets1
+                                            targets5
                                             (point-marker)
                                             '(TODO)))))
              (output-form (org-edna--expand-sexp-form input-sexp)))
@@ -263,45 +266,46 @@
                                 (todo! TODO))
                              ((siblings)
                               (todo! DONE)))))
-             (expected-form '(let
-                                 ((targets1 nil)
-                                  (consideration1 nil)
-                                  (blocking-entry1 nil))
-                               (if
-                                   ;; No inheritance in the conditional scope
-                                   (not
-                                    (let
-                                        ((targets2 nil)
-                                         (consideration2 nil)
-                                         (blocking-entry2 nil))
-                                      ;; Add targets for checklist match
-                                      (setq targets2
-                                            (org-edna--add-targets targets2
-                                                                   (org-edna-finder/match "checklist")))
-                                      ;; Handle condition
-                                      (setq blocking-entry2
-                                            (or blocking-entry2
-                                                (org-edna--handle-condition 'org-edna-condition/done\? 'nil 'nil targets2 consideration2)))))
-                                   ;; Use the top-level scope for then case
-                                   (progn
-                                     ;; Add targets for self finder
-                                     (setq targets1
-                                           (org-edna--add-targets targets1
-                                                                  (org-edna-finder/self)))
-                                     ;; Mark as TODO
-                                     (org-edna--handle-action 'org-edna-action/todo! targets1
-                                                              (point-marker)
-                                                              '(TODO)))
-                                 ;; Use the top-level scope for the else case
-                                 (progn
-                                   ;; Find siblings
-                                   (setq targets1
-                                         (org-edna--add-targets targets1
-                                                                (org-edna-finder/siblings)))
-                                   ;; Mark as DONE
-                                   (org-edna--handle-action 'org-edna-action/todo! targets1
-                                                            (point-marker)
-                                                            '(DONE))))))
+             (expected-form
+              '(let
+                   ((targets1 nil)
+                    (consideration1 nil)
+                    (blocking-entry1 nil))
+                 (if
+                     ;; No inheritance in the conditional scope
+                     (not
+                      (let
+                          ((targets3 nil)
+                           (consideration3 nil)
+                           (blocking-entry3 nil))
+                        ;; Add targets for checklist match
+                        (setq targets3
+                              (org-edna--add-targets targets3
+                                                     (org-edna-finder/match "checklist")))
+                        ;; Handle condition
+                        (setq blocking-entry3
+                              (or blocking-entry3
+                                  (org-edna--handle-condition 'org-edna-condition/done\? 'nil 'nil targets3 consideration3)))))
+                     ;; Use the top-level scope for then case
+                     (progn
+                       ;; Add targets for self finder
+                       (setq targets1
+                             (org-edna--add-targets targets1
+                                                    (org-edna-finder/self)))
+                       ;; Mark as TODO
+                       (org-edna--handle-action 'org-edna-action/todo! targets1
+                                                (point-marker)
+                                                '(TODO)))
+                   ;; Use the top-level scope for the else case
+                   (progn
+                     ;; Find siblings
+                     (setq targets1
+                           (org-edna--add-targets targets1
+                                                  (org-edna-finder/siblings)))
+                     ;; Mark as DONE
+                     (org-edna--handle-action 'org-edna-action/todo! targets1
+                                              (point-marker)
+                                              '(DONE))))))
 
              (output-form (org-edna--expand-sexp-form input-sexp)))
     (should (equal output-form expected-form))))
@@ -323,37 +327,38 @@
                                 (done\?))
                                ((self)
                                 (todo! TODO)))))
-             (expected-form '(let
-                                 ((targets1 nil)
-                                  (consideration1 nil)
-                                  (blocking-entry1 nil))
-                               (if
-                                   ;; No inheritance in the conditional scope
-                                   (not
-                                    (let
-                                        ((targets2 nil)
-                                         (consideration2 nil)
-                                         (blocking-entry2 nil))
-                                      ;; Add targets for checklist match
-                                      (setq targets2
-                                            (org-edna--add-targets targets2
-                                                                   (org-edna-finder/match "checklist")))
-                                      ;; Handle condition
-                                      (setq blocking-entry2
-                                            (or blocking-entry2
-                                                (org-edna--handle-condition 'org-edna-condition/done\? 'nil 'nil targets2 consideration2)))))
-                                   ;; Use the top-level scope for then case
-                                   (progn
-                                     ;; Add targets for self finder
-                                     (setq targets1
-                                           (org-edna--add-targets targets1
-                                                                  (org-edna-finder/self)))
-                                     ;; Mark as TODO
-                                     (org-edna--handle-action 'org-edna-action/todo! targets1
-                                                              (point-marker)
-                                                              '(TODO)))
-                                 ;; End with a nil
-                                 nil)))
+             (expected-form
+              '(let
+                   ((targets1 nil)
+                    (consideration1 nil)
+                    (blocking-entry1 nil))
+                 (if
+                     ;; No inheritance in the conditional scope
+                     (not
+                      (let
+                          ((targets3 nil)
+                           (consideration3 nil)
+                           (blocking-entry3 nil))
+                        ;; Add targets for checklist match
+                        (setq targets3
+                              (org-edna--add-targets targets3
+                                                     (org-edna-finder/match "checklist")))
+                        ;; Handle condition
+                        (setq blocking-entry3
+                              (or blocking-entry3
+                                  (org-edna--handle-condition 'org-edna-condition/done\? 'nil 'nil targets3 consideration3)))))
+                     ;; Use the top-level scope for then case
+                     (progn
+                       ;; Add targets for self finder
+                       (setq targets1
+                             (org-edna--add-targets targets1
+                                                    (org-edna-finder/self)))
+                       ;; Mark as TODO
+                       (org-edna--handle-action 'org-edna-action/todo! targets1
+                                                (point-marker)
+                                                '(TODO)))
+                   ;; End with a nil
+                   nil)))
              (output-form (org-edna--expand-sexp-form input-sexp)))
     (should (equal output-form expected-form))))
 

@@ -107,8 +107,15 @@ Contributing
 
 Changelog
 
+* 1.0beta4: 10beta4.
 * 1.0beta3: 10beta3.
 * 1.0beta2: 10beta2.
+
+1.0beta4
+
+* Fixed multiple forms getting incorrect targets::
+* Fixed multiple forms not evaluating::
+
 
 1.0beta3
 
@@ -1468,11 +1475,37 @@ Changelog
 
 * Menu:
 
+* 1.0beta4: 10beta4.
 * 1.0beta3: 10beta3.
 * 1.0beta2: 10beta2.
 
 
-File: org-edna.info,  Node: 10beta3,  Next: 10beta2,  Up: Changelog
+File: org-edna.info,  Node: 10beta4,  Next: 10beta3,  Up: Changelog
+
+1.0beta4
+========
+
+Just some bug fixes from the new form parsing.
+
+* Menu:
+
+* Fixed multiple forms getting incorrect targets::
+* Fixed multiple forms not evaluating::
+
+
+File: org-edna.info,  Node: Fixed multiple forms getting incorrect targets,  Next: Fixed multiple forms not evaluating,  Up: 10beta4
+
+Fixed multiple forms getting incorrect targets
+----------------------------------------------
+
+
+File: org-edna.info,  Node: Fixed multiple forms not evaluating,  Prev: Fixed multiple forms getting incorrect targets,  Up: 10beta4
+
+Fixed multiple forms not evaluating
+-----------------------------------
+
+
+File: org-edna.info,  Node: 10beta3,  Next: 10beta2,  Prev: 10beta4,  Up: Changelog
 
 1.0beta3
 ========
@@ -1574,77 +1607,80 @@ New finders
 
 Tag Table:
 Node: Top225
-Node: Copying3930
-Node: Introduction4747
-Node: Installation and Setup5695
-Node: Basic Operation6488
-Node: Blockers8339
-Node: Triggers8625
-Node: Syntax8887
-Node: Basic Features9577
-Node: Finders9880
-Node: ancestors11645
-Node: children12239
-Node: descendants12649
-Node: file13171
-Node: first-child13920
-Node: ids14180
-Node: match14841
-Node: next-sibling15479
-Node: next-sibling-wrap15736
-Node: olp16050
-Node: org-file16462
-Node: parent17107
-Node: previous-sibling17305
-Node: previous-sibling-wrap17566
-Node: relatives17845
-Node: rest-of-siblings21466
-Node: rest-of-siblings-wrap21751
-Node: self22100
-Node: siblings22261
-Node: siblings-wrap22498
-Node: Actions22802
-Node: Scheduled/Deadline23544
-Node: TODO State27119
-Node: Archive27487
-Node: Chain Property27807
-Node: Clocking28090
-Node: Property28502
-Node: Priority28824
-Node: Tag29393
-Node: Effort29610
-Node: Advanced Features29999
-Node: Conditions30383
-Node: done30998
-Node: headings31162
-Node: todo-state31538
-Node: variable-set31794
-Node: has-property32223
-Node: re-search32492
-Node: Negating Conditions32852
-Node: Consideration33239
-Node: Conditional Forms34808
-Node: Setting the Properties37464
-Node: Extending Edna38548
-Node: Naming Conventions39038
-Node: Finders (1)39501
-Node: Actions (1)39867
-Node: Conditions (1)40332
-Node: Contributing41222
-Node: Bugs41773
-Node: Development42125
-Node: Documentation43278
-Node: Changelog43723
-Node: 10beta343868
-Node: Conditional Forms (1)44126
-Node: Overhauled Internal Parsing44325
-Node: Fixed consideration keywords44522
-Node: Added 'any consideration44781
-Node: 10beta244996
-Node: Added interactive keyword editor with completion45278
-Node: New uses of schedule! and deadline!45577
-Node: New ``relatives'' finder46072
-Node: New finders46468
+Node: Copying4054
+Node: Introduction4871
+Node: Installation and Setup5819
+Node: Basic Operation6612
+Node: Blockers8463
+Node: Triggers8749
+Node: Syntax9011
+Node: Basic Features9701
+Node: Finders10004
+Node: ancestors11769
+Node: children12363
+Node: descendants12773
+Node: file13295
+Node: first-child14044
+Node: ids14304
+Node: match14965
+Node: next-sibling15603
+Node: next-sibling-wrap15860
+Node: olp16174
+Node: org-file16586
+Node: parent17231
+Node: previous-sibling17429
+Node: previous-sibling-wrap17690
+Node: relatives17969
+Node: rest-of-siblings21590
+Node: rest-of-siblings-wrap21875
+Node: self22224
+Node: siblings22385
+Node: siblings-wrap22622
+Node: Actions22926
+Node: Scheduled/Deadline23668
+Node: TODO State27243
+Node: Archive27611
+Node: Chain Property27931
+Node: Clocking28214
+Node: Property28626
+Node: Priority28948
+Node: Tag29517
+Node: Effort29734
+Node: Advanced Features30123
+Node: Conditions30507
+Node: done31122
+Node: headings31286
+Node: todo-state31662
+Node: variable-set31918
+Node: has-property32347
+Node: re-search32616
+Node: Negating Conditions32976
+Node: Consideration33363
+Node: Conditional Forms34932
+Node: Setting the Properties37588
+Node: Extending Edna38672
+Node: Naming Conventions39162
+Node: Finders (1)39625
+Node: Actions (1)39991
+Node: Conditions (1)40456
+Node: Contributing41346
+Node: Bugs41897
+Node: Development42249
+Node: Documentation43402
+Node: Changelog43847
+Node: 10beta444013
+Node: Fixed multiple forms getting incorrect targets44252
+Node: Fixed multiple forms not evaluating44483
+Node: 10beta344692
+Node: Conditional Forms (1)44966
+Node: Overhauled Internal Parsing45165
+Node: Fixed consideration keywords45362
+Node: Added 'any consideration45621
+Node: 10beta245836
+Node: Added interactive keyword editor with completion46118
+Node: New uses of schedule! and deadline!46417
+Node: New ``relatives'' finder46912
+Node: New finders47308
 
 End Tag Table
 
