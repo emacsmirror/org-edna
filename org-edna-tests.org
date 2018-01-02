@@ -2,7 +2,7 @@
 #+PROPERTY: EFFORT_ALL 0:01 0:02 0:03
 
 * COMMENT Copying
-Copyright (C) 2017 Ian Dunn
+Copyright (C) 2017-2018 Free Software Foundation, Inc.
 
 #+BEGIN_QUOTE
 This program is free software: you can redistribute it and/or modify

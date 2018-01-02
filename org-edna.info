@@ -140,7 +140,7 @@ File: org-edna.info,  Node: Copying,  Next: Introduction,  Prev: Top,  Up: Top
 Copying
 *******
 
-Copyright (C) 2017 Free Software Foundation, Inc.
+Copyright (C) 2017-2018 Free Software Foundation, Inc.
 
      This program is free software: you can redistribute it and/or
      modify it under the terms of the GNU General Public License as
@@ -1608,79 +1608,79 @@ New finders
 Tag Table:
 Node: Top225
 Node: Copying4054
-Node: Introduction4871
-Node: Installation and Setup5819
-Node: Basic Operation6612
-Node: Blockers8463
-Node: Triggers8749
-Node: Syntax9011
-Node: Basic Features9701
-Node: Finders10004
-Node: ancestors11769
-Node: children12363
-Node: descendants12773
-Node: file13295
-Node: first-child14044
-Node: ids14304
-Node: match14965
-Node: next-sibling15603
-Node: next-sibling-wrap15860
-Node: olp16174
-Node: org-file16586
-Node: parent17231
-Node: previous-sibling17429
-Node: previous-sibling-wrap17690
-Node: relatives17969
-Node: rest-of-siblings21590
-Node: rest-of-siblings-wrap21875
-Node: self22224
-Node: siblings22385
-Node: siblings-wrap22622
-Node: Actions22926
-Node: Scheduled/Deadline23668
-Node: TODO State27243
-Node: Archive27611
-Node: Chain Property27931
-Node: Clocking28214
-Node: Property28626
-Node: Priority28948
-Node: Tag29517
-Node: Effort29734
-Node: Advanced Features30123
-Node: Conditions30507
-Node: done31122
-Node: headings31286
-Node: todo-state31662
-Node: variable-set31918
-Node: has-property32347
-Node: re-search32616
-Node: Negating Conditions32976
-Node: Consideration33363
-Node: Conditional Forms34932
-Node: Setting the Properties37588
-Node: Extending Edna38672
-Node: Naming Conventions39162
-Node: Finders (1)39625
-Node: Actions (1)39991
-Node: Conditions (1)40456
-Node: Contributing41346
-Node: Bugs41897
-Node: Development42249
-Node: Documentation43402
-Node: Changelog43847
-Node: 10beta444013
-Node: Fixed multiple forms getting incorrect targets44252
-Node: Fixed multiple forms not evaluating44483
-Node: 10beta344692
-Node: Conditional Forms (1)44966
-Node: Overhauled Internal Parsing45165
-Node: Fixed consideration keywords45362
-Node: Added 'any consideration45621
-Node: 10beta245836
-Node: Added interactive keyword editor with completion46118
-Node: New uses of schedule! and deadline!46417
-Node: New ``relatives'' finder46912
-Node: New finders47308
+Node: Introduction4876
+Node: Installation and Setup5824
+Node: Basic Operation6617
+Node: Blockers8468
+Node: Triggers8754
+Node: Syntax9016
+Node: Basic Features9706
+Node: Finders10009
+Node: ancestors11774
+Node: children12368
+Node: descendants12778
+Node: file13300
+Node: first-child14049
+Node: ids14309
+Node: match14970
+Node: next-sibling15608
+Node: next-sibling-wrap15865
+Node: olp16179
+Node: org-file16591
+Node: parent17236
+Node: previous-sibling17434
+Node: previous-sibling-wrap17695
+Node: relatives17974
+Node: rest-of-siblings21595
+Node: rest-of-siblings-wrap21880
+Node: self22229
+Node: siblings22390
+Node: siblings-wrap22627
+Node: Actions22931
+Node: Scheduled/Deadline23673
+Node: TODO State27248
+Node: Archive27616
+Node: Chain Property27936
+Node: Clocking28219
+Node: Property28631
+Node: Priority28953
+Node: Tag29522
+Node: Effort29739
+Node: Advanced Features30128
+Node: Conditions30512
+Node: done31127
+Node: headings31291
+Node: todo-state31667
+Node: variable-set31923
+Node: has-property32352
+Node: re-search32621
+Node: Negating Conditions32981
+Node: Consideration33368
+Node: Conditional Forms34937
+Node: Setting the Properties37593
+Node: Extending Edna38677
+Node: Naming Conventions39167
+Node: Finders (1)39630
+Node: Actions (1)39996
+Node: Conditions (1)40461
+Node: Contributing41351
+Node: Bugs41902
+Node: Development42254
+Node: Documentation43407
+Node: Changelog43852
+Node: 10beta444018
+Node: Fixed multiple forms getting incorrect targets44257
+Node: Fixed multiple forms not evaluating44488
+Node: 10beta344697
+Node: Conditional Forms (1)44971
+Node: Overhauled Internal Parsing45170
+Node: Fixed consideration keywords45367
+Node: Added 'any consideration45626
+Node: 10beta245841
+Node: Added interactive keyword editor with completion46123
+Node: New uses of schedule! and deadline!46422
+Node: New ``relatives'' finder46917
+Node: New finders47313
 
 End Tag Table
 
