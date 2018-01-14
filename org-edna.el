@@ -1607,6 +1607,13 @@ Form 4: Set the target's priority to the character P."
                     (string-to-char priority-action)
                   priority-action)))
 
+(defun org-edna-set-effort (increment value)
+  "Compatibility function for `org-set-effort'."
+  ;; The signature of `org-set-effort' changed in 9.1.6
+  (if (version< org-version "9.1.6")
+      (org-set-effort value increment)
+    (org-set-effort increment value)))
+
 (defun org-edna-action/set-effort! (_last-entry value)
   "Action to set the effort of a target heading.
 
@@ -1619,8 +1626,8 @@ the raw value for the effort.
 
 For form 2, increment the effort to the next allowed value."
   (if (eq value 'increment)
-      (org-set-effort nil value)
-    (org-set-effort value nil)))
+      (org-edna-set-effort value nil)
+    (org-edna-set-effort nil value)))
 
 (defun org-edna-action/archive! (_last-entry)
   "Action to archive a target heading.
