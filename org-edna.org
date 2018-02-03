@@ -1292,21 +1292,32 @@ making any changes:
 :DESCRIPTION: List of changes by version
 :END:
 ** 1.0beta5
+Some new forms and a new build system.
+
 - Added new forms to set-property!
   - Now allows 'inc, 'dec, 'previous, and 'next as values
+
 - Changed build system to EDE to properly handle dependencies
+
 - Fixed compatibility with new Org effort functions
 ** 1.0beta4
 Just some bug fixes from the new form parsing.
+
 - Fixed multiple forms getting incorrect targets
+
 - Fixed multiple forms not evaluating
 ** 1.0beta3
 HUGE addition here
+
 - Conditional Forms
   - See [[#conditional_forms][Conditional Forms]] for more information
+
 - Overhauled Internal Parsing
+
 - Fixed consideration keywords
+
 - Both consider and consideration are accepted now
+
 - Added 'any consideration
   - Allows passage if just one target is fulfilled
 ** 1.0beta2

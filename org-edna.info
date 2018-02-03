@@ -95,9 +95,9 @@ Conditions
 Extending Edna
 
 * Naming Conventions::           How to name new functions
-* Finders: Finders (1).          Making a new finder
-* Actions: Actions (1).          Making a new action
-* Conditions: Conditions (1).    Making a new condition
+* Finders: Finders 1.            Making a new finder
+* Actions: Actions 1.            Making a new action
+* Conditions: Conditions 1.      Making a new condition
 
 Contributing
 
@@ -107,31 +107,10 @@ Contributing
 
 Changelog
 
+* 1.0beta5: 10beta5.
 * 1.0beta4: 10beta4.
 * 1.0beta3: 10beta3.
 * 1.0beta2: 10beta2.
-
-1.0beta4
-
-* Fixed multiple forms getting incorrect targets::
-* Fixed multiple forms not evaluating::
-
-
-1.0beta3
-
-* Conditional Forms: Conditional Forms (1).
-* Overhauled Internal Parsing::
-* Fixed consideration keywords::
-* Added 'any consideration::
-
-
-1.0beta2
-
-* Added interactive keyword editor with completion::
-* New uses of schedule! and deadline!::
-* New ``relatives'' finder::
-* New finders::
-
 
 
 
@@ -953,12 +932,68 @@ Property
 --------
 
    • Syntax: set-property!(“PROPERTY” “VALUE”)
+   • Syntax: set-property!(“PROPERTY” inc)
+   • Syntax: set-property!(“PROPERTY” dec)
+   • Syntax: set-property!(“PROPERTY” next)
+   • Syntax: set-property!(“PROPERTY” prev)
+   • Syntax: set-property!(“PROPERTY” previous)
 
-   Sets the property PROPERTY on all targets to VALUE.
+   The first form sets the property PROPERTY on all targets to VALUE.
+
+   If VALUE is a symbol, it is interpreted as follows:
+
+inc
+     Increment a numeric property value by one
+dec
+     Decrement a numeric property value by one
+
+   If either ‘inc’ or ‘dec’ attempt to modify a non-numeric property
+value, Edna will fail with an error message.
+
+next
+     Cycle the property through to the next allowed property value
+previous
+     Cycle the property through to the previous allowed property value
+
+   The symbol ‘prev’ may be used as an abbreviation for ‘previous’.
+Similar to ‘inc’ and ‘dec’, any of these will fail if there are no
+defined properties.  When reaching the end of the list of allowed
+properties, ‘next’ will cycle back to the beginning.
+
+   Example:
+
+     #+PROPERTY: TEST_ALL a b c d
+
+     * TODO Test Heading
+       :PROPERTIES:
+       :TEST:     d
+       :TRIGGER:  self set-property!("TEST" next)
+       :END:
+
+   When “Test Heading” is set to DONE, its TEST property will change to
+“a”.  This also works with ‘previous’, but in the opposite direction.
+
+   Additionally, all special forms will fail if the property is not
+already set:
+
+     * TODO Test
+       :PROPERTIES:
+       :TRIGGER: self set-property("TEST" inc)
+       :END:
+
+   In the above example, if “Test” is set to DONE, Edna will fail to
+increment the TEST property, since it doesn’t exist.
 
    • Syntax: delete-property!(“PROPERTY”)
 
    Deletes the property PROPERTY from all targets.
+
+   Examples:
+
+   • set-property!(“COUNTER” “1”) -> Sets the property COUNTER to 1 on
+     all targets
+   • set-property!(“COUNTER” inc) -> Increments the property COUNTER by
+     1.  Following the previous example, it would be 2.
 
 
 File: org-edna.info,  Node: Priority,  Next: Tag,  Prev: Property,  Up: Actions
@@ -1302,12 +1337,12 @@ org-edna-TYPE/KEYWORD.
 * Menu:
 
 * Naming Conventions::           How to name new functions
-* Finders: Finders (1).          Making a new finder
-* Actions: Actions (1).          Making a new action
-* Conditions: Conditions (1).    Making a new condition
+* Finders: Finders 1.            Making a new finder
+* Actions: Actions 1.            Making a new action
+* Conditions: Conditions 1.      Making a new condition
 
 
-File: org-edna.info,  Node: Naming Conventions,  Next: Finders (1),  Up: Extending Edna
+File: org-edna.info,  Node: Naming Conventions,  Next: Finders 1,  Up: Extending Edna
 
 Naming Conventions
 ==================
@@ -1321,7 +1356,7 @@ predicates with ’?’.
 finds a file.
 
 
-File: org-edna.info,  Node: Finders (1),  Next: Actions (1),  Prev: Naming Conventions,  Up: Extending Edna
+File: org-edna.info,  Node: Finders 1,  Next: Actions 1,  Prev: Naming Conventions,  Up: Extending Edna
 
 Finders
 =======
@@ -1335,7 +1370,7 @@ Finders have the form org-edna-finder/KEYWORD, like so:
 or nil if no targets were found.
 
 
-File: org-edna.info,  Node: Actions (1),  Next: Conditions (1),  Prev: Finders (1),  Up: Extending Edna
+File: org-edna.info,  Node: Actions 1,  Next: Conditions 1,  Prev: Finders 1,  Up: Extending Edna
 
 Actions
 =======
@@ -1352,7 +1387,7 @@ target).
    The rest of the arguments are the arguments specified in the form.
 
 
-File: org-edna.info,  Node: Conditions (1),  Prev: Actions (1),  Up: Extending Edna
+File: org-edna.info,  Node: Conditions 1,  Prev: Actions 1,  Up: Extending Edna
 
 Conditions
 ==========
@@ -1475,34 +1510,37 @@ Changelog
 
 * Menu:
 
+* 1.0beta5: 10beta5.
 * 1.0beta4: 10beta4.
 * 1.0beta3: 10beta3.
 * 1.0beta2: 10beta2.
 
 
-File: org-edna.info,  Node: 10beta4,  Next: 10beta3,  Up: Changelog
+File: org-edna.info,  Node: 10beta5,  Next: 10beta4,  Up: Changelog
+
+1.0beta5
+========
+
+Some new forms and a new build system.
+
+   • Added new forms to set-property!
+        • Now allows ’inc, ’dec, ’previous, and ’next as values
+
+   • Changed build system to EDE to properly handle dependencies
+
+   • Fixed compatibility with new Org effort functions
+
+
+File: org-edna.info,  Node: 10beta4,  Next: 10beta3,  Prev: 10beta5,  Up: Changelog
 
 1.0beta4
 ========
 
 Just some bug fixes from the new form parsing.
 
-* Menu:
+   • Fixed multiple forms getting incorrect targets
 
-* Fixed multiple forms getting incorrect targets::
-* Fixed multiple forms not evaluating::
-
-
-File: org-edna.info,  Node: Fixed multiple forms getting incorrect targets,  Next: Fixed multiple forms not evaluating,  Up: 10beta4
-
-Fixed multiple forms getting incorrect targets
-----------------------------------------------
-
-
-File: org-edna.info,  Node: Fixed multiple forms not evaluating,  Prev: Fixed multiple forms getting incorrect targets,  Up: 10beta4
-
-Fixed multiple forms not evaluating
------------------------------------
+   • Fixed multiple forms not evaluating
 
 
 File: org-edna.info,  Node: 10beta3,  Next: 10beta2,  Prev: 10beta4,  Up: Changelog
@@ -1512,42 +1550,17 @@ File: org-edna.info,  Node: 10beta3,  Next: 10beta2,  Prev: 10beta4,  Up: Change
 
 HUGE addition here
 
-* Menu:
+   • Conditional Forms
+        • See *note Conditional Forms:: for more information
 
-* Conditional Forms: Conditional Forms (1).
-* Overhauled Internal Parsing::
-* Fixed consideration keywords::
-* Added 'any consideration::
+   • Overhauled Internal Parsing
 
-
-File: org-edna.info,  Node: Conditional Forms (1),  Next: Overhauled Internal Parsing,  Up: 10beta3
-
-Conditional Forms
------------------
-
-   • See *note Conditional Forms:: for more information
-
-
-File: org-edna.info,  Node: Overhauled Internal Parsing,  Next: Fixed consideration keywords,  Prev: Conditional Forms (1),  Up: 10beta3
-
-Overhauled Internal Parsing
----------------------------
-
-
-File: org-edna.info,  Node: Fixed consideration keywords,  Next: Added 'any consideration,  Prev: Overhauled Internal Parsing,  Up: 10beta3
-
-Fixed consideration keywords
-----------------------------
+   • Fixed consideration keywords
 
    • Both consider and consideration are accepted now
 
-
-File: org-edna.info,  Node: Added 'any consideration,  Prev: Fixed consideration keywords,  Up: 10beta3
-
-Added ’any consideration
-------------------------
-
-   • Allows passage if just one target is fulfilled
+   • Added ’any consideration
+        • Allows passage if just one target is fulfilled
 
 
 File: org-edna.info,  Node: 10beta2,  Prev: 10beta3,  Up: Changelog
@@ -1557,130 +1570,95 @@ File: org-edna.info,  Node: 10beta2,  Prev: 10beta3,  Up: Changelog
 
 Big release here, with three new features.
 
-* Menu:
+   • Added interactive keyword editor with completion
+        • See *note Setting the Properties:: for how to do that
 
-* Added interactive keyword editor with completion::
-* New uses of schedule! and deadline!::
-* New ``relatives'' finder::
-* New finders::
+   • New uses of schedule!  and deadline!
+        • New “float” form that mimics diary-float
+        • New “landing” addition to “+1d” and friends to force planning
+          changes to land on a certain day or type of day
+          (weekend/weekday)
+        • See *note Scheduled/Deadline:: for details
 
-
-File: org-edna.info,  Node: Added interactive keyword editor with completion,  Next: New uses of schedule! and deadline!,  Up: 10beta2
+   • New “relatives” finder
+        • Renamed from chain-find with tons of new keywords
+        • Modified all other relative finders (previous-sibling,
+          first-child, etc.)  to use the same keywords
+        • See *note relatives:: for details
 
-Added interactive keyword editor with completion
-------------------------------------------------
-
-   • See *note Setting the Properties:: for how to do that
-
-
-File: org-edna.info,  Node: New uses of schedule! and deadline!,  Next: New ``relatives'' finder,  Prev: Added interactive keyword editor with completion,  Up: 10beta2
-
-New uses of schedule! and deadline!
------------------------------------
-
-   • New “float” form that mimics diary-float
-   • New “landing” addition to “+1d” and friends to force planning
-     changes to land on a certain day or type of day (weekend/weekday)
-   • See *note Scheduled/Deadline:: for details
-
-
-File: org-edna.info,  Node: New ``relatives'' finder,  Next: New finders,  Prev: New uses of schedule! and deadline!,  Up: 10beta2
-
-New “relatives” finder
-----------------------
-
-   • Renamed from chain-find with tons of new keywords
-   • Modified all other relative finders (previous-sibling, first-child,
-     etc.)  to use the same keywords
-   • See *note relatives:: for details
-
-
-File: org-edna.info,  Node: New finders,  Prev: New ``relatives'' finder,  Up: 10beta2
-
-New finders
------------
-
-   • *note previous-sibling-wrap::
-   • *note rest-of-siblings-wrap::
+   • New finders
+        • *note previous-sibling-wrap::
+        • *note rest-of-siblings-wrap::
 
 
 
 Tag Table:
 Node: Top225
-Node: Copying4054
-Node: Introduction4876
-Node: Installation and Setup5824
-Node: Basic Operation6617
-Node: Blockers8468
-Node: Triggers8754
-Node: Syntax9016
-Node: Basic Features9706
-Node: Finders10009
-Node: ancestors11774
-Node: children12368
-Node: descendants12778
-Node: file13300
-Node: first-child14049
-Node: ids14309
-Node: match14970
-Node: next-sibling15608
-Node: next-sibling-wrap15865
-Node: olp16179
-Node: org-file16591
-Node: parent17236
-Node: previous-sibling17434
-Node: previous-sibling-wrap17695
-Node: relatives17974
-Node: rest-of-siblings21595
-Node: rest-of-siblings-wrap21880
-Node: self22229
-Node: siblings22390
-Node: siblings-wrap22627
-Node: Actions22931
-Node: Scheduled/Deadline23673
-Node: TODO State27248
-Node: Archive27616
-Node: Chain Property27936
-Node: Clocking28219
-Node: Property28631
-Node: Priority28953
-Node: Tag29522
-Node: Effort29739
-Node: Advanced Features30128
-Node: Conditions30512
-Node: done31127
-Node: headings31291
-Node: todo-state31667
-Node: variable-set31923
-Node: has-property32352
-Node: re-search32621
-Node: Negating Conditions32981
-Node: Consideration33368
-Node: Conditional Forms34937
-Node: Setting the Properties37593
-Node: Extending Edna38677
-Node: Naming Conventions39167
-Node: Finders (1)39630
-Node: Actions (1)39996
-Node: Conditions (1)40461
-Node: Contributing41351
-Node: Bugs41902
-Node: Development42254
-Node: Documentation43407
-Node: Changelog43852
-Node: 10beta444018
-Node: Fixed multiple forms getting incorrect targets44257
-Node: Fixed multiple forms not evaluating44488
-Node: 10beta344697
-Node: Conditional Forms (1)44971
-Node: Overhauled Internal Parsing45170
-Node: Fixed consideration keywords45367
-Node: Added 'any consideration45626
-Node: 10beta245841
-Node: Added interactive keyword editor with completion46123
-Node: New uses of schedule! and deadline!46422
-Node: New ``relatives'' finder46917
-Node: New finders47313
+Node: Copying3672
+Node: Introduction4494
+Node: Installation and Setup5442
+Node: Basic Operation6235
+Node: Blockers8086
+Node: Triggers8372
+Node: Syntax8634
+Node: Basic Features9324
+Node: Finders9627
+Node: ancestors11392
+Node: children11986
+Node: descendants12396
+Node: file12918
+Node: first-child13667
+Node: ids13927
+Node: match14588
+Node: next-sibling15226
+Node: next-sibling-wrap15483
+Node: olp15797
+Node: org-file16209
+Node: parent16854
+Node: previous-sibling17052
+Node: previous-sibling-wrap17313
+Node: relatives17592
+Node: rest-of-siblings21213
+Node: rest-of-siblings-wrap21498
+Node: self21847
+Node: siblings22008
+Node: siblings-wrap22245
+Node: Actions22549
+Node: Scheduled/Deadline23291
+Node: TODO State26866
+Node: Archive27234
+Node: Chain Property27554
+Node: Clocking27837
+Node: Property28249
+Node: Priority30436
+Node: Tag31005
+Node: Effort31222
+Node: Advanced Features31611
+Node: Conditions31995
+Node: done32610
+Node: headings32774
+Node: todo-state33150
+Node: variable-set33406
+Node: has-property33835
+Node: re-search34104
+Node: Negating Conditions34464
+Node: Consideration34851
+Node: Conditional Forms36420
+Node: Setting the Properties39076
+Node: Extending Edna40160
+Node: Naming Conventions40650
+Node: Finders 141111
+Node: Actions 141473
+Node: Conditions 141932
+Node: Contributing42818
+Node: Bugs43369
+Node: Development43721
+Node: Documentation44874
+Node: Changelog45319
+Node: 10beta545506
+Node: 10beta445877
+Node: 10beta346130
+Node: 10beta246569
 
 End Tag Table
 
