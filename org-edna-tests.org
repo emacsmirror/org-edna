@@ -1,5 +1,6 @@
 #+STARTUP: nologdone
-#+PROPERTY: EFFORT_ALL 0:01 0:02 0:03
+#+PROPERTY: Effort_ALL 0:01 0:02 0:03
+#+PROPERTY: COUNTER_ALL a b c d
 
 * COMMENT Copying
 Copyright (C) 2017-2018 Free Software Foundation, Inc.

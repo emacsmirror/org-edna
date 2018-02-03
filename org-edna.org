@@ -761,12 +761,65 @@ clock, if any.
 :END:
 
 - Syntax: set-property!("PROPERTY" "VALUE")
+- Syntax: set-property!("PROPERTY" inc)
+- Syntax: set-property!("PROPERTY" dec)
+- Syntax: set-property!("PROPERTY" next)
+- Syntax: set-property!("PROPERTY" prev)
+- Syntax: set-property!("PROPERTY" previous)
 
-Sets the property PROPERTY on all targets to VALUE.
+The first form sets the property PROPERTY on all targets to VALUE.
+
+If VALUE is a symbol, it is interpreted as follows:
+
+- inc :: Increment a numeric property value by one
+- dec :: Decrement a numeric property value by one
+
+If either ~inc~ or ~dec~ attempt to modify a non-numeric property value, Edna will
+fail with an error message.
+
+- next :: Cycle the property through to the next allowed property value
+- previous :: Cycle the property through to the previous allowed property value
+
+The symbol ~prev~ may be used as an abbreviation for ~previous~.  Similar to
+~inc~ and ~dec~, any of these will fail if there are no defined properties.
+When reaching the end of the list of allowed properties, ~next~ will cycle back
+to the beginning.
+
+Example:
+
+#+begin_src org
+,#+PROPERTY: TEST_ALL a b c d
+
+,* TODO Test Heading
+  :PROPERTIES:
+  :TEST:     d
+  :TRIGGER:  self set-property!("TEST" next)
+  :END:
+#+end_src
+
+When "Test Heading" is set to DONE, its TEST property will change to "a".  This
+also works with ~previous~, but in the opposite direction.
+
+Additionally, all special forms will fail if the property is not already set:
+
+#+begin_src org
+,* TODO Test
+  :PROPERTIES:
+  :TRIGGER: self set-property("TEST" inc)
+  :END:
+#+end_src
+
+In the above example, if "Test" is set to DONE, Edna will fail to increment the
+TEST property, since it doesn't exist.
 
 - Syntax: delete-property!("PROPERTY")
 
 Deletes the property PROPERTY from all targets.
+
+Examples:
+
+- set-property!("COUNTER" "1") -> Sets the property COUNTER to 1 on all targets
+- set-property!("COUNTER" inc) -> Increments the property COUNTER by 1.  Following the previous example, it would be 2.
 
 *** Priority
 :PROPERTIES:
@@ -1238,6 +1291,11 @@ making any changes:
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.0beta5
+- Added new forms to set-property!
+  - Now allows 'inc, 'dec, 'previous, and 'next as values
+- Changed build system to EDE to properly handle dependencies
+- Fixed compatibility with new Org effort functions
 ** 1.0beta4
 Just some bug fixes from the new form parsing.
 *** Fixed multiple forms getting incorrect targets

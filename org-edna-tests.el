@@ -1039,7 +1039,6 @@
          (pairs '((cp . rm) (copy . remove) ("cp" . "rm") ("copy" . "remove"))))
     (org-with-point-at target
       (dolist (pair pairs)
-        ;; (message "Pair: %s" pair)
         (org-edna-action/scheduled! source (car pair))
         (should (string-equal (org-entry-get nil "SCHEDULED")
                               "<2000-01-15 Sat 00:00>"))
@@ -1178,6 +1177,55 @@
       (should (equal (org-entry-get nil "TEST") "1"))
       (org-edna-action/delete-property! nil "TEST")
       (should-not (org-entry-get nil "TEST")))))
+
+(ert-deftest org-edna-action-property/inc-dec ()
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+    (org-with-point-at pom
+      (org-edna-action/set-property! nil "TEST" "1")
+      (should (equal (org-entry-get nil "TEST") "1"))
+      (org-edna-action/set-property! nil "TEST" 'inc)
+      (should (equal (org-entry-get nil "TEST") "2"))
+      (org-edna-action/set-property! nil "TEST" 'dec)
+      (should (equal (org-entry-get nil "TEST") "1"))
+      (org-edna-action/delete-property! nil "TEST")
+      (should-not (org-entry-get nil "TEST"))
+      (should-error (org-edna-action/set-property! nil "TEST" 'inc))
+      (should-error (org-edna-action/set-property! nil "TEST" 'dec))
+      (org-edna-action/set-property! nil "TEST" "a")
+      (should (equal (org-entry-get nil "TEST") "a"))
+      (should-error (org-edna-action/set-property! nil "TEST" 'inc))
+      (should-error (org-edna-action/set-property! nil "TEST" 'dec))
+      (org-edna-action/delete-property! nil "TEST")
+      (should-not (org-entry-get nil "TEST")))))
+
+(ert-deftest org-edna-action-property/next-prev ()
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+    (org-with-point-at pom
+      (org-edna-action/set-property! nil "TEST" "a")
+      (should (equal (org-entry-get nil "TEST") "a"))
+      (should-error (org-edna-action/set-property! nil "TEST" 'next))
+      (should-error (org-edna-action/set-property! nil "TEST" 'prev))
+      (should-error (org-edna-action/set-property! nil "TEST" 'previous))
+      (org-edna-action/delete-property! nil "TEST")
+      (should-not (org-entry-get nil "TEST"))
+      ;; Test moving forwards
+      (org-edna-action/set-property! nil "COUNTER" "a")
+      (should (equal (org-entry-get nil "COUNTER") "a"))
+      (org-edna-action/set-property! nil "COUNTER" 'next)
+      (should (equal (org-entry-get nil "COUNTER") "b"))
+      ;; Test moving forwards past the last one
+      (org-edna-action/set-property! nil "COUNTER" "d")
+      (should (equal (org-entry-get nil "COUNTER") "d"))
+      (org-edna-action/set-property! nil "COUNTER" 'next)
+      (should (equal (org-entry-get nil "COUNTER") "a"))
+      ;; Test moving backwards past the first one
+      (org-edna-action/set-property! nil "COUNTER" 'prev)
+      (should (equal (org-entry-get nil "COUNTER") "d"))
+      ;; Test moving backwards normally
+      (org-edna-action/set-property! nil "COUNTER" 'previous)
+      (should (equal (org-entry-get nil "COUNTER") "c"))
+      (org-edna-action/delete-property! nil "COUNTER")
+      (should-not (org-entry-get nil "COUNTER")))))
 
 (ert-deftest org-edna-action-clock ()
   (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))

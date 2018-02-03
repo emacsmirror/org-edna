@@ -7,7 +7,7 @@
 ;; Keywords: convenience, text, org
 ;; URL: https://savannah.nongnu.org/projects/org-edna-el/
 ;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
-;; Version: 1.0beta4
+;; Version: 1.0beta5
 
 ;; This file is part of GNU Emacs.
 
@@ -1551,6 +1551,39 @@ Edna Syntax: tag!(\"TAGS\")
 TAGS is a valid tag specification, such as \":aa:bb:cc:\"."
   (org-set-tags-to tags))
 
+(defun org-edna--string-is-numeric-p (string)
+  "Return non-nil if STRING is a valid numeric string.
+
+Examples of valid numeric strings are \"1\", \"-3\", or \"123\"."
+  ;; Can't use string-to-number, because it returns 0 if STRING isn't a
+  ;; number, which is ambiguous.
+  (numberp (car (read-from-string string))))
+
+(defun org-edna--increment-numeric-property (pom property &optional decrement)
+  "Return the incremented value of PROPERTY at POM.
+
+If optional argument DECREMENT is non-nil, decrement the property
+value instead."
+  (let* ((prop-value (org-entry-get pom property)))
+    (unless prop-value
+      (error "Attempted to increment/decrement unset property %s" property))
+    (unless (org-edna--string-is-numeric-p prop-value)
+      (error "Property %s doesn't have a numeric value (got %s)" property prop-value))
+    (number-to-string (+ (if decrement -1 1) (string-to-number prop-value)))))
+
+(defun org-edna--cycle-property (pom property &optional previous)
+  "Cycle the property PROPERTY at POM through its allowed values.
+
+Change PROPERTY to the next allowed value, unless PREVIOUS is
+non-nil, in which case, cycle to the previous allowed value."
+  (let* ((prop-value (org-entry-get pom property)))
+    (unless prop-value
+      (error "Attempted to cycle an unset property %s" property))
+    (save-excursion
+      ;; Jump to the property line, (required for `org-property-next-allowed-value')
+      (re-search-forward (org-re-property property nil nil prop-value))
+      (org-property-next-allowed-value previous))))
+
 (defun org-edna-action/set-property! (_last-entry property value)
   "Action to set the property PROPERTY of a target heading to VALUE.
 
@@ -1558,7 +1591,15 @@ Edna Syntax: set-property!(\"PROPERTY\" \"VALUE\")
 
 PROPERTY and VALUE are both strings.  PROPERTY must be a valid
 org mode property."
-  (org-entry-put nil property value))
+  (pcase value
+    ((pred stringp)
+     (org-entry-put (point) property value))
+    ((or `inc `dec)
+     (let* ((new-value (org-edna--increment-numeric-property (point) property
+                                                             (eq value 'dec))))
+       (org-entry-put (point) property new-value)))
+    ((or `next `prev `previous)
+     (org-edna--cycle-property (point) property (memq value '(prev previous))))))
 
 (defun org-edna-action/delete-property! (_last-entry property)
   "Action to delete a property from a target heading.
@@ -1607,12 +1648,58 @@ Form 4: Set the target's priority to the character P."
                     (string-to-char priority-action)
                   priority-action)))
 
-(defun org-edna-set-effort (increment value)
-  "Compatibility function for `org-set-effort'."
-  ;; The signature of `org-set-effort' changed in 9.1.6
-  (if (version< org-version "9.1.6")
-      (org-set-effort value increment)
-    (org-set-effort increment value)))
+(defun org-edna-set-effort (value increment)
+  "Set the effort property of the current entry.
+With numerical prefix arg, use the nth allowed value, 0 stands for the
+10th allowed value.
+
+When INCREMENT is non-nil, set the property to the next allowed value."
+  ;; NOTE: Copied from `org-set-effort', because the signature changed in 9.1.7.
+  ;; Since the Org repo doesn't change its version string until after a release,
+  ;; there's no way to tell when to use the old or new signature until after
+  ;; 9.1.7 is released.  Therefore, we cut out the middle man and slap the
+  ;; entire function here.
+  (interactive "P")
+  (when (equal value 0) (setq value 10))
+  (let* ((completion-ignore-case t)
+	 (prop org-effort-property)
+	 (cur (org-entry-get nil prop))
+	 (allowed (org-property-get-allowed-values nil prop 'table))
+	 (existing (mapcar 'list (org-property-values prop)))
+	 rpl
+	 (val (cond
+	       ((stringp value) value)
+	       ((and allowed (integerp value))
+		(or (car (nth (1- value) allowed))
+		    (car (org-last allowed))))
+	       ((and allowed increment)
+		(or (cl-caadr (member (list cur) allowed))
+		    (user-error "Allowed effort values are not set")))
+	       (allowed
+		(message "Select 1-9,0, [RET%s]: %s"
+			 (if cur (concat "=" cur) "")
+			 (mapconcat 'car allowed " "))
+		(setq rpl (read-char-exclusive))
+		(if (equal rpl ?\r)
+		    cur
+		  (setq rpl (- rpl ?0))
+		  (when (equal rpl 0) (setq rpl 10))
+		  (if (and (> rpl 0) (<= rpl (length allowed)))
+		      (car (nth (1- rpl) allowed))
+		    (org-completing-read "Effort: " allowed nil))))
+	       (t
+		(org-completing-read
+		 (concat "Effort" (and cur (string-match "\\S-" cur)
+				       (concat " [" cur "]"))
+			 ": ")
+		 existing nil nil "" nil cur)))))
+    (unless (equal (org-entry-get nil prop) val)
+      (org-entry-put nil prop val))
+    (org-refresh-property
+     '((effort . identity)
+       (effort-minutes . org-duration-to-minutes))
+     val)
+    (message "%s is now %s" prop val)))
 
 (defun org-edna-action/set-effort! (_last-entry value)
   "Action to set the effort of a target heading.
@@ -1626,8 +1713,8 @@ the raw value for the effort.
 
 For form 2, increment the effort to the next allowed value."
   (if (eq value 'increment)
-      (org-edna-set-effort value nil)
-    (org-edna-set-effort nil value)))
+      (org-edna-set-effort nil value)
+    (org-edna-set-effort value nil)))
 
 (defun org-edna-action/archive! (_last-entry)
   "Action to archive a target heading.
