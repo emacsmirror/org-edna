@@ -70,20 +70,19 @@ properties used during actions or conditions."
 ;; 2. Edna sexp form; this is the intermediary form, and form used in org-edna-form
 ;; 3. Lisp form; a form that can be evaluated by Emacs
 
-(defmacro org-edna--syntax-error (msg form error-form)
+(defmacro org-edna--syntax-error (msg form error-pos)
   "Signal an Edna syntax error.
 
 MSG will be reported to the user and should describe the error.
 FORM is the form that generated the error.
-ERROR-FORM is the sub-form in FORM at which the error occurred."
-  `(signal 'invalid-read-syntax (list :msg ,msg :form ,form :error-form ,error-form)))
+ERROR-POS is the positiong in MSG at which the error occurred."
+  `(signal 'invalid-read-syntax (list :msg ,msg :form ,form :error-pos ,error-pos)))
 
 (defun org-edna--print-syntax-error (error-plist)
   "Prints the syntax error from ERROR-PLIST."
   (let* ((msg (plist-get error-plist :msg))
          (form (plist-get error-plist :form))
-         (error-form (plist-get error-plist :error-form))
-         (pos (string-match-p (symbol-name (car error-form)) form)))
+         (pos (plist-get error-plist :error-pos)))
     (message
      "Org Edna Syntax Error: %s\n%s\n%s"
      msg form (concat (make-string pos ?\ ) "^"))))
@@ -192,7 +191,7 @@ siblings todo!(TODO) => ((siblings) (todo! TODO))"
         final-form)
     (while (< pos (length string))
       (pcase-let* ((`(,form ,new-pos) (org-edna-parse-string-form string pos)))
-        (setq final-form (append final-form (list form)))
+        (setq final-form (append final-form (list (cons form pos))))
         (setq pos new-pos)))
     (cons final-form pos)))
 
@@ -212,7 +211,7 @@ the remainder of FORM after the current scope was parsed."
          final-form
          need-break)
     (while (and remaining-form (not need-break))
-      (let ((current-form (pop remaining-form)))
+      (pcase-let* ((`(,current-form . ,error-pos) (pop remaining-form)))
         (pcase (car current-form)
           ('if
               ;; Check the car of each r*-form for the expected
@@ -228,7 +227,7 @@ the remainder of FORM after the current scope was parsed."
                   (unless (equal (car-safe r-form) '(then))
                     (org-edna--syntax-error
                      "Malformed if-construct; expected then terminator"
-                     from-string current-form))
+                     from-string (cdr (car-safe r-form))))
                   (setq cond-form temp-form
                         remaining-form (cdr r-form)))
                 (pcase-let* ((`(,temp-form ,r-form)
@@ -238,7 +237,7 @@ the remainder of FORM after the current scope was parsed."
                   (unless (member (car-safe r-form) '((else) (endif)))
                     (org-edna--syntax-error
                      "Malformed if-construct; expected else or endif terminator"
-                     from-string current-form))
+                     from-string (cdr (car-safe r-form))))
                   (setq have-else (equal (car r-form) '(else))
                         then-form temp-form
                         remaining-form (cdr r-form)))
@@ -249,7 +248,7 @@ the remainder of FORM after the current scope was parsed."
                                                                from-string)))
                     (unless (equal (car-safe r-form) '(endif))
                       (org-edna--syntax-error "Malformed if-construct; expected endif terminator"
-                                              from-string current-form))
+                                              from-string (cdr (car-safe r-form))))
                     (setq else-form temp-form
                           remaining-form (cdr r-form))))
                 (push `(if ,cond-form ,then-form ,else-form) final-form)))
@@ -263,7 +262,7 @@ the remainder of FORM after the current scope was parsed."
            (pcase-let* ((`(,type . ,func) (org-edna--function-for-key (car current-form))))
              (unless (and type func)
                (org-edna--syntax-error "Unrecognized Form"
-                                       from-string current-form))
+                                       from-string error-pos))
              (pcase type
                ('finder
                 (unless (memq state '(finder consideration))
@@ -272,17 +271,17 @@ the remainder of FORM after the current scope was parsed."
                ('action
                 (unless (eq action-or-condition 'action)
                   (org-edna--syntax-error "Actions aren't allowed in this context"
-                                          from-string current-form)))
+                                          from-string error-pos)))
                ('condition
                 (unless (eq action-or-condition 'condition)
                   (org-edna--syntax-error "Conditions aren't allowed in this context"
-                                          from-string current-form))))
+                                          from-string error-pos))))
              ;; Update state
              (setq state type)
              (if need-break ;; changing state
                  ;; Keep current-form on remaining-form so we have it for the
                  ;; next scope, since we didn't process it here.
-                 (setq remaining-form (cons current-form remaining-form))
+                 (setq remaining-form (cons (cons current-form error-pos) remaining-form))
                (push current-form final-form)))))))
     (when (and (eq state 'finder)
                (eq action-or-condition 'condition))
