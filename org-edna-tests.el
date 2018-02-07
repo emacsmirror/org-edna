@@ -154,6 +154,14 @@
              '(((self)
                 (!done?)))))))
 
+(ert-deftest org-edna-form-to-sexp-negation ()
+  (let* ((input-string "self !done?")
+         (sexp (org-edna-string-form-to-sexp-form input-string 'condition)))
+    (should (equal
+             sexp
+             '(((self)
+                (!done?)))))))
+
 (ert-deftest org-edna-form-to-sexp-arguments ()
   (let* ((input-string "match(\"checklist\") todo!(TODO)")
          (sexp (org-edna-string-form-to-sexp-form input-string 'action)))

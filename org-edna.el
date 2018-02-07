@@ -259,7 +259,8 @@ the remainder of FORM after the current scope was parsed."
           (_
            ;; Determine the type of the form
            ;; If we need to change state, return from this scope
-           (pcase-let* ((`(,type . ,func) (org-edna--function-for-key (car current-form))))
+           (pcase-let* ((`(_ . ,key)   (org-edna-break-modifier (car current-form)))
+                        (`(,type . ,func) (org-edna--function-for-key key)))
              (unless (and type func)
                (org-edna--syntax-error "Unrecognized Form"
                                        from-string error-pos))

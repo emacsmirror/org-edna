@@ -4,3 +4,4 @@ org-edna-autoloads.el
 org-edna.texi
 org-edna.html
 .deps
+Makefile

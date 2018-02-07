@@ -107,6 +107,7 @@ Contributing
 
 Changelog
 
+* 1.0beta6: 10beta6.
 * 1.0beta5: 10beta5.
 * 1.0beta4: 10beta4.
 * 1.0beta3: 10beta3.
@@ -1510,13 +1511,23 @@ Changelog
 
 * Menu:
 
+* 1.0beta6: 10beta6.
 * 1.0beta5: 10beta5.
 * 1.0beta4: 10beta4.
 * 1.0beta3: 10beta3.
 * 1.0beta2: 10beta2.
 
 
-File: org-edna.info,  Node: 10beta5,  Next: 10beta4,  Up: Changelog
+File: org-edna.info,  Node: 10beta6,  Next: 10beta5,  Up: Changelog
+
+1.0beta6
+========
+
+   • Fixed error reporting
+   • Fixed parsing of negations in conditions
+
+
+File: org-edna.info,  Node: 10beta5,  Next: 10beta4,  Prev: 10beta6,  Up: Changelog
 
 1.0beta5
 ========
@@ -1594,71 +1605,72 @@ Big release here, with three new features.
 
 Tag Table:
 Node: Top225
-Node: Copying3672
-Node: Introduction4494
-Node: Installation and Setup5442
-Node: Basic Operation6235
-Node: Blockers8086
-Node: Triggers8372
-Node: Syntax8634
-Node: Basic Features9324
-Node: Finders9627
-Node: ancestors11392
-Node: children11986
-Node: descendants12396
-Node: file12918
-Node: first-child13667
-Node: ids13927
-Node: match14588
-Node: next-sibling15226
-Node: next-sibling-wrap15483
-Node: olp15797
-Node: org-file16209
-Node: parent16854
-Node: previous-sibling17052
-Node: previous-sibling-wrap17313
-Node: relatives17592
-Node: rest-of-siblings21213
-Node: rest-of-siblings-wrap21498
-Node: self21847
-Node: siblings22008
-Node: siblings-wrap22245
-Node: Actions22549
-Node: Scheduled/Deadline23291
-Node: TODO State26866
-Node: Archive27234
-Node: Chain Property27554
-Node: Clocking27837
-Node: Property28249
-Node: Priority30436
-Node: Tag31005
-Node: Effort31222
-Node: Advanced Features31611
-Node: Conditions31995
-Node: done32610
-Node: headings32774
-Node: todo-state33150
-Node: variable-set33406
-Node: has-property33835
-Node: re-search34104
-Node: Negating Conditions34464
-Node: Consideration34851
-Node: Conditional Forms36420
-Node: Setting the Properties39076
-Node: Extending Edna40160
-Node: Naming Conventions40650
-Node: Finders 141111
-Node: Actions 141473
-Node: Conditions 141932
-Node: Contributing42818
-Node: Bugs43369
-Node: Development43721
-Node: Documentation44874
-Node: Changelog45319
-Node: 10beta545506
-Node: 10beta445877
-Node: 10beta346130
-Node: 10beta246569
+Node: Copying3693
+Node: Introduction4515
+Node: Installation and Setup5463
+Node: Basic Operation6256
+Node: Blockers8107
+Node: Triggers8393
+Node: Syntax8655
+Node: Basic Features9345
+Node: Finders9648
+Node: ancestors11413
+Node: children12007
+Node: descendants12417
+Node: file12939
+Node: first-child13688
+Node: ids13948
+Node: match14609
+Node: next-sibling15247
+Node: next-sibling-wrap15504
+Node: olp15818
+Node: org-file16230
+Node: parent16875
+Node: previous-sibling17073
+Node: previous-sibling-wrap17334
+Node: relatives17613
+Node: rest-of-siblings21234
+Node: rest-of-siblings-wrap21519
+Node: self21868
+Node: siblings22029
+Node: siblings-wrap22266
+Node: Actions22570
+Node: Scheduled/Deadline23312
+Node: TODO State26887
+Node: Archive27255
+Node: Chain Property27575
+Node: Clocking27858
+Node: Property28270
+Node: Priority30457
+Node: Tag31026
+Node: Effort31243
+Node: Advanced Features31632
+Node: Conditions32016
+Node: done32631
+Node: headings32795
+Node: todo-state33171
+Node: variable-set33427
+Node: has-property33856
+Node: re-search34125
+Node: Negating Conditions34485
+Node: Consideration34872
+Node: Conditional Forms36441
+Node: Setting the Properties39097
+Node: Extending Edna40181
+Node: Naming Conventions40671
+Node: Finders 141132
+Node: Actions 141494
+Node: Conditions 141953
+Node: Contributing42839
+Node: Bugs43390
+Node: Development43742
+Node: Documentation44895
+Node: Changelog45340
+Node: 10beta645548
+Node: 10beta545716
+Node: 10beta446103
+Node: 10beta346356
+Node: 10beta246795
 
 End Tag Table
 

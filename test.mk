@@ -16,8 +16,8 @@
 # EDE only allows arbitrary code from an external makefile, so this is how we've
 # got to do testing.
 
-test:
-	$(EMACS) \
+test: compile
+	@$(EMACS) \
 	$(EMACSFLAGS) \
 	$(addprefix -L ,$(LOADPATH)) \
 	-L "." \

@@ -11,9 +11,9 @@
       :source '("org-edna.el")
       :aux-packages '("org"))
     (ede-proj-target-makefile-miscelaneous "ede-proj-target-makefile-miscelaneous"
-      :name "check"
+      :name #("check" 0 1 (idx 2))
       :path ""
-      :source '("org-edna-tests.el" "org-edna-tests.org")
+      :source '("org-edna-tests.el" "org-edna-tests.org" "test.mk")
       :partofall nil
       :submakefile "test.mk")
     (ede-proj-target-aux "ede-proj-target-aux"
