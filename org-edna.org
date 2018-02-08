@@ -1292,8 +1292,13 @@ making any changes:
 :DESCRIPTION: List of changes by version
 :END:
 ** 1.0beta6
+Lots of parsing fixes.
+
 - Fixed error reporting
+
 - Fixed parsing of negations in conditions
+
+- Fixed parsing of multiple forms inside if/then/else blocks
 ** 1.0beta5
 Some new forms and a new build system.
 

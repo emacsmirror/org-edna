@@ -175,10 +175,10 @@
          (sexp (org-edna-string-form-to-sexp-form input-string 'action)))
     (should (equal
              sexp
-             '(((if ((match "checklist")
-                     (done?))
-                    ((self)
-                     (todo! TODO))
+             '(((if (((match "checklist")
+                      (done?)))
+                    (((self)
+                      (todo! TODO)))
                   nil)))))))
 
 (ert-deftest org-edna-form-to-sexp-if-else ()
@@ -186,12 +186,78 @@
          (sexp (org-edna-string-form-to-sexp-form input-string 'action)))
     (should (equal
              sexp
-             '(((if ((match "checklist")
-                      (done?))
-                    ((self)
-                     (todo! TODO))
-                  ((siblings)
-                   (todo! DONE)))))))))
+             '(((if (((match "checklist")
+                      (done?)))
+                    (((self)
+                      (todo! TODO)))
+                  (((siblings)
+                    (todo! DONE))))))))))
+
+(ert-deftest org-edna-form-to-sexp-if-multiple-thens ()
+  (let* ((input-string "if match(\"checklist\") done? then self next-sibling todo!(TODO) self set-property!(\"COUNTER\" \"0\") endif")
+         (sexp (org-edna-string-form-to-sexp-form input-string 'action)))
+    (should (equal
+             sexp
+             '(((if (((match "checklist")
+                      (done?)))
+                    (((self)
+                      (next-sibling)
+                      (todo! TODO))
+                     ((self)
+                      (set-property! "COUNTER" "0")))
+                  nil)))))))
+
+(ert-deftest org-edna-form-to-sexp-if-multiple-elses ()
+  (let* ((input-string "if match(\"checklist\") done? then self todo!(TODO) else siblings todo!(DONE) self todo!(TODO) endif")
+         (sexp (org-edna-string-form-to-sexp-form input-string 'action)))
+    (should (equal
+             sexp
+             '(((if (((match "checklist")
+                      (done?)))
+                    (((self)
+                      (todo! TODO)))
+                  (((siblings)
+                    (todo! DONE))
+                   ((self)
+                    (todo! TODO))))))))))
+
+(ert-deftest org-edna-form-to-sexp-failed-if ()
+  (pcase-let* ((input-string "if match(\"checklist\") done?")
+               (`(,error . ,data) (should-error (org-edna-string-form-to-sexp-form
+                                                input-string 'action)
+                                               :type 'invalid-read-syntax)))
+    (should (eq error 'invalid-read-syntax))
+    (should (listp data))
+    (should (eq (length data) 6))
+    (should (string-equal (plist-get data :msg) "Malformed if-construct; expected then terminator"))
+    ;; Error should point to the start of the if-statement
+    (should (eq (plist-get data :error-pos) 0))))
+
+(ert-deftest org-edna-form-to-sexp-failed-if-then ()
+  (pcase-let* ((input-string "if match(\"checklist\") done? then")
+               (`(,error . ,data) (should-error (org-edna-string-form-to-sexp-form
+                                                input-string 'action)
+                                               :type 'invalid-read-syntax)))
+    (should (eq error 'invalid-read-syntax))
+    (should (listp data))
+    (should (eq (length data) 6))
+    (should (string-equal (plist-get data :msg)
+                          "Malformed if-construct; expected else or endif terminator"))
+    ;; Error should point to the start of the if-statement
+    (should (eq (plist-get data :error-pos) 28))))
+
+(ert-deftest org-edna-form-to-sexp-failed-if-then-else ()
+  (pcase-let* ((input-string "if match(\"checklist\") done? then todo!(TODO) else todo!(TODO)")
+               (`(,error . ,data) (should-error (org-edna-string-form-to-sexp-form
+                                                 input-string 'action)
+                                                :type 'invalid-read-syntax)))
+    (should (eq error 'invalid-read-syntax))
+    (should (listp data))
+    (should (eq (length data) 6))
+    (should (string-equal (plist-get data :msg)
+                          "Malformed if-construct; expected endif terminator"))
+    ;; Error should point to the start of the if-statement
+    (should (eq (plist-get data :error-pos) 45))))
 
 (ert-deftest org-edna-expand-sexp-form ()
   ;; Override cl-gentemp so we have a repeatable test

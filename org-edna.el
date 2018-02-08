@@ -218,44 +218,50 @@ the remainder of FORM after the current scope was parsed."
               ;; ending.  If it doesn't match, throw an error.
               (let (cond-form then-form else-form have-else)
                 (pcase-let* ((`(,temp-form ,r-form)
-                              (org-edna--normalize-sexp-form
+                              (org-edna--normalize-forms
                                remaining-form
                                ;; Only allow conditions in cond forms
                                'condition
+                               '((then))
                                from-string)))
-                  ;; Use car-safe to catch r-form = nil
-                  (unless (equal (car-safe r-form) '(then))
+                  (unless r-form
                     (org-edna--syntax-error
                      "Malformed if-construct; expected then terminator"
-                     from-string (cdr (car-safe r-form))))
+                     from-string error-pos))
+                  ;; Skip the 'then' construct and move forward
                   (setq cond-form temp-form
+                        error-pos (cdar r-form)
                         remaining-form (cdr r-form)))
+
                 (pcase-let* ((`(,temp-form ,r-form)
-                              (org-edna--normalize-sexp-form remaining-form
-                                                             action-or-condition
-                                                             from-string)))
-                  (unless (member (car-safe r-form) '((else) (endif)))
+                              (org-edna--normalize-forms remaining-form
+                                                         action-or-condition
+                                                         '((else) (endif))
+                                                         from-string)))
+                  (unless r-form
                     (org-edna--syntax-error
                      "Malformed if-construct; expected else or endif terminator"
-                     from-string (cdr (car-safe r-form))))
-                  (setq have-else (equal (car r-form) '(else))
+                     from-string error-pos))
+                  (setq have-else (equal (caar r-form) '(else))
                         then-form temp-form
+                        error-pos (cdar r-form)
                         remaining-form (cdr r-form)))
                 (when have-else
                   (pcase-let* ((`(,temp-form ,r-form)
-                                (org-edna--normalize-sexp-form remaining-form
-                                                               action-or-condition
-                                                               from-string)))
-                    (unless (equal (car-safe r-form) '(endif))
+                                (org-edna--normalize-forms remaining-form
+                                                           action-or-condition
+                                                           '((endif))
+                                                           from-string)))
+                    (unless r-form
                       (org-edna--syntax-error "Malformed if-construct; expected endif terminator"
-                                              from-string (cdr (car-safe r-form))))
+                                              from-string error-pos))
                     (setq else-form temp-form
                           remaining-form (cdr r-form))))
                 (push `(if ,cond-form ,then-form ,else-form) final-form)))
           ((or 'then 'else 'endif)
            (setq need-break t)
            ;; Push the object back on remaining-form so the if knows where we are
-           (setq remaining-form (cons current-form remaining-form)))
+           (setq remaining-form (cons (cons current-form error-pos) remaining-form)))
           (_
            ;; Determine the type of the form
            ;; If we need to change state, return from this scope
@@ -291,6 +297,26 @@ the remainder of FORM after the current scope was parsed."
       (push '(!done?) final-form))
     (list (nreverse final-form) remaining-form)))
 
+(defun org-edna--normalize-forms (form-list action-or-condition end-forms &optional from-string)
+  "Normalize forms in flat form list FORM-LIST until one of END-FORMS is found.
+
+ACTION-OR-CONDITION is either 'action or 'condition, indicating
+which of the two types is allowed in FORM.
+
+FROM-STRING is used internally, and is non-nil if FORM was
+originally a string.
+
+END-FORMS is a list of forms.  When one of them is found, stop parsing."
+  (pcase-let* ((`(,final-form ,rem-form) (org-edna--normalize-sexp-form form-list action-or-condition from-string)))
+    (setq final-form (list final-form))
+    ;; Use car-safe to catch r-form = nil
+    (while (and rem-form (not (member (car (car-safe rem-form)) end-forms)))
+      (pcase-let* ((`(,new-form ,r-form)
+                    (org-edna--normalize-sexp-form rem-form action-or-condition from-string)))
+        (setq final-form (append final-form (list new-form))
+              rem-form r-form)))
+    (list final-form rem-form)))
+
 (defun org-edna--normalize-all-forms (form-list action-or-condition &optional from-string)
   "Normalize all forms in flat form list FORM-LIST.
 
@@ -299,14 +325,7 @@ which of the two types is allowed in FORM.
 
 FROM-STRING is used internally, and is non-nil if FORM was
 originally a string."
-  (pcase-let* ((`(,final-form ,rem-form) (org-edna--normalize-sexp-form form-list action-or-condition from-string)))
-    (setq final-form (list final-form))
-    (while rem-form
-      (pcase-let* ((`(,new-form ,r-form)
-                    (org-edna--normalize-sexp-form rem-form action-or-condition from-string)))
-        (setq final-form (append final-form (list new-form))
-              rem-form r-form)))
-    final-form))
+  (car-safe (org-edna--normalize-forms form-list action-or-condition nil from-string)))
 
 (defun org-edna-string-form-to-sexp-form (string-form action-or-condition)
   "Parse string form STRING-FORM into an Edna sexp form.

@@ -1523,8 +1523,13 @@ File: org-edna.info,  Node: 10beta6,  Next: 10beta5,  Up: Changelog
 1.0beta6
 ========
 
+Lots of parsing fixes.
+
    • Fixed error reporting
+
    • Fixed parsing of negations in conditions
+
+   • Fixed parsing of multiple forms inside if/then/else blocks
 
 
 File: org-edna.info,  Node: 10beta5,  Next: 10beta4,  Prev: 10beta6,  Up: Changelog
@@ -1667,10 +1672,10 @@ Node: Development43742
 Node: Documentation44895
 Node: Changelog45340
 Node: 10beta645548
-Node: 10beta545716
-Node: 10beta446103
-Node: 10beta346356
-Node: 10beta246795
+Node: 10beta545808
+Node: 10beta446195
+Node: 10beta346448
+Node: 10beta246887
 
 End Tag Table
 
