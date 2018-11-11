@@ -469,6 +469,11 @@ which of the two types is allowed in STRING-FORM."
 ;; Cache works because the returned values of finders are all markers.  Markers
 ;; will automatically update themselves when a buffer is edited.
 
+;; We use a timeout for cache because it's expected that the Org files
+;; themselves will change.  Thus, there's no assured way to determine if we need
+;; to update the cache without actually running again.  Therefore, we assume
+;; most operations that the user wants to expedite will be performed in bulk.
+
 (cl-defstruct org-edna--finder-input
   func-sym args)
 
