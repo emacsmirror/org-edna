@@ -270,7 +270,7 @@
              '(let ((targets1 nil)
                     (consideration1 nil)
                     (blocking-entry1 nil))
-                (setq targets1 (org-edna--add-targets targets1 (org-edna-finder/self)))
+                (setq targets1 (org-edna--add-targets targets1 (org-edna--handle-finder 'org-edna-finder/self 'nil)))
                 (setq blocking-entry1
                       (or blocking-entry1
                           (org-edna--handle-condition 'org-edna-condition/done?
@@ -303,7 +303,7 @@
                        (blocking-entry2 blocking-entry1))
                    (setq targets2
                          (org-edna--add-targets targets2
-                                                (org-edna-finder/match "checklist")))
+                                                (org-edna--handle-finder 'org-edna-finder/match '("checklist"))))
                    (org-edna--handle-action 'org-edna-action/todo!
                                             targets2
                                             (point-marker)
@@ -313,7 +313,7 @@
                        (blocking-entry5 blocking-entry1))
                    (setq targets5
                          (org-edna--add-targets targets5
-                                                (org-edna-finder/siblings)))
+                                                (org-edna--handle-finder 'org-edna-finder/siblings 'nil)))
                    (org-edna--handle-action 'org-edna-action/todo!
                                             targets5
                                             (point-marker)
@@ -355,7 +355,7 @@
                         ;; Add targets for checklist match
                         (setq targets3
                               (org-edna--add-targets targets3
-                                                     (org-edna-finder/match "checklist")))
+                                                     (org-edna--handle-finder 'org-edna-finder/match '("checklist"))))
                         ;; Handle condition
                         (setq blocking-entry3
                               (or blocking-entry3
@@ -365,7 +365,7 @@
                        ;; Add targets for self finder
                        (setq targets1
                              (org-edna--add-targets targets1
-                                                    (org-edna-finder/self)))
+                                                    (org-edna--handle-finder 'org-edna-finder/self 'nil)))
                        ;; Mark as TODO
                        (org-edna--handle-action 'org-edna-action/todo! targets1
                                                 (point-marker)
@@ -375,7 +375,7 @@
                      ;; Find siblings
                      (setq targets1
                            (org-edna--add-targets targets1
-                                                  (org-edna-finder/siblings)))
+                                                  (org-edna--handle-finder 'org-edna-finder/siblings 'nil)))
                      ;; Mark as DONE
                      (org-edna--handle-action 'org-edna-action/todo! targets1
                                               (point-marker)
@@ -416,7 +416,7 @@
                         ;; Add targets for checklist match
                         (setq targets3
                               (org-edna--add-targets targets3
-                                                     (org-edna-finder/match "checklist")))
+                                                     (org-edna--handle-finder 'org-edna-finder/match '("checklist"))))
                         ;; Handle condition
                         (setq blocking-entry3
                               (or blocking-entry3
@@ -426,7 +426,7 @@
                        ;; Add targets for self finder
                        (setq targets1
                              (org-edna--add-targets targets1
-                                                    (org-edna-finder/self)))
+                                                    (org-edna--handle-finder 'org-edna-finder/self 'nil)))
                        ;; Mark as TODO
                        (org-edna--handle-action 'org-edna-action/todo! targets1
                                                 (point-marker)
@@ -1197,6 +1197,30 @@
       (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
       (should (string-equal (org-entry-get nil "SCHEDULED")
                             "<2000-01-15 Sat 00:00>")))))
+
+(ert-deftest org-edna-action-scheduled/landing-no-hour ()
+  "Test landing arguments to scheduled increment, without hour."
+  ;; Override `current-time' so we can get a deterministic value
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-id-find "caf27724-0887-4565-9765-ed2f1edcfb16" t)))
+    (org-with-point-at target
+      ;; Time starts at Jan 1, 2017
+      (org-edna-action/scheduled! nil "2017-01-01 Sun")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2017-01-01 Sun>"))
+      ;; Move forward 10 days, then backward until we find a weekend
+      (org-edna-action/scheduled! nil "+10d -wknd")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2017-01-08 Sun>"))
+      ;; Move forward one week, then forward until we find a weekday
+      (org-edna-action/scheduled! nil "+1w +wkdy")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2017-01-16 Mon>"))
+      ;; Back to Saturday for other tests
+      (org-edna-action/scheduled! nil "2017-01-01 Sun")
+      (should (string-equal (org-entry-get nil "SCHEDULED")
+                            "<2017-01-01 Sun>")))))
 
 (ert-deftest org-edna-action-scheduled/float ()
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
