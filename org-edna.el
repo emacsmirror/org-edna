@@ -387,7 +387,7 @@ correspond to internal variables."
                (`(,type . ,func) (org-edna--function-for-key key)))
     (pcase type
       ('finder
-       `(setq ,target-var (org-edna--add-targets ,target-var (,func ,@args))))
+       `(setq ,target-var (org-edna--add-targets ,target-var (org-edna--handle-finder ',func ',args))))
       ('action
        `(org-edna--handle-action ',func ,target-var (point-marker) ',args))
       ('condition
@@ -463,6 +463,78 @@ ACTION-OR-CONDITION is either 'action or 'condition, indicating
 which of the two types is allowed in STRING-FORM."
   (org-edna-eval-sexp-form
    (org-edna-string-form-to-sexp-form string-form action-or-condition)))
+
+;;; Cache
+
+;; Cache works because the returned values of finders are all markers.  Markers
+;; will automatically update themselves when a buffer is edited.
+
+(cl-defstruct org-edna--finder-input
+  func-sym args)
+
+(cl-defstruct org-edna--finder-cache-entry
+  input results last-run-time)
+
+(defvar org-edna--finder-cache (make-hash-table :test 'equal))
+
+(defcustom org-edna-finder-use-cache nil
+  "Whether to use cache for improved performance with finders.
+
+When cache is used for a finder, each finder call will store its
+results for up to `org-edna-finder-cache-timeout' seconds.  The
+results and input are both stored, so the same form for a given
+finder will yield the results of the previous call.
+
+If enough time has passed since the results in cache for a
+specific form were generated, the results will be regenerated and
+stored in cache.
+
+Minor changes to an Org file, such as setting properties or
+adding unrelated headlines, will be taken into account."
+  :group 'org-edna
+  :type 'boolean)
+
+(defcustom org-edna-finder-cache-timeout 300
+  "Maximum age to keep entries in cache, in seconds."
+  :group 'org-edna
+  :type 'number)
+
+(defun org-edna--add-to-finder-cache (func-sym args)
+  (let* ((results (apply func-sym args))
+         (input (make-org-edna--finder-input :func-sym func-sym
+                                             :args args))
+         (entry (make-org-edna--finder-cache-entry :input input
+                                                   :results results
+                                                   :last-run-time (current-time))))
+    (map-put org-edna--finder-cache input entry)))
+
+(defun org-edna--finder-cache-timeout (_func-sym)
+  ;; In the future, we may want to support configurable timeouts on a per-finder
+  ;; basis.
+  org-edna-finder-cache-timeout)
+
+(defun org-edna--handle-finder (func-sym args)
+  (if (not org-edna-finder-use-cache)
+      ;; Not using cache, so use the function directly.
+      (apply func-sym args)
+    (let* ((input (make-org-edna--finder-input :func-sym func-sym
+                                               :args args))
+           (entry (map-elt org-edna--finder-cache input)))
+      (cond
+       ;; If we don't have an entry, rerun and make a new one.
+       ((not entry)
+        (org-edna--add-to-finder-cache func-sym args))
+       ;; If we do have an entry, but it's timed out, then create a new one.
+       ((>= (float-time (time-subtract (current-time)
+                                      (org-edna--finder-cache-entry-last-run-time entry)))
+           (org-edna--finder-cache-timeout func-sym))
+        (org-edna--add-to-finder-cache func-sym args))
+       ;; If any element of the results is an invalid marker, then rerun.
+       ((seq-find (lambda (x) (not (markerp x))) (org-edna--finder-cache-entry-results entry) nil)
+        (org-edna--add-to-finder-cache func-sym args))
+       ;; We have an entry created within the allowed interval.
+       (t
+        (org-edna--finder-cache-entry-results entry))))))
 
 
 
