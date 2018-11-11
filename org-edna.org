@@ -1291,6 +1291,8 @@ making any changes:
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.0beta7
+- Added cache to the finders to improve performance
 ** 1.0beta6
 Lots of parsing fixes.
 
