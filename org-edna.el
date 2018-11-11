@@ -387,7 +387,7 @@ correspond to internal variables."
                (`(,type . ,func) (org-edna--function-for-key key)))
     (pcase type
       ('finder
-       `(setq ,target-var (org-edna--add-targets ,target-var (org-edna--handle-finder ',func ',args))))
+       `(setq ,target-var (org-edna--add-targets ,target-var (org-edna--handle-finder ',func ',@args))))
       ('action
        `(org-edna--handle-action ',func ,target-var (point-marker) ',args))
       ('condition
@@ -506,35 +506,51 @@ adding unrelated headlines, will be taken into account."
          (entry (make-org-edna--finder-cache-entry :input input
                                                    :results results
                                                    :last-run-time (current-time))))
-    (map-put org-edna--finder-cache input entry)))
+    (puthash input entry org-edna--finder-cache)
+    ;; Returning the results here passes them to the calling function.  It's the
+    ;; only part of the entry we care about here.
+    results))
 
 (defun org-edna--finder-cache-timeout (_func-sym)
   ;; In the future, we may want to support configurable timeouts on a per-finder
   ;; basis.
   org-edna-finder-cache-timeout)
 
-(defun org-edna--handle-finder (func-sym args)
+(defun org-edna--get-cache-entry (func-sym args)
+  "Find a valid entry in the cache.
+
+If none exists, return nil.  An entry is invalid for any of the
+following reasons:
+
+- It doesn't exist
+- It has timed out
+- It contains an invalid marker"
+  (let* ((input (make-org-edna--finder-input :func-sym func-sym
+                                             :args args))
+         (entry (gethash input org-edna--finder-cache)))
+    (cond
+     ;; If we don't have an entry, rerun and make a new one.
+     ((not entry) nil)
+     ;; If we do have an entry, but it's timed out, then create a new one.
+     ((>= (float-time (time-subtract (current-time)
+                                    (org-edna--finder-cache-entry-last-run-time entry)))
+         (org-edna--finder-cache-timeout func-sym))
+      nil)
+     ;; If any element of the results is an invalid marker, then rerun.
+     ((seq-find (lambda (x) (not (markerp x))) (org-edna--finder-cache-entry-results entry) nil)
+      nil)
+     ;; We have an entry created within the allowed interval.
+     (t entry))))
+
+(defun org-edna--handle-finder (func-sym &rest args)
   (if (not org-edna-finder-use-cache)
       ;; Not using cache, so use the function directly.
       (apply func-sym args)
-    (let* ((input (make-org-edna--finder-input :func-sym func-sym
-                                               :args args))
-           (entry (map-elt org-edna--finder-cache input)))
-      (cond
-       ;; If we don't have an entry, rerun and make a new one.
-       ((not entry)
-        (org-edna--add-to-finder-cache func-sym args))
-       ;; If we do have an entry, but it's timed out, then create a new one.
-       ((>= (float-time (time-subtract (current-time)
-                                      (org-edna--finder-cache-entry-last-run-time entry)))
-           (org-edna--finder-cache-timeout func-sym))
-        (org-edna--add-to-finder-cache func-sym args))
-       ;; If any element of the results is an invalid marker, then rerun.
-       ((seq-find (lambda (x) (not (markerp x))) (org-edna--finder-cache-entry-results entry) nil)
-        (org-edna--add-to-finder-cache func-sym args))
-       ;; We have an entry created within the allowed interval.
-       (t
-        (org-edna--finder-cache-entry-results entry))))))
+    (let* ((entry (org-edna--get-cache-entry func-sym args)))
+      (if entry
+          (org-edna--finder-cache-entry-results entry)
+        ;; Adds the entry to the cache, and returns the results.
+        (org-edna--add-to-finder-cache func-sym args)))))
 
 
 
