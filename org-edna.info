@@ -112,6 +112,7 @@ Contributing
 
 Changelog
 
+* 1.0beta8: 10beta8.
 * 1.0beta7: 10beta7.
 * 1.0beta6: 10beta6.
 * 1.0beta5: 10beta5.
@@ -1636,6 +1637,7 @@ Changelog
 
 * Menu:
 
+* 1.0beta8: 10beta8.
 * 1.0beta7: 10beta7.
 * 1.0beta6: 10beta6.
 * 1.0beta5: 10beta5.
@@ -1644,7 +1646,15 @@ Changelog
 * 1.0beta2: 10beta2.
 
 
-File: org-edna.info,  Node: 10beta7,  Next: 10beta6,  Up: Changelog
+File: org-edna.info,  Node: 10beta8,  Next: 10beta7,  Up: Changelog
+
+1.0beta8
+========
+
+Quick fix for beta7.
+
+
+File: org-edna.info,  Node: 10beta7,  Next: 10beta6,  Prev: 10beta8,  Up: Changelog
 
 1.0beta7
 ========
@@ -1750,78 +1760,79 @@ Big release here, with three new features.
 
 Tag Table:
 Node: Top225
-Node: Copying4093
-Node: Introduction4915
-Node: Installation and Setup5863
-Node: Basic Operation6587
-Node: Blockers8438
-Node: Triggers8724
-Node: Syntax8986
-Node: Basic Features9676
-Node: Finders9979
-Node: ancestors11744
-Node: children12338
-Node: descendants12748
-Node: file13270
-Node: first-child14019
-Node: ids14279
-Node: match14940
-Node: next-sibling15578
-Node: next-sibling-wrap15835
-Node: olp16149
-Node: org-file16561
-Node: parent17206
-Node: previous-sibling17404
-Node: previous-sibling-wrap17665
-Node: relatives17944
-Node: rest-of-siblings21565
-Node: rest-of-siblings-wrap21850
-Node: self22199
-Node: siblings22360
-Node: siblings-wrap22597
-Node: Actions22901
-Node: Scheduled/Deadline23643
-Node: TODO State27218
-Node: Archive27586
-Node: Chain Property27906
-Node: Clocking28189
-Node: Property28601
-Node: Priority30788
-Node: Tag31357
-Node: Effort31574
-Node: Advanced Features31963
-Node: Finder Cache32411
-Node: Conditions33450
-Node: done34086
-Node: headings34250
-Node: todo-state34626
-Node: variable-set34882
-Node: has-property35311
-Node: re-search35580
-Node: Negating Conditions35940
-Node: Consideration36327
-Node: Conditional Forms37896
-Node: Setting the Properties40552
-Node: Extending Edna41636
-Node: Naming Conventions42126
-Node: Finders 142587
-Node: Actions 142949
-Node: Conditions 143408
-Node: Contributing44294
-Node: Bugs45160
-Node: Working with EDE45517
-Node: Compiling Edna46601
-Node: Testing Edna47470
-Node: Before Sending Changes48451
-Node: Developing with Bazaar49138
-Node: Documentation49879
-Node: Changelog50335
-Node: 10beta750564
-Node: 10beta650842
-Node: 10beta551118
-Node: 10beta451505
-Node: 10beta351758
-Node: 10beta252197
+Node: Copying4114
+Node: Introduction4936
+Node: Installation and Setup5884
+Node: Basic Operation6608
+Node: Blockers8459
+Node: Triggers8745
+Node: Syntax9007
+Node: Basic Features9697
+Node: Finders10000
+Node: ancestors11765
+Node: children12359
+Node: descendants12769
+Node: file13291
+Node: first-child14040
+Node: ids14300
+Node: match14961
+Node: next-sibling15599
+Node: next-sibling-wrap15856
+Node: olp16170
+Node: org-file16582
+Node: parent17227
+Node: previous-sibling17425
+Node: previous-sibling-wrap17686
+Node: relatives17965
+Node: rest-of-siblings21586
+Node: rest-of-siblings-wrap21871
+Node: self22220
+Node: siblings22381
+Node: siblings-wrap22618
+Node: Actions22922
+Node: Scheduled/Deadline23664
+Node: TODO State27239
+Node: Archive27607
+Node: Chain Property27927
+Node: Clocking28210
+Node: Property28622
+Node: Priority30809
+Node: Tag31378
+Node: Effort31595
+Node: Advanced Features31984
+Node: Finder Cache32432
+Node: Conditions33471
+Node: done34107
+Node: headings34271
+Node: todo-state34647
+Node: variable-set34903
+Node: has-property35332
+Node: re-search35601
+Node: Negating Conditions35961
+Node: Consideration36348
+Node: Conditional Forms37917
+Node: Setting the Properties40573
+Node: Extending Edna41657
+Node: Naming Conventions42147
+Node: Finders 142608
+Node: Actions 142970
+Node: Conditions 143429
+Node: Contributing44315
+Node: Bugs45181
+Node: Working with EDE45538
+Node: Compiling Edna46622
+Node: Testing Edna47491
+Node: Before Sending Changes48472
+Node: Developing with Bazaar49159
+Node: Documentation49900
+Node: Changelog50356
+Node: 10beta850606
+Node: 10beta750718
+Node: 10beta651012
+Node: 10beta551288
+Node: 10beta451675
+Node: 10beta351928
+Node: 10beta252367
 
 End Tag Table
 

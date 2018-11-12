@@ -1410,6 +1410,8 @@ making any changes:
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.0beta8
+Quick fix for beta7.
 ** 1.0beta7
 Biggest change here is the cache.
 
@@ -1418,7 +1420,6 @@ Biggest change here is the cache.
 - Updated documentation to include EDE
 
 - Added testing and compiling documentation
-
 ** 1.0beta6
 Lots of parsing fixes.
 

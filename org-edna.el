@@ -7,7 +7,7 @@
 ;; Keywords: convenience, text, org
 ;; URL: https://savannah.nongnu.org/projects/org-edna-el/
 ;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
-;; Version: 1.0beta7
+;; Version: 1.0beta8
 
 ;; This file is part of GNU Emacs.
 
@@ -387,7 +387,7 @@ correspond to internal variables."
                (`(,type . ,func) (org-edna--function-for-key key)))
     (pcase type
       ('finder
-       `(setq ,target-var (org-edna--add-targets ,target-var (org-edna--handle-finder ',func ',@args))))
+       `(setq ,target-var (org-edna--add-targets ,target-var (org-edna--handle-finder ',func ',args))))
       ('action
        `(org-edna--handle-action ',func ,target-var (point-marker) ',args))
       ('condition
@@ -547,7 +547,7 @@ following reasons:
      ;; We have an entry created within the allowed interval.
      (t entry))))
 
-(defun org-edna--handle-finder (func-sym &rest args)
+(defun org-edna--handle-finder (func-sym args)
   (if (not org-edna-finder-use-cache)
       ;; Not using cache, so use the function directly.
       (apply func-sym args)
