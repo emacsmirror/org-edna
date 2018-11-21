@@ -505,6 +505,24 @@ adding unrelated headlines, will be taken into account."
   :group 'org-edna
   :type 'number)
 
+(defvar org-edna-finder-cache-enabled-finders
+  '(org-edna-finder/match
+    org-edna-finder/ids
+    org-edna-finder/olp
+    org-edna-finder/file
+    org-edna-finder/org-file)
+  "List of finders for which cache is enabled.
+
+Only edit this list if you've added custom finders.  Many
+finders, specifically relative finders, rely on the context in
+which they're called.  For these finders, cache will not work
+properly.
+
+The default state of this list contains the built-in finders for
+which context is irrelevant.
+
+Each entry is the function symbol for the finder.")
+
 (defun org-edna--add-to-finder-cache (func-sym args)
   (let* ((results (apply func-sym args))
          (input (make-org-edna--finder-input :func-sym func-sym
@@ -548,8 +566,12 @@ following reasons:
      ;; We have an entry created within the allowed interval.
      (t entry))))
 
+(defun org-edna--cache-is-enabled-for-finder (func-sym)
+  (memq func-sym org-edna-finder-cache-enabled-finders))
+
 (defun org-edna--handle-finder (func-sym args)
-  (if (not org-edna-finder-use-cache)
+  (if (or (not org-edna-finder-use-cache)
+          (not (org-edna--cache-is-enabled-for-finder func-sym)))
       ;; Not using cache, so use the function directly.
       (apply func-sym args)
     (let* ((entry (org-edna--get-cache-entry func-sym args)))
