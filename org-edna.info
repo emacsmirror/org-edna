@@ -85,12 +85,12 @@ Advanced Features
 
 Conditions
 
-* done::
-* headings::
-* todo-state::
-* variable-set::
-* has-property::
-* re-search::                    Search for a regular expression
+* Heading is DONE::
+* File Has Headings::
+* Heading TODO State::
+* Lisp Variable Set::
+* Heading Has Property::
+* Regexp Search::                Search for a regular expression
 * Negating Conditions::
 
 
@@ -1091,14 +1091,19 @@ File: org-edna.info,  Node: Effort,  Prev: Tag,  Up: Actions
 Effort
 ------
 
-   • Syntax: set-effort!(VALUE)
+Modifies the effort of all targets.
 
-   Sets the effort of all targets according to VALUE:
+   • Syntax: set-effort!(“VALUE”)
 
-   • If VALUE is a string, then the effort is set to VALUE
-   • If VALUE is an integer, then set the value to the VALUE’th allowed
-     effort property
-   • If VALUE is the symbol ’increment, increment effort
+     Set the effort of all targets to “VALUE”.
+
+   • Syntax: set-effort!(NUMBER)
+
+     Sets the effort to the NUMBER’th allowed effort property.
+
+   • Syntax: set-effort!(increment)
+
+     Increment the effort value.
 
 
 File: org-edna.info,  Node: Getting Help,  Prev: Actions,  Up: Basic Features
@@ -1168,29 +1173,29 @@ means block if any target heading isn’t done.
 
 * Menu:
 
-* done::
-* headings::
-* todo-state::
-* variable-set::
-* has-property::
-* re-search::                    Search for a regular expression
+* Heading is DONE::
+* File Has Headings::
+* Heading TODO State::
+* Lisp Variable Set::
+* Heading Has Property::
+* Regexp Search::                Search for a regular expression
 * Negating Conditions::
 
 
-File: org-edna.info,  Node: done,  Next: headings,  Up: Conditions
+File: org-edna.info,  Node: Heading is DONE,  Next: File Has Headings,  Up: Conditions
 
-done
-----
+Heading is DONE
+---------------
 
    • Syntax: done?
 
    Blocks the source heading if any target heading is DONE.
 
 
-File: org-edna.info,  Node: headings,  Next: todo-state,  Prev: done,  Up: Conditions
+File: org-edna.info,  Node: File Has Headings,  Next: Heading TODO State,  Prev: Heading is DONE,  Up: Conditions
 
-headings
---------
+File Has Headings
+-----------------
 
    • Syntax: headings?
 
@@ -1202,10 +1207,10 @@ Org heading.  This means that target does not have to be a heading.
    The above example blocks if refile.org has any headings.
 
 
-File: org-edna.info,  Node: todo-state,  Next: variable-set,  Prev: headings,  Up: Conditions
+File: org-edna.info,  Node: Heading TODO State,  Next: Lisp Variable Set,  Prev: File Has Headings,  Up: Conditions
 
-todo-state
-----------
+Heading TODO State
+------------------
 
    • Syntax: todo-state?(STATE)
 
@@ -1214,10 +1219,10 @@ todo-state
    STATE may be a string or a symbol.
 
 
-File: org-edna.info,  Node: variable-set,  Next: has-property,  Prev: todo-state,  Up: Conditions
+File: org-edna.info,  Node: Lisp Variable Set,  Next: Heading Has Property,  Prev: Heading TODO State,  Up: Conditions
 
-variable-set
-------------
+Lisp Variable Set
+-----------------
 
    • Syntax: variable-set?(VARIABLE VALUE)
 
@@ -1234,10 +1239,10 @@ self variable-set?(buffer-file-name “org-edna.org”)
      Blocks if the variable ‘buffer-file-name’ is set to “org-edna.org”.
 
 
-File: org-edna.info,  Node: has-property,  Next: re-search,  Prev: variable-set,  Up: Conditions
+File: org-edna.info,  Node: Heading Has Property,  Next: Regexp Search,  Prev: Lisp Variable Set,  Up: Conditions
 
-has-property
-------------
+Heading Has Property
+--------------------
 
    • Syntax: has-property?(“PROPERTY” “VALUE”)
 
@@ -1261,10 +1266,10 @@ to VALUE.
 showered at least three times.
 
 
-File: org-edna.info,  Node: re-search,  Next: Negating Conditions,  Prev: has-property,  Up: Conditions
+File: org-edna.info,  Node: Regexp Search,  Next: Negating Conditions,  Prev: Heading Has Property,  Up: Conditions
 
-re-search
----------
+Regexp Search
+-------------
 
    • Syntax: re-search?(“REGEXP”)
 
@@ -1275,7 +1280,7 @@ in any of the targets.
 other targets as well.
 
 
-File: org-edna.info,  Node: Negating Conditions,  Prev: re-search,  Up: Conditions
+File: org-edna.info,  Node: Negating Conditions,  Prev: Regexp Search,  Up: Conditions
 
 Negating Conditions
 -------------------
@@ -1847,80 +1852,80 @@ Big release here, with three new features.
 
 Tag Table:
 Node: Top225
-Node: Copying4165
-Node: Introduction4987
-Node: Installation and Setup5935
-Node: Basic Operation6659
-Node: Blockers8510
-Node: Triggers8796
-Node: Syntax9058
-Node: Basic Features9748
-Node: Finders10102
-Node: ancestors11867
-Node: children12461
-Node: descendants12871
-Node: file13393
-Node: first-child14142
-Node: ids14402
-Node: match15063
-Node: next-sibling15701
-Node: next-sibling-wrap15958
-Node: olp16272
-Node: org-file16684
-Node: parent17329
-Node: previous-sibling17527
-Node: previous-sibling-wrap17788
-Node: relatives18067
-Node: rest-of-siblings21688
-Node: rest-of-siblings-wrap21973
-Node: self22322
-Node: siblings22483
-Node: siblings-wrap22720
-Node: Actions23024
-Node: Scheduled/Deadline23787
-Node: TODO State27302
-Node: Archive28027
-Node: Chain Property28347
-Node: Clocking29100
-Node: Property29512
-Node: Priority31685
-Node: Tag32254
-Node: Effort32471
-Node: Getting Help32860
-Node: Advanced Features33305
-Node: Finder Cache33753
-Node: Conditions34792
-Node: done35428
-Node: headings35592
-Node: todo-state35968
-Node: variable-set36224
-Node: has-property36861
-Node: re-search37574
-Node: Negating Conditions37934
-Node: Consideration38321
-Node: Conditional Forms39909
-Node: Setting the Properties42565
-Node: Extending Edna43649
-Node: Naming Conventions44139
-Node: Finders 144931
-Node: Actions 145293
-Node: Conditions 145752
-Node: Contributing46638
-Node: Bugs47504
-Node: Working with EDE47861
-Node: Compiling Edna48945
-Node: Testing Edna49814
-Node: Before Sending Changes50795
-Node: Developing with Bazaar51482
-Node: Documentation52223
-Node: Changelog52679
-Node: 10beta852929
-Node: 10beta753041
-Node: 10beta653335
-Node: 10beta553611
-Node: 10beta453998
-Node: 10beta354251
-Node: 10beta254690
+Node: Copying4206
+Node: Introduction5028
+Node: Installation and Setup5976
+Node: Basic Operation6700
+Node: Blockers8551
+Node: Triggers8837
+Node: Syntax9099
+Node: Basic Features9789
+Node: Finders10143
+Node: ancestors11908
+Node: children12502
+Node: descendants12912
+Node: file13434
+Node: first-child14183
+Node: ids14443
+Node: match15104
+Node: next-sibling15742
+Node: next-sibling-wrap15999
+Node: olp16313
+Node: org-file16725
+Node: parent17370
+Node: previous-sibling17568
+Node: previous-sibling-wrap17829
+Node: relatives18108
+Node: rest-of-siblings21729
+Node: rest-of-siblings-wrap22014
+Node: self22363
+Node: siblings22524
+Node: siblings-wrap22761
+Node: Actions23065
+Node: Scheduled/Deadline23828
+Node: TODO State27343
+Node: Archive28068
+Node: Chain Property28388
+Node: Clocking29141
+Node: Property29553
+Node: Priority31726
+Node: Tag32295
+Node: Effort32512
+Node: Getting Help32896
+Node: Advanced Features33341
+Node: Finder Cache33789
+Node: Conditions34828
+Node: Heading is DONE35505
+Node: File Has Headings35711
+Node: Heading TODO State36133
+Node: Lisp Variable Set36427
+Node: Heading Has Property37095
+Node: Regexp Search37841
+Node: Negating Conditions38221
+Node: Consideration38612
+Node: Conditional Forms40200
+Node: Setting the Properties42856
+Node: Extending Edna43940
+Node: Naming Conventions44430
+Node: Finders 145222
+Node: Actions 145584
+Node: Conditions 146043
+Node: Contributing46929
+Node: Bugs47795
+Node: Working with EDE48152
+Node: Compiling Edna49236
+Node: Testing Edna50105
+Node: Before Sending Changes51086
+Node: Developing with Bazaar51773
+Node: Documentation52514
+Node: Changelog52970
+Node: 10beta853220
+Node: 10beta753332
+Node: 10beta653626
+Node: 10beta553902
+Node: 10beta454289
+Node: 10beta354542
+Node: 10beta254981
 
 End Tag Table
 

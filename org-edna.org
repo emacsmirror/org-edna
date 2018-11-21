@@ -909,13 +909,19 @@ e.g. tag1:tag2
 :DESCRIPTION: So much effort!
 :END:
 
-- Syntax: set-effort!(VALUE)
+Modifies the effort of all targets.
 
-Sets the effort of all targets according to VALUE:
+- Syntax: set-effort!("VALUE")
 
-- If VALUE is a string, then the effort is set to VALUE
-- If VALUE is an integer, then set the value to the VALUE'th allowed effort property
-- If VALUE is the symbol 'increment, increment effort
+  Set the effort of all targets to "VALUE".
+
+- Syntax: set-effort!(NUMBER)
+
+  Sets the effort to the NUMBER'th allowed effort property.
+
+- Syntax: set-effort!(increment)
+
+  Increment the effort value.
 
 ** Getting Help
 :PROPERTIES:
