@@ -583,6 +583,7 @@ following reasons:
         (org-edna--add-to-finder-cache func-sym args)))))
 
 
+;;; Interactive Functions
 
 (defmacro org-edna-run (change-plist &rest body)
   "Run a TODO state change.
@@ -655,6 +656,7 @@ Remove Edna's workers from `org-trigger-hook' and
   (remove-hook 'org-blocker-hook 'org-edna-blocker-function))
 
 
+;;; Finders
 
 ;; Tag Finder
 (defun org-edna-finder/match (match-spec &optional scope skip)
@@ -1256,6 +1258,7 @@ which ones will and won't work."
     (list (point-min-marker))))
 
 
+;;; Actions
 
 ;; Set TODO state
 (defun org-edna-action/todo! (_last-entry new-state)
@@ -1882,6 +1885,7 @@ Does nothing if the source heading has no property PROPERTY."
     (org-entry-put nil property old-prop)))
 
 
+;;; Conditions
 
 ;; For most conditions, we return true if condition is true and neg is false, or
 ;; if condition is false and neg is true:
@@ -1985,6 +1989,7 @@ starting from target's position."
       (format "%s %s in %s" (if neg "Did Not Find" "Found") match (buffer-name)))))
 
 
+;;; Consideration
 
 (defun org-edna-handle-consideration (consideration blocks)
   "Handle consideration CONSIDERATION.
@@ -2034,7 +2039,6 @@ same as \"consider\"."
            first-block))))))
 
 
-
 ;;; Popout editing
 
 (defvar org-edna-edit-original-marker nil)
@@ -2278,6 +2282,7 @@ Displays help for KEYWORD in the Help buffer."
       (princ doc))))
 
 
+;;; Bug Reports
 
 (declare-function lm-report-bug "lisp-mnt" (topic))
 

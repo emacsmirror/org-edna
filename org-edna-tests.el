@@ -3,9 +3,6 @@
 ;; Copyright (C) 2017-2018 Free Software Foundation, Inc.
 
 ;; Author: Ian Dunn <dunni@gnu.org>
-;; Keywords: convenience, text, org
-;; Version: 1.0
-;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "8.0"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -1646,11 +1643,82 @@ This avoids org-id digging into its internal database."
               (org-edna-test-mark-todo heading1-pom heading3-pom heading4-pom heading5-pom))))
       (org-edna-test-restore-test-file))))
 
+(ert-deftest org-edna-doc-test/ancestors-cache ()
+  (let* ((start-heading (org-edna-find-test-heading "24a0c3bb-7e69-4e9e-bb98-5aba2ff17bb1"))
+         (org-todo-keywords '((sequence "TODO" "|" "DONE")))
+         ;; Only block based on Edna
+         (org-blocker-hook 'org-edna-blocker-function)
+         ;; Enable cache
+         (org-edna-finder-use-cache t))
+    (unwind-protect
+        (org-with-point-at start-heading
+          (save-restriction
+            ;; Only allow operating on the current tree
+            (org-narrow-to-subtree)
+            ;; Show the entire subtree
+            (outline-show-all)
+            (let* ((heading1-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading2-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading3-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading4-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading5-pom (progn (org-next-visible-heading 1) (point-marker))))
+              ;; Verify that we can't change the TODO state to DONE
+              (should (org-edna-test-check-block heading5-pom "Initial state of heading 5"))
+              ;; Change the state at 4 to DONE
+              (org-edna-test-change-todo-state heading4-pom "DONE")
+              ;; Verify that ALL ancestors need to be changed
+              (should (org-edna-test-check-block heading5-pom "Heading 5 after parent changed"))
+              (org-edna-test-mark-done heading1-pom heading3-pom)
+              ;; Only need 1, 3, and 4 to change 5
+              (should (not (org-edna-test-check-block heading5-pom
+                                                    "Heading 5 after all parents changed")))
+              ;; Change the state back to TODO on all of them
+              (org-edna-test-mark-todo heading1-pom heading3-pom heading4-pom heading5-pom))))
+      (org-edna-test-restore-test-file))))
+
 (ert-deftest org-edna-doc-test/descendants ()
   (let* ((start-heading (org-edna-find-test-heading "cc18dc74-00e8-4081-b46f-e36800041fe7"))
          (org-todo-keywords '((sequence "TODO" "|" "DONE")))
          ;; Only block based on Edna
          (org-blocker-hook 'org-edna-blocker-function))
+    (unwind-protect
+        (org-with-point-at start-heading
+          (save-restriction
+            ;; Only allow operating on the current tree
+            (org-narrow-to-subtree)
+            ;; Show the entire subtree
+            (outline-show-all)
+            (let* ((heading1-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading2-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading3-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading4-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading5-pom (progn (org-next-visible-heading 1) (point-marker))))
+              (should (org-edna-test-check-block heading1-pom "Heading 1 initial state"))
+              ;; Change the state at 2 to DONE
+              (org-edna-test-mark-done heading2-pom)
+              ;; Verify that ALL descendants need to be changed
+              (should (org-edna-test-check-block heading1-pom "Heading 1 after changing 2"))
+              ;; Try 3
+              (org-edna-test-mark-done heading3-pom)
+              ;; Verify that ALL descendants need to be changed
+              (should (org-edna-test-check-block heading1-pom "Heading 1 after changing 3"))
+              ;; Try 4
+              (org-edna-test-mark-done heading4-pom)
+              ;; Verify that ALL descendants need to be changed
+              (should (org-edna-test-check-block heading1-pom "Heading 1 after changing 4"))
+              ;; Try 5
+              (org-edna-test-mark-done heading5-pom)
+              ;; Verify that ALL descendants need to be changed
+              (should (not (org-edna-test-check-block heading1-pom "Heading 1 after changing 5"))))))
+      (org-edna-test-restore-test-file))))
+
+(ert-deftest org-edna-doc-test/descendants-cache ()
+  (let* ((start-heading (org-edna-find-test-heading "cc18dc74-00e8-4081-b46f-e36800041fe7"))
+         (org-todo-keywords '((sequence "TODO" "|" "DONE")))
+         ;; Only block based on Edna
+         (org-blocker-hook 'org-edna-blocker-function)
+         ;; Enable cache
+         (org-edna-finder-use-cache t))
     (unwind-protect
         (org-with-point-at start-heading
           (save-restriction
@@ -1733,6 +1801,62 @@ This avoids org-id digging into its internal database."
           ;; Change the test file back to its original state.
           (org-edna-test-restore-test-file))))))
 
+(ert-deftest org-edna-doc-test/laundry-cache ()
+  "Test for the \"laundry\" example in the documentation.
+
+This version enables cache, ensuring that the repeated calls to
+the relative finders all still work while cache is enabled."
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (start-heading (org-edna-find-test-heading "e57ce099-9f37-47f4-a6bb-61a84eb1fbbe"))
+             (org-todo-keywords '((sequence "TODO" "|" "DONE")))
+             ;; Only block based on Edna
+             (org-blocker-hook 'org-edna-blocker-function)
+             ;; Only trigger based on Edna
+             (org-trigger-hook 'org-edna-trigger-function)
+             ;; Enable cache
+             (org-edna-finder-use-cache t))
+    (org-with-point-at start-heading
+      (save-restriction
+        ;; Only allow operating on the current tree
+        (org-narrow-to-subtree)
+        ;; Show the entire subtree
+        (outline-show-all)
+        (unwind-protect
+            (let* ((heading1-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading2-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading3-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (heading4-pom (progn (org-next-visible-heading 1) (point-marker))))
+              ;; Verify that headings 2, 3, and 4 are all blocked
+              (should (org-edna-test-check-block heading2-pom
+                                                 "Initial attempt to change heading 2"))
+              (should (org-edna-test-check-block heading3-pom
+                                                 "Initial attempt to change heading 3"))
+              (should (org-edna-test-check-block heading4-pom
+                                                 "Initial attempt to change heading 4"))
+              ;; Mark heading 1 as DONE
+              (should (not (org-edna-test-check-block heading1-pom
+                                                    "Set heading 1 to DONE")))
+              ;; Only heading 2 should have a scheduled time
+              (should (string-equal (org-entry-get heading2-pom "SCHEDULED")
+                                    "<2000-01-15 Sat 01:00>"))
+              (should (not (org-entry-get heading3-pom "SCHEDULED")))
+              (should (not (org-entry-get heading4-pom "SCHEDULED")))
+              ;; The others should still be blocked.
+              (should (org-edna-test-check-block heading3-pom
+                                                 "Second attempt to change heading 3"))
+              (should (org-edna-test-check-block heading4-pom
+                                                 "Second attempt to change heading 4"))
+              ;; Try changing heading 2
+              (should (not (org-edna-test-check-block heading2-pom
+                                                    "Set heading 2 to DONE")))
+              (should (string-equal (org-entry-get heading3-pom "SCHEDULED")
+                                    "<2000-01-16 Sun 09:00>"))
+              ;; 4 should still be blocked
+              (should (org-edna-test-check-block heading4-pom
+                                                 "Second attempt to change heading 4")))
+          ;; Change the test file back to its original state.
+          (org-edna-test-restore-test-file))))))
+
 (ert-deftest org-edna-doc-test/nightly ()
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (start-heading (org-edna-find-test-heading "8b6d9820-d943-4622-85c9-4a346e033453"))
@@ -1743,6 +1867,47 @@ This avoids org-id digging into its internal database."
              (org-blocker-hook 'org-edna-blocker-function)
              ;; Only trigger based on Edna
              (org-trigger-hook 'org-edna-trigger-function))
+    (org-with-point-at start-heading
+      (save-restriction
+        ;; Only allow operating on the current tree
+        (org-narrow-to-subtree)
+        ;; Show the entire subtree
+        (outline-show-all)
+        (unwind-protect
+            (let* ((nightly-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (lunch-pom   (progn (org-next-visible-heading 1) (point-marker)))
+                   (door-pom    (progn (org-next-visible-heading 1) (point-marker)))
+                   (dog-pom     (progn (org-next-visible-heading 1) (point-marker))))
+              ;; Verify that Nightly is blocked
+              (should (org-edna-test-check-block nightly-pom "Initial Nightly Check"))
+              ;; Check off Lunch, and verify that nightly is still blocked
+              (org-edna-test-mark-done lunch-pom)
+              (should (org-edna-test-check-block nightly-pom "Nightly after Lunch"))
+              ;; Check off Door, and verify that nightly is still blocked
+              (org-edna-test-mark-done door-pom)
+              (should (org-edna-test-check-block nightly-pom "Nightly after Door"))
+              ;; Check off Dog.  This should trigger the others.
+              (org-edna-test-mark-done dog-pom)
+              (should (org-edna-test-compare-todos lunch-pom "TODO" "Lunch after Nightly Trigger"))
+              (should (org-edna-test-compare-todos door-pom "TODO" "Door after Nightly Trigger"))
+              (should (org-edna-test-compare-todos dog-pom "TODO" "Dog after Nightly Trigger"))
+              (should (string-equal (org-entry-get nightly-pom "DEADLINE")
+                                    "<2000-01-16 Sun +1d>")))
+          ;; Change the test file back to its original state.
+          (org-edna-test-restore-test-file))))))
+
+(ert-deftest org-edna-doc-test/nightly-cache ()
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (start-heading (org-edna-find-test-heading "8b6d9820-d943-4622-85c9-4a346e033453"))
+             ;; Only use the test file in the agenda
+             (org-agenda-files `(,org-edna-test-file))
+             (org-todo-keywords '((sequence "TODO" "|" "DONE")))
+             ;; Only block based on Edna
+             (org-blocker-hook 'org-edna-blocker-function)
+             ;; Only trigger based on Edna
+             (org-trigger-hook 'org-edna-trigger-function)
+             ;; Enable cache
+             (org-edna-finder-use-cache t))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
