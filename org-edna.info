@@ -865,19 +865,23 @@ following, PLANNING is either scheduled or deadline.
 
    Examples:
 
-   • scheduled!(“Mon 09:00”) -> Set SCHEDULED to the following Monday at
-     9:00
-   • deadline!(“++2h”) -> Set DEADLINE to two hours from now.
-   • deadline!(copy) deadline!(“+1h”) -> Copy the source deadline to the
-     target, then increment it by an hour.
-   • scheduled!(“+1wkdy”) -> Set SCHEDULED to the next weekday
-   • scheduled!(“+1d +wkdy”) -> Same as above
-   • deadline!(“+1m -wkdy”) -> Set SCHEDULED up one month, but move
-     backward to find a weekend
-   • scheduled!(“float 2 Tue Feb”) -> Set SCHEDULED to the second
-     Tuesday in the following February
-   • scheduled!(“float 3 Thu”) -> Set SCHEDULED to the third Thursday in
-     the following month
+scheduled!(“Mon 09:00”)
+     Set SCHEDULED to the following Monday at 9:00
+deadline!(“++2h”)
+     Set DEADLINE to two hours from now.
+deadline!(copy) deadline!(“+1h”)
+     Copy the source deadline to the target, then increment it by an
+     hour.
+scheduled!(“+1wkdy”)
+     Set SCHEDULED to the next weekday
+scheduled!(“+1d +wkdy”)
+     Same as above
+deadline!(“+1m -wkdy”)
+     Set SCHEDULED up one month, but move backward to find a weekend
+scheduled!(“float 2 Tue Feb”)
+     Set SCHEDULED to the second Tuesday in the following February
+scheduled!(“float 3 Thu”)
+     Set SCHEDULED to the third Thursday in the following month
 
 
 File: org-edna.info,  Node: TODO State,  Next: Archive,  Prev: Scheduled/Deadline,  Up: Actions
@@ -892,6 +896,23 @@ TODO State
    NEW-STATE may either be a string or a symbol denoting the new TODO
 state.  It can also be the empty string, in which case the TODO state is
 removed.
+
+   Example:
+
+     * TODO Heading 1
+       :PROPERTIES:
+       :TRIGGER: next-sibling todo!(DONE)
+       :END:
+     * TODO Heading 2
+
+   In this example, when “Heading 1” is marked as DONE, it will also
+mark “Heading 2” as DONE:
+
+     * DONE Heading 1
+       :PROPERTIES:
+       :TRIGGER: next-sibling todo!(DONE)
+       :END:
+     * DONE Heading 2
 
 
 File: org-edna.info,  Node: Archive,  Next: Chain Property,  Prev: TODO State,  Up: Actions
@@ -916,6 +937,28 @@ Chain Property
 
    Copies PROPERTY from the source entry to all targets.  Does nothing
 if the source heading has no property PROPERTY.
+
+   Example:
+
+     * TODO Heading 1
+       :PROPERTIES:
+       :COUNTER: 2
+       :TRIGGER: next-sibling chain!("COUNTER")
+       :END:
+     * TODO Heading 2
+
+   In this example, when “Heading 1” is marked as DONE, it will copy its
+COUNTER property to “Heading 2”:
+
+     * DONE Heading 1
+       :PROPERTIES:
+       :COUNTER: 2
+       :TRIGGER: next-sibling chain!("COUNTER")
+       :END:
+     * TODO Heading 2
+       :PROPERTIES:
+       :COUNTER: 2
+       :END:
 
 
 File: org-edna.info,  Node: Clocking,  Next: Property,  Prev: Chain Property,  Up: Actions
@@ -987,7 +1030,7 @@ already set:
 
      * TODO Test
        :PROPERTIES:
-       :TRIGGER: self set-property("TEST" inc)
+       :TRIGGER: self set-property!("TEST" inc)
        :END:
 
    In the above example, if “Test” is set to DONE, Edna will fail to
@@ -999,10 +1042,11 @@ increment the TEST property, since it doesn’t exist.
 
    Examples:
 
-   • set-property!(“COUNTER” “1”) -> Sets the property COUNTER to 1 on
-     all targets
-   • set-property!(“COUNTER” inc) -> Increments the property COUNTER by
-     1.  Following the previous example, it would be 2.
+set-property!(“COUNTER” “1”)
+     Sets the property COUNTER to 1 on all targets
+set-property!(“COUNTER” inc)
+     Increments the property COUNTER by 1.  Following the previous
+     example, it would be 2.
 
 
 File: org-edna.info,  Node: Priority,  Next: Tag,  Prev: Property,  Up: Actions
@@ -1182,7 +1226,12 @@ against VALUE. Block the source heading if VARIABLE = VALUE.
 
    VARIABLE should be a symbol, and VALUE is any valid lisp expression.
 
-     self variable-set?(test-variable 12)
+   Examples:
+
+self variable-set?(test-variable 12)
+     Blocks if the variable ‘test-variable’ is set to 12.
+self variable-set?(buffer-file-name “org-edna.org”)
+     Blocks if the variable ‘buffer-file-name’ is set to “org-edna.org”.
 
 
 File: org-edna.info,  Node: has-property,  Next: re-search,  Prev: variable-set,  Up: Conditions
@@ -1194,6 +1243,22 @@ has-property
 
    Tests each target for the property PROPERTY, and blocks if it’s set
 to VALUE.
+
+   Example:
+
+     * TODO Take Shower
+       :PROPERTIES:
+       :COUNT:  1
+       :TRIGGER: self set-property!("COUNT" inc) todo!("TODO")
+       :END:
+     * TODO Wash Towels
+       :PROPERTIES:
+       :BLOCKER:  previous-sibling !has-property?("COUNT" "3")
+       :TRIGGER:  previous-sibling set-property!("COUNT" "0")
+       :END:
+
+   In this example, “Wash Towels” can’t be completed until the user has
+showered at least three times.
 
 
 File: org-edna.info,  Node: re-search,  Next: Negating Conditions,  Prev: has-property,  Up: Conditions
@@ -1228,7 +1293,8 @@ File: org-edna.info,  Node: Consideration,  Next: Conditional Forms,  Prev: Cond
 Consideration
 =============
 
-“Consideration” is a special keyword that’s only valid for blockers.
+“Consideration” and “consider” are special keywords that are only valid
+for blockers.
 
    This says “Allow a task to complete if CONSIDERATION of its targets
 pass the given condition”.
@@ -1812,49 +1878,49 @@ Node: siblings22483
 Node: siblings-wrap22720
 Node: Actions23024
 Node: Scheduled/Deadline23787
-Node: TODO State27362
-Node: Archive27730
-Node: Chain Property28050
-Node: Clocking28333
-Node: Property28745
-Node: Priority30932
-Node: Tag31501
-Node: Effort31718
-Node: Getting Help32107
-Node: Advanced Features32552
-Node: Finder Cache33000
-Node: Conditions34039
-Node: done34675
-Node: headings34839
-Node: todo-state35215
-Node: variable-set35471
-Node: has-property35900
-Node: re-search36169
-Node: Negating Conditions36529
-Node: Consideration36916
-Node: Conditional Forms38485
-Node: Setting the Properties41141
-Node: Extending Edna42225
-Node: Naming Conventions42715
-Node: Finders 143507
-Node: Actions 143869
-Node: Conditions 144328
-Node: Contributing45214
-Node: Bugs46080
-Node: Working with EDE46437
-Node: Compiling Edna47521
-Node: Testing Edna48390
-Node: Before Sending Changes49371
-Node: Developing with Bazaar50058
-Node: Documentation50799
-Node: Changelog51255
-Node: 10beta851505
-Node: 10beta751617
-Node: 10beta651911
-Node: 10beta552187
-Node: 10beta452574
-Node: 10beta352827
-Node: 10beta253266
+Node: TODO State27302
+Node: Archive28027
+Node: Chain Property28347
+Node: Clocking29100
+Node: Property29512
+Node: Priority31685
+Node: Tag32254
+Node: Effort32471
+Node: Getting Help32860
+Node: Advanced Features33305
+Node: Finder Cache33753
+Node: Conditions34792
+Node: done35428
+Node: headings35592
+Node: todo-state35968
+Node: variable-set36224
+Node: has-property36861
+Node: re-search37574
+Node: Negating Conditions37934
+Node: Consideration38321
+Node: Conditional Forms39909
+Node: Setting the Properties42565
+Node: Extending Edna43649
+Node: Naming Conventions44139
+Node: Finders 144931
+Node: Actions 145293
+Node: Conditions 145752
+Node: Contributing46638
+Node: Bugs47504
+Node: Working with EDE47861
+Node: Compiling Edna48945
+Node: Testing Edna49814
+Node: Before Sending Changes50795
+Node: Developing with Bazaar51482
+Node: Documentation52223
+Node: Changelog52679
+Node: 10beta852929
+Node: 10beta753041
+Node: 10beta653335
+Node: 10beta553611
+Node: 10beta453998
+Node: 10beta354251
+Node: 10beta254690
 
 End Tag Table
 

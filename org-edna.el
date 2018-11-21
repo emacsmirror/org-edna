@@ -96,7 +96,8 @@ Currently, the following are handled:
 
 Everything else is returned as is."
   (pcase arg
-    ((and (pred symbolp)
+    ((and (pred symbolp) ;; Symbol
+          ;; Name matches `org-uuidgen-p'
           (let (pred org-uuidgen-p) (symbol-name arg)))
      (symbol-name arg))
     (_
@@ -127,7 +128,8 @@ If KEY is an invalid Edna keyword, then return nil."
   (cond
    ;; Just return nil if it's not a symbol
    ((or (not key)
-        (not (symbolp key))))
+        (not (symbolp key)))
+    nil)
    ((memq key '(consideration consider))
     ;; Function is ignored here, but `org-edna-describe-keyword' needs this
     ;; function.
@@ -397,7 +399,7 @@ correspond to internal variables."
                                                             ,target-var
                                                             ,consideration-var))))
       ('consideration
-       `(setq ,consideration-var ,(nth 0 args))))))
+       `(setq ,consideration-var ',(nth 0 args))))))
 
 (defun org-edna--expand-sexp-form (form &optional
                                         use-old-scope
@@ -664,7 +666,11 @@ MATCH-SPEC may be any valid match string; it is passed straight
 into `org-map-entries'.
 
 SCOPE and SKIP are their counterparts in `org-map-entries'.
-SCOPE defaults to agenda, and SKIP defaults to nil.
+SCOPE defaults to agenda, and SKIP defaults to nil.  Because of
+the different defaults in SCOPE, the symbol 'buffer may also be
+used.  This indicates that scope should be the current buffer,
+honoring any restriction (the equivalent of the nil SCOPE in
+`org-map-entries'.)
 
 * TODO Test
   :PROPERTIES:
@@ -673,7 +679,10 @@ SCOPE defaults to agenda, and SKIP defaults to nil.
 
 \"Test\" will block until all entries tagged \"test\" and
 \"mine\" in the agenda files are marked DONE."
+  ;; Our default is agenda...
   (setq scope (or scope 'agenda))
+  ;; ...but theirs is the buffer
+  (when (eq scope 'buffer) (setq scope nil))
   (org-map-entries
    ;; Find all entries in the agenda files that match the given tag.
    (lambda nil (point-marker))
@@ -2206,7 +2215,7 @@ SUFFIX is an additional suffix to use when matching keywords."
   "Return a list of all allowed Edna keywords for a blocker."
   `(,@(org-edna--collect-finders)
     ,@(org-edna--collect-conditions)
-    "consideration"))
+    "consideration" "consider"))
 
 (defun org-edna-completions-for-trigger ()
   "Return a list of all allowed Edna keywords for a trigger."

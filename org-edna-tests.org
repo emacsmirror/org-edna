@@ -1,4 +1,5 @@
 #+STARTUP: nologdone
+#+STARTUP: indent
 #+PROPERTY: Effort_ALL 0:01 0:02 0:03
 #+PROPERTY: COUNTER_ALL a b c d
 
@@ -136,4 +137,134 @@ DEADLINE: <2017-01-05 Thu> SCHEDULED: <2017-01-05 Thu>
 ** Parent Sub Heading #2
 :PROPERTIES:
 :ID:       4fe67f03-2b35-4708-8c38-54d2c4dfab81
+:END:
+* Documentation Tests
+** Ancestors
+:PROPERTIES:
+:ID:       24a0c3bb-7e69-4e9e-bb98-5aba2ff17bb1
+:END:
+*** TODO Heading 1
+**** TODO Heading 2
+**** TODO Heading 3
+***** TODO Heading 4
+****** TODO Heading 5
+:PROPERTIES:
+:BLOCKER:  ancestors
+:END:
+** Descendants
+:PROPERTIES:
+:ID:       cc18dc74-00e8-4081-b46f-e36800041fe7
+:END:
+*** TODO Heading 1
+:PROPERTIES:
+:BLOCKER:  descendants
+:END:
+**** TODO Heading 2
+**** TODO Heading 3
+***** TODO Heading 4
+****** TODO Heading 5
+** Laundry
+:PROPERTIES:
+:ID:       e57ce099-9f37-47f4-a6bb-61a84eb1fbbe
+:END:
+*** TODO Put clothes in washer
+SCHEDULED: <2000-01-15 Sat 00:00>
+:PROPERTIES:
+:TRIGGER: next-sibling scheduled!("++1h")
+:END:
+*** TODO Put clothes in dryer
+:PROPERTIES:
+:TRIGGER: next-sibling scheduled!("Sun 9:00")
+:BLOCKER:  previous-sibling
+:END:
+*** TODO Fold laundry
+:PROPERTIES:
+:TRIGGER: next-sibling scheduled!("++1h")
+:BLOCKER:  previous-sibling
+:END:
+*** TODO Put clothes away
+:PROPERTIES:
+:TRIGGER: next-sibling scheduled!("++1h")
+:BLOCKER:  previous-sibling
+:END:
+** Nightlies - Standard
+:PROPERTIES:
+:ID:       8b6d9820-d943-4622-85c9-4a346e033453
+:END:
+*** TODO Nightly
+DEADLINE: <2000-01-15 Sat +1d>
+:PROPERTIES:
+:ID:       2d94abf9-2d63-46fd-8dc5-cd396555bcfe
+:BLOCKER:  match("nightly")
+:TRIGGER:  match("nightly") todo!(TODO)
+:END:
+*** TODO Prepare Tomorrow's Lunch                                 :nightly:
+:PROPERTIES:
+:TRIGGER:  if match("nightly") then ids(2d94abf9-2d63-46fd-8dc5-cd396555bcfe) todo!(DONE) endif
+:END:
+*** TODO Lock Back Door                                           :nightly:
+:PROPERTIES:
+:TRIGGER:  if match("nightly") then ids(2d94abf9-2d63-46fd-8dc5-cd396555bcfe) todo!(DONE) endif
+:END:
+*** TODO Feed Dog                                                 :nightly:
+:PROPERTIES:
+:TRIGGER:  if match("nightly") then ids(2d94abf9-2d63-46fd-8dc5-cd396555bcfe) todo!(DONE) endif
+:END:
+** Dailies - Consideration
+:PROPERTIES:
+:ID:       630805bb-a864-4cdc-9a6f-0f126e887c66
+:END:
+*** TODO Daily
+DEADLINE: <2000-01-15 Sat +1d>
+:PROPERTIES:
+:ID:       96f7e46c-40c3-4f5b-8f00-81a6e3cb122b
+:TRIGGER:  match("daily") todo!(TODO)
+:END:
+*** TODO Prepare Tomorrow's Lunch                                   :daily:
+:PROPERTIES:
+:TRIGGER:  if consider(any) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
+:END:
+*** TODO Lock Back Door                                             :daily:
+:PROPERTIES:
+:TRIGGER:  if consider(any) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
+:END:
+*** TODO Feed Dog                                                   :daily:
+:PROPERTIES:
+:TRIGGER:  if consider(any) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
+:END:
+** Weeklies - Inverted Conditional
+:PROPERTIES:
+:ID:       cf529a5e-1b0c-40c3-8f85-fe2fc4df0ffd
+:END:
+*** TODO Weekly
+DEADLINE: <2000-01-15 Sat +1d>
+:PROPERTIES:
+:ID:       9a0c4b00-64be-4971-a93e-c530cbdd4b2b
+:TRIGGER:  match("weekly") todo!(TODO)
+:END:
+*** TODO Prepare Tomorrow's Lunch                                 :weekly:
+:PROPERTIES:
+:TRIGGER:  if match("weekly") then else ids(9a0c4b00-64be-4971-a93e-c530cbdd4b2b) todo!(DONE) endif
+:END:
+*** TODO Lock Back Door                                           :weekly:
+:PROPERTIES:
+:TRIGGER:  if match("weekly") then else ids(9a0c4b00-64be-4971-a93e-c530cbdd4b2b) todo!(DONE) endif
+:END:
+*** TODO Feed Dog                                                 :weekly:
+:PROPERTIES:
+:TRIGGER:  if match("weekly") then else ids(9a0c4b00-64be-4971-a93e-c530cbdd4b2b) todo!(DONE) endif
+:END:
+** Basic Shower - No Conditional
+:PROPERTIES:
+:ID:       34d67756-927b-4a21-a62d-7989bd138946
+:END:
+*** TODO Take Shower
+:PROPERTIES:
+:COUNT:  0
+:TRIGGER:  self set-property!("COUNT" inc) todo!("TODO")
+:END:
+*** TODO Wash Towels
+:PROPERTIES:
+:BLOCKER:  previous-sibling !has-property?("COUNT" "3")
+:TRIGGER:  previous-sibling set-property!("COUNT" "0")
 :END:

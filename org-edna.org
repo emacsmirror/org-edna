@@ -692,14 +692,15 @@ PLANNING is either scheduled or deadline.
 
 Examples:
 
-- scheduled!("Mon 09:00") -> Set SCHEDULED to the following Monday at 9:00
-- deadline!("++2h") -> Set DEADLINE to two hours from now.
-- deadline!(copy) deadline!("+1h") -> Copy the source deadline to the target, then increment it by an hour.
-- scheduled!("+1wkdy") -> Set SCHEDULED to the next weekday
-- scheduled!("+1d +wkdy") -> Same as above
-- deadline!("+1m -wkdy") -> Set SCHEDULED up one month, but move backward to find a weekend
-- scheduled!("float 2 Tue Feb") -> Set SCHEDULED to the second Tuesday in the following February
-- scheduled!("float 3 Thu") -> Set SCHEDULED to the third Thursday in the following month
+- scheduled!("Mon 09:00") :: Set SCHEDULED to the following Monday at 9:00
+- deadline!("++2h") :: Set DEADLINE to two hours from now.
+- deadline!(copy) deadline!("+1h") :: Copy the source deadline to the target, then increment it by an hour.
+- scheduled!("+1wkdy") :: Set SCHEDULED to the next weekday
+- scheduled!("+1d +wkdy") :: Same as above
+- deadline!("+1m -wkdy") :: Set SCHEDULED up one month, but move backward to find a weekend
+- scheduled!("float 2 Tue Feb") :: Set SCHEDULED to the second Tuesday in the following February
+- scheduled!("float 3 Thu") :: Set SCHEDULED to the third Thursday in the following month
+
 *** TODO State
 :PROPERTIES:
 :CUSTOM_ID: todo!
@@ -712,6 +713,27 @@ Sets the TODO state of the target heading to NEW-STATE.
 
 NEW-STATE may either be a string or a symbol denoting the new TODO state.  It
 can also be the empty string, in which case the TODO state is removed.
+
+Example:
+
+#+BEGIN_SRC org
+,* TODO Heading 1
+  :PROPERTIES:
+  :TRIGGER: next-sibling todo!(DONE)
+  :END:
+,* TODO Heading 2
+#+END_SRC
+
+In this example, when "Heading 1" is marked as DONE, it will also mark "Heading
+2" as DONE:
+
+#+BEGIN_SRC org
+,* DONE Heading 1
+  :PROPERTIES:
+  :TRIGGER: next-sibling todo!(DONE)
+  :END:
+,* DONE Heading 2
+#+END_SRC
 
 *** Archive
 :PROPERTIES:
@@ -736,6 +758,32 @@ nil, Edna will not ask before archiving targets.
 
 Copies PROPERTY from the source entry to all targets.  Does nothing if the
 source heading has no property PROPERTY.
+
+Example:
+
+#+BEGIN_SRC org
+,* TODO Heading 1
+  :PROPERTIES:
+  :COUNTER: 2
+  :TRIGGER: next-sibling chain!("COUNTER")
+  :END:
+,* TODO Heading 2
+#+END_SRC
+
+In this example, when "Heading 1" is marked as DONE, it will copy its COUNTER
+property to "Heading 2":
+
+#+BEGIN_SRC org
+,* DONE Heading 1
+  :PROPERTIES:
+  :COUNTER: 2
+  :TRIGGER: next-sibling chain!("COUNTER")
+  :END:
+,* TODO Heading 2
+  :PROPERTIES:
+  :COUNTER: 2
+  :END:
+#+END_SRC
 
 *** Clocking
 :PROPERTIES:
@@ -804,7 +852,7 @@ Additionally, all special forms will fail if the property is not already set:
 #+begin_src org
 ,* TODO Test
   :PROPERTIES:
-  :TRIGGER: self set-property("TEST" inc)
+  :TRIGGER: self set-property!("TEST" inc)
   :END:
 #+end_src
 
@@ -817,8 +865,8 @@ Deletes the property PROPERTY from all targets.
 
 Examples:
 
-- set-property!("COUNTER" "1") -> Sets the property COUNTER to 1 on all targets
-- set-property!("COUNTER" inc) -> Increments the property COUNTER by 1.  Following the previous example, it would be 2.
+- set-property!("COUNTER" "1") :: Sets the property COUNTER to 1 on all targets
+- set-property!("COUNTER" inc) :: Increments the property COUNTER by 1.  Following the previous example, it would be 2.
 
 *** Priority
 :PROPERTIES:
@@ -923,7 +971,7 @@ that target, then the source heading is blocked.
 If no condition is specified, ~!done?~ is used by default, which means block if
 any target heading isn't done.
 
-*** done
+*** Heading is DONE
 :PROPERTIES:
 :CUSTOM_ID: done
 :END:
@@ -932,7 +980,7 @@ any target heading isn't done.
 
 Blocks the source heading if any target heading is DONE.
 
-*** headings
+*** File Has Headings
 :PROPERTIES:
 :CUSTOM_ID: headings
 :END:
@@ -948,7 +996,7 @@ org-file("refile.org") headings?
 
 The above example blocks if refile.org has any headings.
 
-*** todo-state
+*** Heading TODO State
 :PROPERTIES:
 :CUSTOM_ID: todo-state
 :END:
@@ -959,7 +1007,7 @@ Blocks if any target heading has TODO state set to STATE.
 
 STATE may be a string or a symbol.
 
-*** variable-set
+*** Lisp Variable Set
 :PROPERTIES:
 :CUSTOM_ID: variable-set
 :END:
@@ -971,11 +1019,12 @@ against VALUE.  Block the source heading if VARIABLE = VALUE.
 
 VARIABLE should be a symbol, and VALUE is any valid lisp expression.
 
-#+BEGIN_EXAMPLE
-self variable-set?(test-variable 12)
-#+END_EXAMPLE
+Examples:
 
-*** has-property
+- self variable-set?(test-variable 12) :: Blocks if the variable ~test-variable~ is set to 12.
+- self variable-set?(buffer-file-name "org-edna.org") :: Blocks if the variable ~buffer-file-name~ is set to "org-edna.org".
+
+*** Heading Has Property
 :PROPERTIES:
 :CUSTOM_ID: has-property
 :END:
@@ -984,7 +1033,25 @@ self variable-set?(test-variable 12)
 
 Tests each target for the property PROPERTY, and blocks if it's set to VALUE.
 
-*** re-search
+Example:
+
+#+begin_src org
+,* TODO Take Shower
+  :PROPERTIES:
+  :COUNT:  1
+  :TRIGGER: self set-property!("COUNT" inc) todo!("TODO")
+  :END:
+,* TODO Wash Towels
+  :PROPERTIES:
+  :BLOCKER:  previous-sibling !has-property?("COUNT" "3")
+  :TRIGGER:  previous-sibling set-property!("COUNT" "0")
+  :END:
+#+end_src
+
+In this example, "Wash Towels" can't be completed until the user has showered at
+least three times.
+
+*** Regexp Search
 :PROPERTIES:
 :CUSTOM_ID: re-search
 :DESCRIPTION: Search for a regular expression
