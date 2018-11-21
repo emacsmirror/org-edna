@@ -1187,6 +1187,12 @@ Scheme to suffix destructive functions with '!' and predicates with '?'.
 Thus, one can have an action that files a target, and a finder that finds a
 file.
 
+We recommend that you don't name a finder with a special character at the end of
+its name.  As we devise new ideas, we consider using special characters for
+additional categories of keywords.  Thus, to avoid complications in the future,
+it's best if everyone avoids using characters that may become reserved in the
+future.
+
 ** Finders
 :PROPERTIES:
 :DESCRIPTION: Making a new finder

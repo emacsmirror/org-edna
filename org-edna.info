@@ -1403,6 +1403,12 @@ predicates with ’?’.
    Thus, one can have an action that files a target, and a finder that
 finds a file.
 
+   We recommend that you don’t name a finder with a special character at
+the end of its name.  As we devise new ideas, we consider using special
+characters for additional categories of keywords.  Thus, to avoid
+complications in the future, it’s best if everyone avoids using
+characters that may become reserved in the future.
+
 
 File: org-edna.info,  Node: Finders 1,  Next: Actions 1,  Prev: Naming Conventions,  Up: Extending Edna
 
@@ -1830,25 +1836,25 @@ Node: Conditional Forms38485
 Node: Setting the Properties41141
 Node: Extending Edna42225
 Node: Naming Conventions42715
-Node: Finders 143176
-Node: Actions 143538
-Node: Conditions 143997
-Node: Contributing44883
-Node: Bugs45749
-Node: Working with EDE46106
-Node: Compiling Edna47190
-Node: Testing Edna48059
-Node: Before Sending Changes49040
-Node: Developing with Bazaar49727
-Node: Documentation50468
-Node: Changelog50924
-Node: 10beta851174
-Node: 10beta751286
-Node: 10beta651580
-Node: 10beta551856
-Node: 10beta452243
-Node: 10beta352496
-Node: 10beta252935
+Node: Finders 143507
+Node: Actions 143869
+Node: Conditions 144328
+Node: Contributing45214
+Node: Bugs46080
+Node: Working with EDE46437
+Node: Compiling Edna47521
+Node: Testing Edna48390
+Node: Before Sending Changes49371
+Node: Developing with Bazaar50058
+Node: Documentation50799
+Node: Changelog51255
+Node: 10beta851505
+Node: 10beta751617
+Node: 10beta651911
+Node: 10beta552187
+Node: 10beta452574
+Node: 10beta352827
+Node: 10beta253266
 
 End Tag Table
 
