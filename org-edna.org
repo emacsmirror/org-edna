@@ -1015,7 +1015,8 @@ tagged "test" does *not* have the property PROP set to "1".
 :DESCRIPTION: Only some of them
 :END:
 
-"Consideration" is a special keyword that's only valid for blockers.
+"Consideration" and "consider" are special keywords that are only valid for
+blockers.
 
 This says "Allow a task to complete if CONSIDERATION of its targets pass the
 given condition".
