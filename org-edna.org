@@ -869,6 +869,19 @@ Sets the effort of all targets according to VALUE:
 - If VALUE is an integer, then set the value to the VALUE'th allowed effort property
 - If VALUE is the symbol 'increment, increment effort
 
+** Getting Help
+:PROPERTIES:
+:CUSTOM_ID: help
+:DESCRIPTION: Getting some help
+:END:
+
+Edna provides help for any keyword with ~M-x org-edna-describe-keyword~.  When
+invoked, a list of keywords (finders, actions, etc.) known to Edna will be
+provided.  Select any one to get its description.
+
+This description includes the syntax and an explanation of what the keyword
+does.  Some descriptions also contain examples.
+
 * Advanced Features
 :PROPERTIES:
 :CUSTOM_ID: advanced

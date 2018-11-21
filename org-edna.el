@@ -129,8 +129,9 @@ If KEY is an invalid Edna keyword, then return nil."
    ((or (not key)
         (not (symbolp key))))
    ((memq key '(consideration consider))
-    ;; Function is ignored here
-    (cons 'consideration 'identity))
+    ;; Function is ignored here, but `org-edna-describe-keyword' needs this
+    ;; function.
+    (cons 'consideration 'org-edna-handle-consideration))
    ((string-suffix-p "!" (symbol-name key))
     ;; Action
     (let ((func-sym (intern (format "org-edna-action/%s" key))))
@@ -2220,6 +2221,30 @@ PRED, and ACTION."
   "Complete the Edna keyword at point."
   (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
     (list (car bounds) (cdr bounds) 'org-edna-completion-table-function)))
+
+(defun org-edna-describe-keyword (keyword)
+  "Describe the Org Edna keyword KEYWORD.
+
+KEYWORD should be a string for a keyword recognized by edna.
+
+Displays help for KEYWORD in the Help buffer."
+  (interactive
+   (list
+    (completing-read
+     "Keyword: "
+     `(,@(org-edna--collect-finders)
+       ,@(org-edna--collect-actions)
+       ,@(org-edna--collect-conditions)
+       "consideration" "consider")
+     nil ;; No filter predicate
+     t))) ;; require match
+  ;; help-split-fundoc splits the usage info from the rest of the documentation.
+  ;; This avoids having another usage line in the keyword documentation that has
+  ;; nothing to do with how edna expects the function.
+  (pcase-let* ((`(,_type . ,func) (org-edna--function-for-key (intern keyword)))
+               (`(,_usage . ,doc) (help-split-fundoc (documentation func t) func)))
+    (with-help-window (help-buffer)
+      (princ doc))))
 
 
 
