@@ -526,6 +526,8 @@ All arguments are symbols, unless noted otherwise.
 - scheduled-down:  Scheduled time, closest first
 - deadline-up:     Deadline time, farthest first
 - deadline-down:   Deadline time, closest first
+- timestamp-up:    Timestamp time, farthest first
+- timestamp-down:  Timestamp time, closest first
 
 Many of the other finders are shorthand for argument combinations of relative:
 
@@ -1503,6 +1505,14 @@ making any changes:
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.0
+
+- Various bugs fixes
+  - Fixed parsing of consideration
+  - Limited cache to just the finders that don't depend on current position
+- Added "buffer" option for match finder
+- Added timestamp sorting to relatives finder
+
 ** 1.0beta8
 Quick fix for beta7.
 ** 1.0beta7

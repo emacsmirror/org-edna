@@ -1102,6 +1102,28 @@ This avoids org-id digging into its internal database."
                    (org-with-point-at current
                      (org-edna-finder/relatives arg 'deadline-down size))))))
 
+(ert-deftest org-edna-relatives/sort-timestamp ()
+  (let* ((start-marker org-edna-test-relative-parent-one)
+         (target-list `(,org-edna-test-relative-child-with-todo
+                        ,org-edna-test-relative-child-with-done
+                        ,org-edna-test-relative-commented-child
+                        ,org-edna-test-relative-child-with-children
+                        ,org-edna-test-relative-standard-child
+                        ,org-edna-test-relative-archived-child))
+         (arg 'step-down)
+         (size (length target-list))
+         (org-agenda-files `(,org-edna-test-file))
+         (current (org-edna-find-test-heading start-marker))
+         (siblings (mapcar
+                    (lambda (uuid) (org-edna-find-test-heading uuid))
+                    target-list)))
+    (should (equal siblings
+                   (org-with-point-at current
+                     (org-edna-finder/relatives arg 'timestamp-up size))))
+    (should (equal (nreverse siblings)
+                   (org-with-point-at current
+                     (org-edna-finder/relatives arg 'timestamp-down size))))))
+
 (ert-deftest org-edna-cache/no-entry ()
   (let* ((org-edna-finder-use-cache t)
          (org-edna--finder-cache (make-hash-table :test 'equal)))
@@ -1174,6 +1196,8 @@ This avoids org-id digging into its internal database."
           (org-edna-action/todo! nil 'TODO)
           (should (string-equal (org-entry-get nil "TODO") "TODO")))
       (org-edna-test-restore-test-file))))
+
+;; Scheduled
 
 (ert-deftest org-edna-action-scheduled/wkdy ()
   ;; Override `current-time' so we can get a deterministic value
@@ -1355,6 +1379,189 @@ This avoids org-id digging into its internal database."
           ;; Back to Saturday for other tests
           (org-edna-action/scheduled! nil "2000-01-15 Sat 00:00")
           (should (string-equal (org-entry-get nil "SCHEDULED")
+                                "<2000-01-15 Sat 00:00>")))
+      (org-edna-test-restore-test-file))))
+
+(ert-deftest org-edna-action-deadline/wkdy ()
+  ;; Override `current-time' so we can get a deterministic value
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-edna-find-test-heading "0d491588-7da3-43c5-b51a-87fbd34f79f7")))
+    (unwind-protect
+        (org-with-point-at target
+          (org-edna-action/deadline! nil "Mon")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-17 Mon>"))
+          (org-edna-action/deadline! nil 'rm)
+          (should (not (org-entry-get nil "DEADLINE")))
+          (org-edna-action/deadline! nil "Mon 9:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-17 Mon 09:00>"))
+          (org-edna-action/deadline! nil 'rm)
+          (should (not (org-entry-get nil "DEADLINE"))))
+      (org-edna-test-restore-test-file))))
+
+(ert-deftest org-edna-action-deadline/cp ()
+  (let* ((org-agenda-files `(,org-edna-test-file))
+         (target (org-edna-find-test-heading "0d491588-7da3-43c5-b51a-87fbd34f79f7"))
+         (source (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5"))
+         (pairs '((cp . rm) (copy . remove) ("cp" . "rm") ("copy" . "remove"))))
+    (unwind-protect
+        (org-with-point-at target
+          (dolist (pair pairs)
+            (org-edna-action/deadline! source (car pair))
+            (should (string-equal (org-entry-get nil "DEADLINE")
+                                  "<2000-01-15 Sat 00:00>"))
+            (org-edna-action/deadline! source (cdr pair))
+            (should (not (org-entry-get nil "DEADLINE")))))
+      (org-edna-test-restore-test-file))))
+
+(ert-deftest org-edna-action-deadline/inc ()
+  ;; Override `current-time' so we can get a deterministic value
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
+    (unwind-protect
+        (org-with-point-at target
+          ;; Time starts at Jan 15, 2000
+          (org-edna-action/deadline! nil "2000-01-15 Sat 00:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:00>"))
+          ;; Increment 1 minute
+          (org-edna-action/deadline! nil "+1M")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:01>"))
+          ;; Decrement 1 minute
+          (org-edna-action/deadline! nil "-1M")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:00>"))
+          ;; +1 day
+          (org-edna-action/deadline! nil "+1d")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-16 Sun 00:00>"))
+          ;; +1 hour from current time
+          (org-edna-action/deadline! nil "++1h")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 01:00>"))
+          ;; Back to Saturday
+          (org-edna-action/deadline! nil "2000-01-15 Sat 00:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:00>"))
+          ;; -1 day to Friday
+          (org-edna-action/deadline! nil "-1d")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-14 Fri 00:00>"))
+          ;; Increment two days to the next weekday
+          (org-edna-action/deadline! nil "+2wkdy")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-17 Mon 00:00>"))
+          ;; Increment one day, expected to land on a weekday
+          (org-edna-action/deadline! nil "+1wkdy")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-18 Tue 00:00>"))
+          ;; Move forward 8 days, then backward until we find a weekend
+          (org-edna-action/deadline! nil "+8d -wknd")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-23 Sun 00:00>"))
+          ;; Move forward one week, then forward until we find a weekday
+          ;; (org-edna-action/deadline! nil "+1w +wkdy")
+          ;; (should (string-equal (org-entry-get nil "DEADLINE")
+          ;;                       "<2000-01-31 Mon 00:00>"))
+          ;; Back to Saturday for other tests
+          (org-edna-action/deadline! nil "2000-01-15 Sat 00:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:00>")))
+      (org-edna-test-restore-test-file))))
+
+(ert-deftest org-edna-action-deadline/landing ()
+  "Test landing arguments to deadline increment."
+  ;; Override `current-time' so we can get a deterministic value
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
+    (unwind-protect
+        (org-with-point-at target
+          ;; Time starts at Jan 15, 2000
+          (org-edna-action/deadline! nil "2000-01-15 Sat 00:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:00>"))
+          ;; Move forward 10 days, then backward until we find a weekend
+          (org-edna-action/deadline! nil "+10d -wknd")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-23 Sun 00:00>"))
+          ;; Move forward one week, then forward until we find a weekday
+          (org-edna-action/deadline! nil "+1w +wkdy")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-31 Mon 00:00>"))
+          ;; Back to Saturday for other tests
+          (org-edna-action/deadline! nil "2000-01-15 Sat 00:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:00>")))
+      (org-edna-test-restore-test-file))))
+
+(ert-deftest org-edna-action-deadline/landing-no-hour ()
+  "Test landing arguments to deadline increment, without hour."
+  ;; Override `current-time' so we can get a deterministic value
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-edna-find-test-heading "caf27724-0887-4565-9765-ed2f1edcfb16")))
+    (unwind-protect
+        (org-with-point-at target
+          ;; Time starts at Jan 1, 2017
+          (org-edna-action/deadline! nil "2017-01-01 Sun")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2017-01-01 Sun>"))
+          ;; Move forward 10 days, then backward until we find a weekend
+          (org-edna-action/deadline! nil "+10d -wknd")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2017-01-08 Sun>"))
+          ;; Move forward one week, then forward until we find a weekday
+          (org-edna-action/deadline! nil "+1w +wkdy")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2017-01-16 Mon>"))
+          ;; Back to Saturday for other tests
+          (org-edna-action/deadline! nil "2017-01-01 Sun")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2017-01-01 Sun>")))
+      (org-edna-test-restore-test-file))))
+
+(ert-deftest org-edna-action-deadline/float ()
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (org-agenda-files `(,org-edna-test-file))
+             (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
+    (unwind-protect
+        (org-with-point-at target
+          ;; Time starts at Jan 15, 2000
+          (org-edna-action/deadline! nil "2000-01-15 Sat 00:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-01-15 Sat 00:00>"))
+          ;; The third Tuesday of next month (Feb 15th)
+          (org-edna-action/deadline! nil "float 3 Tue")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-02-15 Tue 00:00>"))
+          ;; The second Friday of the following May (May 12th)
+          (org-edna-action/deadline! nil "float 2 5 May")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-05-12 Fri 00:00>"))
+          ;; Move forward to the second Wednesday of the next month (June 14th)
+          (org-edna-action/deadline! nil "float 2 Wednesday")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-06-14 Wed 00:00>"))
+          ;; Move forward to the first Thursday in the following Jan (Jan 4th, 2001)
+          (org-edna-action/deadline! nil "float 1 4 Jan")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2001-01-04 Thu 00:00>"))
+          ;; The fourth Monday in Feb, 2000 (Feb 28th)
+          (org-edna-action/deadline! nil "float ++4 monday")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-02-28 Mon 00:00>"))
+          ;; The second Monday after Mar 12th, 2000 (Mar 20th)
+          (org-edna-action/deadline! nil "float 2 monday Mar 12")
+          (should (string-equal (org-entry-get nil "DEADLINE")
+                                "<2000-03-20 Mon 00:00>"))
+          ;; Back to Saturday for other tests
+          (org-edna-action/deadline! nil "2000-01-15 Sat 00:00")
+          (should (string-equal (org-entry-get nil "DEADLINE")
                                 "<2000-01-15 Sat 00:00>")))
       (org-edna-test-restore-test-file))))
 
@@ -2039,6 +2246,7 @@ the relative finders all still work while cache is enabled."
               (should (string-equal (org-entry-get shower-pom "COUNT") "0")))
           ;; Change the test file back to its original state.
           (org-edna-test-restore-test-file))))))
+
 (provide 'org-edna-tests)
 
 ;;; org-edna-tests.el ends here

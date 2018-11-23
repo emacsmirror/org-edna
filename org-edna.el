@@ -810,6 +810,14 @@ Return a list of markers for the descendants."
   (when-let* ((entry-tags (org-get-tags-at)))
     (seq-intersection tags entry-tags)))
 
+(defun org-edna--get-timestamp-time (pom &optional inherit)
+  "Get the timestamp time as a time tuple, of a format suitable
+for calling org-schedule with, or if there is no timestamp,
+returns nil."
+  (let ((time (org-entry-get pom "TIMESTAMP" inherit)))
+    (when time
+      (apply 'encode-time (org-parse-time-string time)))))
+
 (defun org-edna-finder/relatives (&rest options)
   "Find some relative of the current heading.
 
@@ -875,7 +883,9 @@ All arguments are symbols, unless noted otherwise.
 - scheduled-up:    Scheduled time, farthest first
 - scheduled-down:  Scheduled time, closest first
 - deadline-up:     Deadline time, farthest first
-- deadline-down:   Deadline time, closest first"
+- deadline-down:   Deadline time, closest first
+- timestamp-up:    Timestamp time, farthest first
+- timestamp-down:  Timestamp time, closest first"
   (let (targets
         sortfun
         reverse-sort
@@ -1028,6 +1038,18 @@ All arguments are symbols, unless noted otherwise.
                (lambda (lhs rhs)
                  (let ((time-lhs (org-get-deadline-time lhs))
                        (time-rhs (org-get-deadline-time rhs)))
+                   (time-less-p time-lhs time-rhs)))))
+        ('timestamp-up
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((time-lhs (org-edna--get-timestamp-time lhs))
+                       (time-rhs (org-edna--get-timestamp-time rhs)))
+                   (not (time-less-p time-lhs time-rhs))))))
+        ('timestamp-down
+         (setq sortfun
+               (lambda (lhs rhs)
+                 (let ((time-lhs (org-edna--get-timestamp-time lhs))
+                       (time-rhs (org-edna--get-timestamp-time rhs)))
                    (time-less-p time-lhs time-rhs)))))))
     (setq filterfuns (nreverse filterfuns))
     (when (and targets sortfun)
@@ -1285,11 +1307,18 @@ N is an integer.  WHAT can be `day', `month', `year', `minute',
     (org-timestamp-change n what)
     (buffer-string)))
 
+(defun org-edna--property-for-planning-type (type)
+  (pcase type
+    ('scheduled "SCHEDULED")
+    ('deadline "DEADLINE")
+    ('timestamp "TIMESTAMP")
+    (_ "")))
+
 (defun org-edna--get-planning-info (what)
   "Get the planning info for WHAT.
 
-WHAT is either 'scheduled or 'deadline."
-  (org-entry-get nil (if (eq what 'scheduled) "SCHEDULED" "DEADLINE")))
+WHAT is one of 'scheduled, 'deadline, or 'timestamp."
+  (org-entry-get nil (org-edna--property-for-planning-type what)))
 
 ;; Silence the byte-compiler
 (defvar parse-time-weekdays)
