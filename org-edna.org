@@ -1093,43 +1093,73 @@ tagged "test" does *not* have the property PROP set to "1".
 "Consideration" and "consider" are special keywords that are only valid for
 blockers.
 
-This says "Allow a task to complete if CONSIDERATION of its targets pass the
-given condition".
+A blocker says "If ANY heading in TARGETS meets CONDITION, block this task".
 
-This keyword can allow specifying only a portion of tasks to consider:
+In order to modify the ANY part of that statement, the ~consider~ keyword may be
+used:
 
-1. consider(PERCENT)
-2. consider(NUMBER)
-3. consider(all) (Default)
-4. consider(any)
+1. consider(any)
+2. consider(all)
+3. consider(FRACTION)
+4. consider(NUMBER)
 
-(1) tells the blocker to only consider some portion of the targets.  If at least
-PERCENT of them are in a DONE state, allow the task to be set to DONE.  PERCENT
-must be a decimal, and doesn't need to include a %-sign.
+(1) blocks the current task if any target meets the blocking condition.  This is
+the default case.
 
-(2) tells the blocker to only consider NUMBER of the targets.
+(2) blocks the current task only if all targets meet the blocking condition.
 
-(3) tells the blocker to consider all following targets.
+#+begin_src org
+,* Shovel Snow
+,** TODO Shovel on Monday
+,** TODO Shovel on Tuesday
+,** TODO Shovel on Wednesday
+,** TODO Put shovel away
+   :PROPERTIES:
+   :BLOCKER: consider(all) rest-of-siblings-wrap
+   :END:
+#+end_src
 
-(4) tells the blocker to allow passage if any of the targets pass.
+The above example blocks "Put shovel away" so long as all of the siblings are
+still marked TODO.
 
-A consideration must be specified before the conditions to which it applies:
+(3) blocks the current task if at least FRACTION of the targets meet the
+blocking condition.
 
-#+BEGIN_EXAMPLE
-consider(0.5) siblings match("find_me") consider(all) !done?
-#+END_EXAMPLE
+#+begin_src org
+,* Work
+,** TODO Shovel Snow
+,** TODO Clean room
+,** TODO Vacuum
+,** TODO Eat lunch
+,** TODO Work on Edna
+   :PROPERTIES:
+   :BLOCKER: consider(0.5) rest-of-siblings-wrap
+   :END:
+#+end_src
 
-The above code will allow task completion if at least half the siblings are
-complete, and all tasks tagged "find_me" are complete.
+The above example blocks "Work on Edna" so long as at least half of the siblings
+are marked TODO.  This means that three of them must be completed before
+development can begin on Edna.
 
-#+BEGIN_SRC emacs-lisp
-consider(1) ids(ID1 ID2 ID3) consider(2) ids(ID3 ID4 ID5 ID6)
-#+END_SRC
+(4) blocks the current task if at least NUMBER of the targets meet the blocking
+condition.
 
-The above code will allow task completion if at least one of ID1, ID2, and ID3
-are complete, and at least two of ID3, ID4, ID5, and ID6 are complete.
+#+begin_src org
+,* Work
+,** TODO Shovel Snow
+,** TODO Clean room
+,** TODO Vacuum
+,** TODO Eat lunch
+,** TODO Work on Edna
+   :PROPERTIES:
+   :BLOCKER: consider(2) rest-of-siblings-wrap
+   :END:
+#+end_src
 
-If no consideration is given, ALL is assumed.
+The above example blocks "Work on Edna" so long as two of the siblings are
+marked TODO.  This means that NUMBER=1 is the same as specifying ~any~.
+
+A consideration must be specified before the conditions to which it applies.
 
 Both "consider" and "consideration" are valid keywords; they both mean the same
 thing.
@@ -1188,18 +1218,19 @@ trigger the original until the last one is marked DONE.
 Occasionally, you may find that you'd rather execute a form if the condition
 *would* block.  There are two options.
 
-The first is confusing: use ~consider(any)~.  This will tell Edna to pass so
-long as one of the targets meets the condition.  This is the opposite of Edna's
-standard operation, which only allows passage if all targets meet the condition.
+The first is to use ~consider(all)~.  This will tell Edna to block only if all
+of the targets meets the condition, and thus not block if at least one of them
+does not meet the condition.  This is the opposite of Edna's standard operation,
+which only allows passage if all targets meet the condition.
 
 #+begin_src org
 ,* TODO Prepare Tomorrow's Lunch                                     :nightly:
   :PROPERTIES:
-  :TRIGGER:  if consider(any) match("nightly") then ids(12345) todo!(DONE) endif
+  :TRIGGER:  if consider(all) match("nightly") then ids(12345) todo!(DONE) endif
   :END:
 #+end_src
 
-The second is a lot easier to understand: just switch the then and else clauses:
+The second is to switch the then and else clauses:
 
 #+begin_src org
 ,* TODO Prepare Tomorrow's Lunch                                     :nightly:
@@ -1512,6 +1543,7 @@ making any changes:
   - Limited cache to just the finders that don't depend on current position
 - Added "buffer" option for match finder
 - Added timestamp sorting to relatives finder
+- Inverted meaning of consideration to avoid confusion
 
 ** 1.0beta8
 Quick fix for beta7.

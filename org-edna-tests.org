@@ -231,15 +231,15 @@ DEADLINE: <2000-01-15 Sat +1d>
 :END:
 *** TODO Prepare Tomorrow's Lunch                                   :daily:
 :PROPERTIES:
-:TRIGGER:  if consider(any) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
+:TRIGGER:  if consider(all) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
 :END:
 *** TODO Lock Back Door                                             :daily:
 :PROPERTIES:
-:TRIGGER:  if consider(any) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
+:TRIGGER:  if consider(3) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
 :END:
 *** TODO Feed Dog                                                   :daily:
 :PROPERTIES:
-:TRIGGER:  if consider(any) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
+:TRIGGER:  if consider(0.9) match("daily") then ids(96f7e46c-40c3-4f5b-8f00-81a6e3cb122b) todo!(DONE) endif
 :END:
 ** Weeklies - Inverted Conditional
 :PROPERTIES:
@@ -276,4 +276,39 @@ DEADLINE: <2000-01-15 Sat +1d>
 :PROPERTIES:
 :BLOCKER:  previous-sibling !has-property?("COUNT" "3")
 :TRIGGER:  previous-sibling set-property!("COUNT" "0")
+:END:
+** Snow Shoveling
+:PROPERTIES:
+:ID:       b1d89bd8-db96-486e-874c-98e2b3a8cbf2
+:END:
+*** TODO Shovel on Monday
+*** TODO Shovel on Tuesday
+*** TODO Shovel on Wednesday
+*** TODO Put shovel away
+:PROPERTIES:
+:BLOCKER: consider(all) rest-of-siblings-wrap
+:END:
+** Work I - Consider Fraction
+:PROPERTIES:
+:ID:       7de5af8b-a226-463f-8360-edd88b99462a
+:END:
+*** TODO Shovel Snow
+*** TODO Clean room
+*** TODO Vacuum
+*** TODO Eat lunch
+*** TODO Work on Edna
+:PROPERTIES:
+:BLOCKER: consider(0.5) rest-of-siblings-wrap
+:END:
+** Work II - Consider Number
+:PROPERTIES:
+:ID:       b79279f7-be3c-45ac-96dc-6e962a5873d4
+:END:
+*** TODO Shovel Snow
+*** TODO Clean room
+*** TODO Vacuum
+*** TODO Eat lunch
+*** TODO Work on Edna
+:PROPERTIES:
+:BLOCKER: consider(2) rest-of-siblings-wrap
 :END:

@@ -2023,49 +2023,65 @@ starting from target's position."
 (defun org-edna-handle-consideration (consideration blocks)
   "Handle consideration CONSIDERATION.
 
-Edna Syntax: consider(all) [1]
+Edna Syntax: consider(any) [1]
 Edna Syntax: consider(N)   [2]
 Edna Syntax: consider(P)   [3]
-Edna Syntax: consider(any) [4]
+Edna Syntax: consider(all) [4]
 
-Form 1: consider all targets when evaluating conditions.
-Form 2: consider the condition met if only N of the targets pass.
-Form 3: consider the condition met if only P% of the targets pass.
-Form 4: consider the condition met if any target meets it
+A blocker can be read as:
+\"If ANY heading in TARGETS matches CONDITION, block this heading\"
 
-If CONSIDERATION is nil, default to 'all.
+The consideration is \"ANY\".
+
+Form 1 blocks only if any target matches the condition.  This is
+the default.
+
+Form 2 blocks only if at least N targets meet the condition.  N=1
+is the same as 'any'.
+
+Form 3 blocks only if *at least* fraction P of the targets meet
+the condition.  This should be a decimal value between 0 and 1.
+
+Form 4 blocks only if all targets match the condition.
+
+The default consideration is \"any\".
+
+If CONSIDERATION is nil, default to 'any.
 
 The \"consideration\" keyword is also provided.  It functions the
 same as \"consider\"."
-  ;; BLOCKS is a list of blocking entries; if one isn't blocked, its entry will
-  ;; be nil.
-  (let ((consideration (or consideration 'all))
-        (first-block (seq-find #'identity blocks))
-        (total-blocks (seq-length blocks))
-        (fulfilled (seq-count #'not blocks)))
+  ;; BLOCKS is a list of entries that meets the blocking condition; if one isn't
+  ;; blocked, its entry will be nil.
+  (let* ((consideration (or consideration 'any))
+         (first-block (seq-find #'identity blocks))
+         (total-blocks (seq-length blocks))
+         (fulfilled (seq-count #'not blocks))
+         (blocked (- total-blocks fulfilled)))
     (pcase consideration
-      ('all
-       ;; All of them must be fulfilled, so find the first one that isn't.
-       first-block)
       ('any
-       ;; Any of them can be fulfilled, so find the first one that is
+       ;; In order to pass, all of them must be fulfilled, so find the first one
+       ;; that isn't.
+       first-block)
+      ('all
+       ;; All of them must be set to block, so if one of them doesn't block, the
+       ;; entire entry won't block.
        (if (> fulfilled 0)
            ;; Have one fulfilled
            nil
          ;; None of them are fulfilled
          first-block))
       ((pred integerp)
-       ;; A fixed number of them must be fulfilled, so check how many aren't.
-       (let* ((fulfilled (seq-count #'not blocks)))
-         (if (>= fulfilled consideration)
-             nil
-           first-block)))
+       ;; A minimum number of them must meet the blocking condition, so check
+       ;; how many block.
+       (if (>= blocked consideration)
+           first-block
+         nil))
       ((pred floatp)
-       ;; A certain percentage of them must be fulfilled
-       (let* ((fulfilled (seq-count #'not blocks)))
-         (if (>= (/ (float fulfilled) (float total-blocks)) consideration)
-             nil
-           first-block))))))
+       ;; A certain percentage of them must block for the blocker to block.
+       (let* ((float-blocked (/ (float blocked) (float total-blocks))))
+         (if (>= float-blocked consideration)
+             first-block
+           nil))))))
 
 
 ;;; Popout editing

@@ -113,6 +113,7 @@ Contributing
 
 Changelog
 
+* 1.0: 10.
 * 1.0beta8: 10beta8.
 * 1.0beta7: 10beta7.
 * 1.0beta6: 10beta6.
@@ -668,6 +669,8 @@ and for similarity to org-depend.
    • scheduled-down: Scheduled time, closest first
    • deadline-up: Deadline time, farthest first
    • deadline-down: Deadline time, closest first
+   • timestamp-up: Timestamp time, farthest first
+   • timestamp-down: Timestamp time, closest first
 
    Many of the other finders are shorthand for argument combinations of
 relative:
@@ -1301,43 +1304,71 @@ Consideration
 “Consideration” and “consider” are special keywords that are only valid
 for blockers.
 
-   This says “Allow a task to complete if CONSIDERATION of its targets
-pass the given condition”.
+   A blocker says “If ANY heading in TARGETS meets CONDITION, block this
+task”.
 
-   This keyword can allow specifying only a portion of tasks to
-consider:
+   In order to modify the ANY part of that statement, the ‘consider’
+keyword may be used:
 
-  1. consider(PERCENT)
-  2. consider(NUMBER)
-  3. consider(all) (Default)
-  4. consider(any)
+  1. consider(any)
+  2. consider(all)
+  3. consider(FRACTION)
+  4. consider(NUMBER)
 
-   (1) tells the blocker to only consider some portion of the targets.
-If at least PERCENT of them are in a DONE state, allow the task to be
-set to DONE. PERCENT must be a decimal, and doesn’t need to include a
-%-sign.
+   (1) blocks the current task if any target meets the blocking
+condition.  This is the default case.
 
-   (2) tells the blocker to only consider NUMBER of the targets.
+   (2) blocks the current task only if all targets meet the blocking
+condition.
 
-   (3) tells the blocker to consider all following targets.
+     * Shovel Snow
+     ** TODO Shovel on Monday
+     ** TODO Shovel on Tuesday
+     ** TODO Shovel on Wednesday
+     ** TODO Put shovel away
+        :PROPERTIES:
+        :BLOCKER: consider(all) rest-of-siblings-wrap
+        :END:
 
-   (4) tells the blocker to allow passage if any of the targets pass.
+   The above example blocks “Put shovel away” so long as all of the
+siblings are still marked TODO.
+
+   (3) blocks the current task if at least FRACTION of the targets meet
+the blocking condition.
+
+     * Work
+     ** TODO Shovel Snow
+     ** TODO Clean room
+     ** TODO Vacuum
+     ** TODO Eat lunch
+     ** TODO Work on Edna
+        :PROPERTIES:
+        :BLOCKER: consider(0.5) rest-of-siblings-wrap
+        :END:
+
+   The above example blocks “Work on Edna” so long as at least half of
+the siblings are marked TODO. This means that three of them must be
+completed before development can begin on Edna.
+
+   (4) blocks the current task if at least NUMBER of the targets meet
+the blocking condition.
+
+     * Work
+     ** TODO Shovel Snow
+     ** TODO Clean room
+     ** TODO Vacuum
+     ** TODO Eat lunch
+     ** TODO Work on Edna
+        :PROPERTIES:
+        :BLOCKER: consider(2) rest-of-siblings-wrap
+        :END:
+
+   The above example blocks “Work on Edna” so long as two of the
+siblings are marked TODO. This means that NUMBER=1 is the same as
+specifying ‘any’.
 
    A consideration must be specified before the conditions to which it
-applies:
-
-     consider(0.5) siblings match("find_me") consider(all) !done?
-
-   The above code will allow task completion if at least half the
-siblings are complete, and all tasks tagged “find_me” are complete.
-
-     consider(1) ids(ID1 ID2 ID3) consider(2) ids(ID3 ID4 ID5 ID6)
-
-   The above code will allow task completion if at least one of ID1,
-ID2, and ID3 are complete, and at least two of ID3, ID4, ID5, and ID6
-are complete.
-
-   If no consideration is given, ALL is assumed.
+applies.
 
    Both “consider” and “consideration” are valid keywords; they both
 mean the same thing.
@@ -1391,18 +1422,18 @@ it won’t trigger the original until the last one is marked DONE.
    Occasionally, you may find that you’d rather execute a form if the
 condition *would* block.  There are two options.
 
-   The first is confusing: use ‘consider(any)’.  This will tell Edna to
-pass so long as one of the targets meets the condition.  This is the
-opposite of Edna’s standard operation, which only allows passage if all
-targets meet the condition.
+   The first is to use ‘consider(all)’.  This will tell Edna to block
+only if all of the targets meets the condition, and thus not block if at
+least one of them does not meet the condition.  This is the opposite of
+Edna’s standard operation, which only allows passage if all targets meet
+the condition.
 
      * TODO Prepare Tomorrow's Lunch                                     :nightly:
        :PROPERTIES:
-       :TRIGGER:  if consider(any) match("nightly") then ids(12345) todo!(DONE) endif
+       :TRIGGER:  if consider(all) match("nightly") then ids(12345) todo!(DONE) endif
        :END:
 
-   The second is a lot easier to understand: just switch the then and
-else clauses:
+   The second is to switch the then and else clauses:
 
      * TODO Prepare Tomorrow's Lunch                                     :nightly:
        :PROPERTIES:
@@ -1729,6 +1760,7 @@ Changelog
 
 * Menu:
 
+* 1.0: 10.
 * 1.0beta8: 10beta8.
 * 1.0beta7: 10beta7.
 * 1.0beta6: 10beta6.
@@ -1738,7 +1770,21 @@ Changelog
 * 1.0beta2: 10beta2.
 
 
-File: org-edna.info,  Node: 10beta8,  Next: 10beta7,  Up: Changelog
+File: org-edna.info,  Node: 10,  Next: 10beta8,  Up: Changelog
+
+1.0
+===
+
+   • Various bugs fixes
+        • Fixed parsing of consideration
+        • Limited cache to just the finders that don’t depend on current
+          position
+   • Added “buffer” option for match finder
+   • Added timestamp sorting to relatives finder
+   • Inverted meaning of consideration to avoid confusion
+
+
+File: org-edna.info,  Node: 10beta8,  Next: 10beta7,  Prev: 10,  Up: Changelog
 
 1.0beta8
 ========
@@ -1852,80 +1898,81 @@ Big release here, with three new features.
 
 Tag Table:
 Node: Top225
-Node: Copying4206
-Node: Introduction5028
-Node: Installation and Setup5976
-Node: Basic Operation6700
-Node: Blockers8551
-Node: Triggers8837
-Node: Syntax9099
-Node: Basic Features9789
-Node: Finders10143
-Node: ancestors11908
-Node: children12502
-Node: descendants12912
-Node: file13434
-Node: first-child14183
-Node: ids14443
-Node: match15104
-Node: next-sibling15742
-Node: next-sibling-wrap15999
-Node: olp16313
-Node: org-file16725
-Node: parent17370
-Node: previous-sibling17568
-Node: previous-sibling-wrap17829
-Node: relatives18108
-Node: rest-of-siblings21729
-Node: rest-of-siblings-wrap22014
-Node: self22363
-Node: siblings22524
-Node: siblings-wrap22761
-Node: Actions23065
-Node: Scheduled/Deadline23828
-Node: TODO State27343
-Node: Archive28068
-Node: Chain Property28388
-Node: Clocking29141
-Node: Property29553
-Node: Priority31726
-Node: Tag32295
-Node: Effort32512
-Node: Getting Help32896
-Node: Advanced Features33341
-Node: Finder Cache33789
-Node: Conditions34828
-Node: Heading is DONE35505
-Node: File Has Headings35711
-Node: Heading TODO State36133
-Node: Lisp Variable Set36427
-Node: Heading Has Property37095
-Node: Regexp Search37841
-Node: Negating Conditions38221
-Node: Consideration38612
-Node: Conditional Forms40200
-Node: Setting the Properties42856
-Node: Extending Edna43940
-Node: Naming Conventions44430
-Node: Finders 145222
-Node: Actions 145584
-Node: Conditions 146043
-Node: Contributing46929
-Node: Bugs47795
-Node: Working with EDE48152
-Node: Compiling Edna49236
-Node: Testing Edna50105
-Node: Before Sending Changes51086
-Node: Developing with Bazaar51773
-Node: Documentation52514
-Node: Changelog52970
-Node: 10beta853220
-Node: 10beta753332
-Node: 10beta653626
-Node: 10beta553902
-Node: 10beta454289
-Node: 10beta354542
-Node: 10beta254981
+Node: Copying4217
+Node: Introduction5039
+Node: Installation and Setup5987
+Node: Basic Operation6711
+Node: Blockers8562
+Node: Triggers8848
+Node: Syntax9110
+Node: Basic Features9800
+Node: Finders10154
+Node: ancestors11919
+Node: children12513
+Node: descendants12923
+Node: file13445
+Node: first-child14194
+Node: ids14454
+Node: match15115
+Node: next-sibling15753
+Node: next-sibling-wrap16010
+Node: olp16324
+Node: org-file16736
+Node: parent17381
+Node: previous-sibling17579
+Node: previous-sibling-wrap17840
+Node: relatives18119
+Node: rest-of-siblings21845
+Node: rest-of-siblings-wrap22130
+Node: self22479
+Node: siblings22640
+Node: siblings-wrap22877
+Node: Actions23181
+Node: Scheduled/Deadline23944
+Node: TODO State27459
+Node: Archive28184
+Node: Chain Property28504
+Node: Clocking29257
+Node: Property29669
+Node: Priority31842
+Node: Tag32411
+Node: Effort32628
+Node: Getting Help33012
+Node: Advanced Features33457
+Node: Finder Cache33905
+Node: Conditions34944
+Node: Heading is DONE35621
+Node: File Has Headings35827
+Node: Heading TODO State36249
+Node: Lisp Variable Set36543
+Node: Heading Has Property37211
+Node: Regexp Search37957
+Node: Negating Conditions38337
+Node: Consideration38728
+Node: Conditional Forms40912
+Node: Setting the Properties43600
+Node: Extending Edna44684
+Node: Naming Conventions45174
+Node: Finders 145966
+Node: Actions 146328
+Node: Conditions 146787
+Node: Contributing47673
+Node: Bugs48539
+Node: Working with EDE48896
+Node: Compiling Edna49980
+Node: Testing Edna50849
+Node: Before Sending Changes51830
+Node: Developing with Bazaar52517
+Node: Documentation53258
+Node: Changelog53714
+Node: 1053975
+Node: 10beta854377
+Node: 10beta754500
+Node: 10beta654794
+Node: 10beta555070
+Node: 10beta455457
+Node: 10beta355710
+Node: 10beta256149
 
 End Tag Table
 

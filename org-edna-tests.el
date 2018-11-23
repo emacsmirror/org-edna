@@ -26,6 +26,9 @@
 (require 'ert)
 (require 'org-id)
 
+(defvar org-edna-test-inhibit-messages nil
+  "Whether to inhibit messages (apart from ERT messages).")
+
 (defconst org-edna-test-dir
   (expand-file-name (file-name-directory (or load-file-name buffer-file-name))))
 
@@ -1184,6 +1187,7 @@ This avoids org-id digging into its internal database."
 
 (ert-deftest org-edna-action/todo-test ()
   (let* ((org-agenda-files `(,org-edna-test-file))
+         (inhibit-message org-edna-test-inhibit-messages)
          (target (org-edna-find-test-heading "0d491588-7da3-43c5-b51a-87fbd34f79f7")))
     (unwind-protect
         (org-with-point-at target
@@ -1203,6 +1207,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "0d491588-7da3-43c5-b51a-87fbd34f79f7")))
     (unwind-protect
         (org-with-point-at target
@@ -1220,6 +1225,7 @@ This avoids org-id digging into its internal database."
 
 (ert-deftest org-edna-action-scheduled/cp ()
   (let* ((org-agenda-files `(,org-edna-test-file))
+         (inhibit-message org-edna-test-inhibit-messages)
          (target (org-edna-find-test-heading "0d491588-7da3-43c5-b51a-87fbd34f79f7"))
          (source (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5"))
          (pairs '((cp . rm) (copy . remove) ("cp" . "rm") ("copy" . "remove"))))
@@ -1237,6 +1243,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
     (unwind-protect
         (org-with-point-at target
@@ -1295,6 +1302,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
     (unwind-protect
         (org-with-point-at target
@@ -1321,6 +1329,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "caf27724-0887-4565-9765-ed2f1edcfb16")))
     (unwind-protect
         (org-with-point-at target
@@ -1345,6 +1354,7 @@ This avoids org-id digging into its internal database."
 (ert-deftest org-edna-action-scheduled/float ()
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
     (unwind-protect
         (org-with-point-at target
@@ -1386,6 +1396,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "0d491588-7da3-43c5-b51a-87fbd34f79f7")))
     (unwind-protect
         (org-with-point-at target
@@ -1403,6 +1414,7 @@ This avoids org-id digging into its internal database."
 
 (ert-deftest org-edna-action-deadline/cp ()
   (let* ((org-agenda-files `(,org-edna-test-file))
+         (inhibit-message org-edna-test-inhibit-messages)
          (target (org-edna-find-test-heading "0d491588-7da3-43c5-b51a-87fbd34f79f7"))
          (source (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5"))
          (pairs '((cp . rm) (copy . remove) ("cp" . "rm") ("copy" . "remove"))))
@@ -1420,6 +1432,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
     (unwind-protect
         (org-with-point-at target
@@ -1478,6 +1491,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
     (unwind-protect
         (org-with-point-at target
@@ -1504,6 +1518,7 @@ This avoids org-id digging into its internal database."
   ;; Override `current-time' so we can get a deterministic value
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
              (org-agenda-files `(,org-edna-test-file))
+             (inhibit-message org-edna-test-inhibit-messages)
              (target (org-edna-find-test-heading "caf27724-0887-4565-9765-ed2f1edcfb16")))
     (unwind-protect
         (org-with-point-at target
@@ -1527,6 +1542,7 @@ This avoids org-id digging into its internal database."
 
 (ert-deftest org-edna-action-deadline/float ()
   (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (inhibit-message org-edna-test-inhibit-messages)
              (org-agenda-files `(,org-edna-test-file))
              (target (org-edna-find-test-heading "97e6b0f0-40c4-464f-b760-6e5ca9744eb5")))
     (unwind-protect
@@ -1566,7 +1582,8 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-tag ()
-  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at pom
           (org-edna-action/tag! nil "tag")
@@ -1576,7 +1593,8 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-property ()
-  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at pom
           (org-edna-action/set-property! nil "TEST" "1")
@@ -1586,7 +1604,8 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-property/inc-dec ()
-  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at pom
           (org-edna-action/set-property! nil "TEST" "1")
@@ -1608,7 +1627,8 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-property/next-prev ()
-  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at pom
           (org-edna-action/set-property! nil "TEST" "a")
@@ -1639,7 +1659,8 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-clock ()
-  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at pom
           (org-edna-action/clock-in! nil)
@@ -1651,6 +1672,7 @@ This avoids org-id digging into its internal database."
 
 (ert-deftest org-edna-action-priority ()
   (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (inhibit-message org-edna-test-inhibit-messages)
         (org-lowest-priority  ?C)
         (org-highest-priority ?A)
         (org-default-priority ?B))
@@ -1669,7 +1691,8 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-effort ()
-  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one)))
+  (let ((pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+        (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at pom
           (org-edna-action/set-effort! nil "0:01")
@@ -1680,11 +1703,12 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-archive ()
-  (let ((org-archive-save-context-info '(todo))
-        (pom (org-edna-find-test-heading org-edna-test-archive-heading))
-        ;; Archive it to the same location
-        (org-archive-location "::** Archive")
-        (org-edna-prompt-for-archive nil))
+  (let* ((inhibit-message org-edna-test-inhibit-messages)
+         (org-archive-save-context-info '(todo))
+         (pom (org-edna-find-test-heading org-edna-test-archive-heading))
+         ;; Archive it to the same location
+         (org-archive-location "::** Archive")
+         (org-edna-prompt-for-archive nil))
     (unwind-protect
         (org-with-point-at pom
           (org-edna-action/archive! nil)
@@ -1693,7 +1717,8 @@ This avoids org-id digging into its internal database."
       (org-edna-test-restore-test-file))))
 
 (ert-deftest org-edna-action-chain ()
-  (let ((old-pom (org-edna-find-test-heading org-edna-test-id-heading-one))
+  (let ((inhibit-message org-edna-test-inhibit-messages)
+        (old-pom (org-edna-find-test-heading org-edna-test-id-heading-one))
         (new-pom (org-edna-find-test-heading org-edna-test-id-heading-two)))
     (unwind-protect
         (progn
@@ -1709,12 +1734,13 @@ This avoids org-id digging into its internal database."
 ;; Conditions
 
 (defun org-edna-test-condition-form (func-sym pom-true pom-false block-true block-false &rest args)
-  (org-with-point-at pom-true
-    (should-not (apply func-sym t args))
-    (should     (equal (apply func-sym nil args) block-true)))
-  (org-with-point-at pom-false
-    (should     (equal (apply func-sym t args) block-false))
-    (should-not (apply func-sym nil args))))
+  (let* ((inhibit-message org-edna-test-inhibit-messages))
+    (org-with-point-at pom-true
+      (should-not (apply func-sym t args))
+      (should     (equal (apply func-sym nil args) block-true)))
+    (org-with-point-at pom-false
+      (should     (equal (apply func-sym t args) block-false))
+      (should-not (apply func-sym nil args)))))
 
 (ert-deftest org-edna-condition-done ()
   (let* ((pom-done (org-edna-find-test-heading org-edna-test-id-heading-four))
@@ -1794,27 +1820,37 @@ This avoids org-id digging into its internal database."
 
 ;; Consideration
 
-(ert-deftest org-edna-consideration/all ()
-  (let ((blocks-blocking `("a" nil "b"))
+(ert-deftest org-edna-consideration/any ()
+  (let ((blocks-all-blocking `("a" "c" "b"))
+        (blocks-some-blocking `("a" nil "b"))
         (blocks-no-blocking `(nil nil nil)))
-    (should (string-equal (org-edna-handle-consideration 'all blocks-blocking) "a"))
+    (should (string-equal (org-edna-handle-consideration 'any blocks-all-blocking) "a"))
+    (should (string-equal (org-edna-handle-consideration 'any blocks-some-blocking) "a"))
+    (should (not (org-edna-handle-consideration 'any blocks-no-blocking)))))
+
+(ert-deftest org-edna-consideration/all ()
+  (let ((blocks-all-blocking `("a" "c" "b"))
+        (blocks-some-blocking `(nil "c" nil))
+        (blocks-no-blocking `(nil nil nil)))
+    (should (string-equal (org-edna-handle-consideration 'all blocks-all-blocking) "a"))
+    (should (not (org-edna-handle-consideration 'all blocks-some-blocking)))
     (should (not (org-edna-handle-consideration 'all blocks-no-blocking)))))
 
 (ert-deftest org-edna-consideration/integer ()
-  (let ((blocks-blocking `("a" "c" "b"))
-        (blocks-no-blocking `("a" nil "b"))
-        (blocks-empty `(nil nil nil)))
-    (should (string-equal (org-edna-handle-consideration 1 blocks-blocking) "a"))
-    (should (not (org-edna-handle-consideration 1 blocks-no-blocking)))
-    (should (not (org-edna-handle-consideration 1 blocks-empty)))))
+  (let ((blocks-all-blocking `("a" "c" "b"))
+        (blocks-some-blocking `("a" nil "b"))
+        (blocks-no-blocking `(nil nil nil)))
+    (should (string-equal (org-edna-handle-consideration 2 blocks-all-blocking) "a"))
+    (should (string-equal (org-edna-handle-consideration 2 blocks-some-blocking) "a"))
+    (should (not (org-edna-handle-consideration 2 blocks-no-blocking)))))
 
 (ert-deftest org-edna-consideration/float ()
-  (let ((blocks-blocking `("a" "c" "b"))
-        (blocks-no-blocking `("a" nil "b"))
-        (blocks-empty `(nil nil nil)))
-    (should (string-equal (org-edna-handle-consideration 0.25 blocks-blocking) "a"))
-    (should (not (org-edna-handle-consideration 0.25 blocks-no-blocking)))
-    (should (not (org-edna-handle-consideration 0.25 blocks-empty)))))
+  (let ((blocks-all-blocking `("a" "c" "b"))
+        (blocks-some-blocking `("a" nil "b"))
+        (blocks-no-blocking `(nil nil nil)))
+    (should (string-equal (org-edna-handle-consideration 0.25 blocks-all-blocking) "a"))
+    (should (string-equal (org-edna-handle-consideration 0.25 blocks-some-blocking) "a"))
+    (should (not (org-edna-handle-consideration 0.25 blocks-no-blocking)))))
 
 
 ;;; Full Run-through Tests from the Documentation
@@ -1823,7 +1859,8 @@ This avoids org-id digging into its internal database."
   (let* ((start-heading (org-edna-find-test-heading "24a0c3bb-7e69-4e9e-bb98-5aba2ff17bb1"))
          (org-todo-keywords '((sequence "TODO" "|" "DONE")))
          ;; Only block based on Edna
-         (org-blocker-hook 'org-edna-blocker-function))
+         (org-blocker-hook 'org-edna-blocker-function)
+         (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at start-heading
           (save-restriction
@@ -1856,7 +1893,8 @@ This avoids org-id digging into its internal database."
          ;; Only block based on Edna
          (org-blocker-hook 'org-edna-blocker-function)
          ;; Enable cache
-         (org-edna-finder-use-cache t))
+         (org-edna-finder-use-cache t)
+         (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at start-heading
           (save-restriction
@@ -1887,7 +1925,8 @@ This avoids org-id digging into its internal database."
   (let* ((start-heading (org-edna-find-test-heading "cc18dc74-00e8-4081-b46f-e36800041fe7"))
          (org-todo-keywords '((sequence "TODO" "|" "DONE")))
          ;; Only block based on Edna
-         (org-blocker-hook 'org-edna-blocker-function))
+         (org-blocker-hook 'org-edna-blocker-function)
+         (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at start-heading
           (save-restriction
@@ -1925,7 +1964,8 @@ This avoids org-id digging into its internal database."
          ;; Only block based on Edna
          (org-blocker-hook 'org-edna-blocker-function)
          ;; Enable cache
-         (org-edna-finder-use-cache t))
+         (org-edna-finder-use-cache t)
+         (inhibit-message org-edna-test-inhibit-messages))
     (unwind-protect
         (org-with-point-at start-heading
           (save-restriction
@@ -1965,7 +2005,8 @@ This avoids org-id digging into its internal database."
              ;; Only block based on Edna
              (org-blocker-hook 'org-edna-blocker-function)
              ;; Only trigger based on Edna
-             (org-trigger-hook 'org-edna-trigger-function))
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
@@ -2021,7 +2062,8 @@ the relative finders all still work while cache is enabled."
              ;; Only trigger based on Edna
              (org-trigger-hook 'org-edna-trigger-function)
              ;; Enable cache
-             (org-edna-finder-use-cache t))
+             (org-edna-finder-use-cache t)
+             (inhibit-message org-edna-test-inhibit-messages))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
@@ -2073,7 +2115,8 @@ the relative finders all still work while cache is enabled."
              ;; Only block based on Edna
              (org-blocker-hook 'org-edna-blocker-function)
              ;; Only trigger based on Edna
-             (org-trigger-hook 'org-edna-trigger-function))
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
@@ -2114,7 +2157,8 @@ the relative finders all still work while cache is enabled."
              ;; Only trigger based on Edna
              (org-trigger-hook 'org-edna-trigger-function)
              ;; Enable cache
-             (org-edna-finder-use-cache t))
+             (org-edna-finder-use-cache t)
+             (inhibit-message org-edna-test-inhibit-messages))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
@@ -2153,7 +2197,8 @@ the relative finders all still work while cache is enabled."
              ;; Only block based on Edna
              (org-blocker-hook 'org-edna-blocker-function)
              ;; Only trigger based on Edna
-             (org-trigger-hook 'org-edna-trigger-function))
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
@@ -2171,7 +2216,21 @@ the relative finders all still work while cache is enabled."
               (should (org-edna-test-compare-todos door-pom "TODO" "Door after Daily Trigger"))
               (should (org-edna-test-compare-todos dog-pom "TODO" "Dog after Daily Trigger"))
               (should (string-equal (org-entry-get daily-pom "DEADLINE")
-                                    "<2000-01-16 Sun +1d>")))
+                                    "<2000-01-16 Sun +1d>"))
+              ;; Check off Door.  This should trigger the others.
+              (org-edna-test-mark-done door-pom)
+              (should (org-edna-test-compare-todos lunch-pom "TODO" "Lunch after Door Trigger"))
+              (should (org-edna-test-compare-todos door-pom "TODO" "Door after Door Trigger"))
+              (should (org-edna-test-compare-todos dog-pom "TODO" "Dog after Door Trigger"))
+              (should (string-equal (org-entry-get daily-pom "DEADLINE")
+                                    "<2000-01-17 Mon +1d>"))
+              ;; Check off Dog.  This should trigger the others.
+              (org-edna-test-mark-done dog-pom)
+              (should (org-edna-test-compare-todos lunch-pom "TODO" "Lunch after Dog Trigger"))
+              (should (org-edna-test-compare-todos door-pom "TODO" "Door after Dog Trigger"))
+              (should (org-edna-test-compare-todos dog-pom "TODO" "Dog after Dog Trigger"))
+              (should (string-equal (org-entry-get daily-pom "DEADLINE")
+                                    "<2000-01-18 Tue +1d>")))
           ;; Change the test file back to its original state.
           (org-edna-test-restore-test-file))))))
 
@@ -2184,7 +2243,8 @@ the relative finders all still work while cache is enabled."
              ;; Only block based on Edna
              (org-blocker-hook 'org-edna-blocker-function)
              ;; Only trigger based on Edna
-             (org-trigger-hook 'org-edna-trigger-function))
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
@@ -2215,7 +2275,8 @@ the relative finders all still work while cache is enabled."
              ;; Only block based on Edna
              (org-blocker-hook 'org-edna-blocker-function)
              ;; Only trigger based on Edna
-             (org-trigger-hook 'org-edna-trigger-function))
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
     (org-with-point-at start-heading
       (save-restriction
         ;; Only allow operating on the current tree
@@ -2244,6 +2305,135 @@ the relative finders all still work while cache is enabled."
               (should (not (org-edna-test-check-block towels-pom "Towels Check, Count=3")))
               ;; Verify that the property was reset.
               (should (string-equal (org-entry-get shower-pom "COUNT") "0")))
+          ;; Change the test file back to its original state.
+          (org-edna-test-restore-test-file))))))
+
+(ert-deftest org-edna-doc-test/snow-shoveling ()
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (start-heading (org-edna-find-test-heading "b1d89bd8-db96-486e-874c-98e2b3a8cbf2"))
+             ;; Only use the test file in the agenda
+             (org-agenda-files `(,org-edna-test-file))
+             (org-todo-keywords '((sequence "TODO" "|" "DONE")))
+             ;; Only block based on Edna
+             (org-blocker-hook 'org-edna-blocker-function)
+             ;; Only trigger based on Edna
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
+    (org-with-point-at start-heading
+      (save-restriction
+        ;; Only allow operating on the current tree
+        (org-narrow-to-subtree)
+        ;; Show the entire subtree
+        (outline-show-all)
+        (unwind-protect
+            (let* ((monday-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (tuesday-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (wednesday-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (shovel-pom (progn (org-next-visible-heading 1) (point-marker))))
+              ;; Verify shovels is blocked
+              (should (org-edna-test-check-block shovel-pom "Initial Shovel Check"))
+
+              ;; Mark Monday as done
+              (org-edna-test-mark-done monday-pom)
+              (should (not (org-edna-test-check-block shovel-pom "Shovel after changing Monday")))
+              ;; Reset
+              (org-edna-test-mark-todo monday-pom tuesday-pom wednesday-pom shovel-pom)
+
+              ;; Mark Tuesday as done
+              (org-edna-test-mark-done tuesday-pom)
+              (should (not (org-edna-test-check-block shovel-pom "Shovel after changing Tuesday")))
+
+              ;; Reset
+              (org-edna-test-mark-todo monday-pom tuesday-pom wednesday-pom shovel-pom)
+              ;; Mark Wednesday as done
+              (org-edna-test-mark-done wednesday-pom)
+              (should (not (org-edna-test-check-block shovel-pom "Shovel after changing Wednesday"))))
+          ;; Change the test file back to its original state.
+          (org-edna-test-restore-test-file))))))
+
+(ert-deftest org-edna-doc-test/consider-fraction ()
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (start-heading (org-edna-find-test-heading "7de5af8b-a226-463f-8360-edd88b99462a"))
+             ;; Only use the test file in the agenda
+             (org-agenda-files `(,org-edna-test-file))
+             (org-todo-keywords '((sequence "TODO" "|" "DONE")))
+             ;; Only block based on Edna
+             (org-blocker-hook 'org-edna-blocker-function)
+             ;; Only trigger based on Edna
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
+    (org-with-point-at start-heading
+      (save-restriction
+        ;; Only allow operating on the current tree
+        (org-narrow-to-subtree)
+        ;; Show the entire subtree
+        (outline-show-all)
+        (unwind-protect
+            (let* ((shovel-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (room-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (vacuum-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (lunch-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (edna-pom (progn (org-next-visible-heading 1) (point-marker))))
+              ;; Verify Edna is blocked
+              (should (org-edna-test-check-block edna-pom "Initial Edna Check"))
+
+              ;; Mark Shovel snow as done
+              (org-edna-test-mark-done shovel-pom)
+              ;; Verify Edna is still blocked
+              (should (org-edna-test-check-block edna-pom "Edna Check after Shovel"))
+
+              ;; Mark Vacuum as done
+              (org-edna-test-mark-done vacuum-pom)
+              ;; Verify Edna is still blocked
+              (should (org-edna-test-check-block edna-pom "Edna Check after Vacuum"))
+
+              ;; Mark Room as done
+              (org-edna-test-mark-done room-pom)
+              ;; Verify Edna is no longer blocked
+              (should (not (org-edna-test-check-block edna-pom "Edna Check after Room"))))
+          ;; Change the test file back to its original state.
+          (org-edna-test-restore-test-file))))))
+
+(ert-deftest org-edna-doc-test/consider-number ()
+  (cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
+             (start-heading (org-edna-find-test-heading "b79279f7-be3c-45ac-96dc-6e962a5873d4"))
+             ;; Only use the test file in the agenda
+             (org-agenda-files `(,org-edna-test-file))
+             (org-todo-keywords '((sequence "TODO" "|" "DONE")))
+             ;; Only block based on Edna
+             (org-blocker-hook 'org-edna-blocker-function)
+             ;; Only trigger based on Edna
+             (org-trigger-hook 'org-edna-trigger-function)
+             (inhibit-message org-edna-test-inhibit-messages))
+    (org-with-point-at start-heading
+      (save-restriction
+        ;; Only allow operating on the current tree
+        (org-narrow-to-subtree)
+        ;; Show the entire subtree
+        (outline-show-all)
+        (unwind-protect
+            (let* ((shovel-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (room-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (vacuum-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (lunch-pom (progn (org-next-visible-heading 1) (point-marker)))
+                   (edna-pom (progn (org-next-visible-heading 1) (point-marker))))
+              ;; Verify Edna is blocked
+              (should (org-edna-test-check-block edna-pom "Initial Edna Check"))
+
+              ;; Mark Shovel snow as done
+              (org-edna-test-mark-done shovel-pom)
+              ;; Verify Edna is still blocked
+              (should (org-edna-test-check-block edna-pom "Edna Check after Shovel"))
+
+              ;; Mark Vacuum as done
+              (org-edna-test-mark-done vacuum-pom)
+              ;; Verify Edna is still blocked
+              (should (org-edna-test-check-block edna-pom "Edna Check after Vacuum"))
+
+              ;; Mark Room as done
+              (org-edna-test-mark-done room-pom)
+              ;; Verify Edna is no longer blocked
+              (should (not (org-edna-test-check-block edna-pom "Edna Check after Room"))))
           ;; Change the test file back to its original state.
           (org-edna-test-restore-test-file))))))
 
