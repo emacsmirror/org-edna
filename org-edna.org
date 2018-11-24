@@ -699,7 +699,7 @@ Examples:
 - deadline!(copy) deadline!("+1h") :: Copy the source deadline to the target, then increment it by an hour.
 - scheduled!("+1wkdy") :: Set SCHEDULED to the next weekday
 - scheduled!("+1d +wkdy") :: Same as above
-- deadline!("+1m -wkdy") :: Set SCHEDULED up one month, but move backward to find a weekend
+- deadline!("+1m -wkdy") :: Set DEADLINE up one month, but move backward to find a weekend
 - scheduled!("float 2 Tue Feb") :: Set SCHEDULED to the second Tuesday in the following February
 - scheduled!("float 3 Thu") :: Set SCHEDULED to the third Thursday in the following month
 
@@ -1071,7 +1071,57 @@ Blocks the source heading if the regular expression REGEXP is present in any
 of the targets.
 
 The targets are expected to be files, although this will work with other targets
-as well.
+as well.  When given a target heading, the heading's file will be searched.
+*** Checking Tags
+:PROPERTIES:
+:CUSTOM_ID: has-tags
+:DESCRIPTION: Matching against a set of tags
+:END:
+
+- Syntax: has-tags?("TAG1" "TAG2" ...)
+
+Blocks the source heading if any of the target headings have one or more of the
+given tags.
+
+#+begin_src org
+,* TODO Task 1                                                          :tag1:
+,* TODO Task 2                                                     :tag3:tag2:
+,* TODO Task 3
+  :PROPERTIES:
+  :BLOCKER:  rest-of-siblings-wrap has-tags?("tag1" "tag2")
+  :END:
+#+end_src
+
+In the above example, Tasks 1 and 2 will block Task 3.  Task 1 will block it
+because it contains "tag1" as one of its tags, and likewise for Task 2 and
+"tag2".
+
+Note that marking "Task 1" or "Task 2" as DONE will not unblock "Task 3".  If
+you want to set up such a system, use the [[#match][match]] finder.
+*** Matching Headings
+:PROPERTIES:
+:CUSTOM_ID: matches
+:DESCRIPTION: Matching against a match string
+:END:
+
+- Syntax: matches?("MATCH-STRING")
+
+Blocks the source heading if any of the target headings match against
+MATCH-STRING.
+
+MATCH-STRING is a string passed to ~org-map-entries~.
+
+#+begin_src org
+,* TODO Task 1
+,* TODO Task 2
+,* TODO Task 3
+  :PROPERTIES:
+  :BLOCKER:  rest-of-siblings-wrap !matches?("TODO==\"DONE\"")
+  :END:
+#+end_src
+
+In the above example, Tasks 1 and 2 will block Task 3 until they're marked as
+DONE.
 
 *** Negating Conditions
 :PROPERTIES:
@@ -1544,6 +1594,7 @@ making any changes:
 - Added "buffer" option for match finder
 - Added timestamp sorting to relatives finder
 - Inverted meaning of consideration to avoid confusion
+- Added [[#has-tags][has-tags?]] and [[#matches][matches?]] conditions
 
 ** 1.0beta8
 Quick fix for beta7.

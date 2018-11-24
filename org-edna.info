@@ -91,6 +91,8 @@ Conditions
 * Lisp Variable Set::
 * Heading Has Property::
 * Regexp Search::                Search for a regular expression
+* Checking Tags::                Matching against a set of tags
+* Matching Headings::            Matching against a match string
 * Negating Conditions::
 
 
@@ -880,7 +882,7 @@ scheduled!(“+1wkdy”)
 scheduled!(“+1d +wkdy”)
      Same as above
 deadline!(“+1m -wkdy”)
-     Set SCHEDULED up one month, but move backward to find a weekend
+     Set DEADLINE up one month, but move backward to find a weekend
 scheduled!(“float 2 Tue Feb”)
      Set SCHEDULED to the second Tuesday in the following February
 scheduled!(“float 3 Thu”)
@@ -1182,6 +1184,8 @@ means block if any target heading isn’t done.
 * Lisp Variable Set::
 * Heading Has Property::
 * Regexp Search::                Search for a regular expression
+* Checking Tags::                Matching against a set of tags
+* Matching Headings::            Matching against a match string
 * Negating Conditions::
 
 
@@ -1269,7 +1273,7 @@ to VALUE.
 showered at least three times.
 
 
-File: org-edna.info,  Node: Regexp Search,  Next: Negating Conditions,  Prev: Heading Has Property,  Up: Conditions
+File: org-edna.info,  Node: Regexp Search,  Next: Checking Tags,  Prev: Heading Has Property,  Up: Conditions
 
 Regexp Search
 -------------
@@ -1280,10 +1284,59 @@ Regexp Search
 in any of the targets.
 
    The targets are expected to be files, although this will work with
-other targets as well.
+other targets as well.  When given a target heading, the heading’s file
+will be searched.
 
 
-File: org-edna.info,  Node: Negating Conditions,  Prev: Regexp Search,  Up: Conditions
+File: org-edna.info,  Node: Checking Tags,  Next: Matching Headings,  Prev: Regexp Search,  Up: Conditions
+
+Checking Tags
+-------------
+
+   • Syntax: has-tags?(“TAG1” “TAG2” ...)
+
+   Blocks the source heading if any of the target headings have one or
+more of the given tags.
+
+     * TODO Task 1                                                          :tag1:
+     * TODO Task 2                                                     :tag3:tag2:
+     * TODO Task 3
+       :PROPERTIES:
+       :BLOCKER:  rest-of-siblings-wrap has-tags?("tag1" "tag2")
+       :END:
+
+   In the above example, Tasks 1 and 2 will block Task 3.  Task 1 will
+block it because it contains “tag1” as one of its tags, and likewise for
+Task 2 and “tag2”.
+
+   Note that marking “Task 1” or “Task 2” as DONE will not unblock “Task
+3”.  If you want to set up such a system, use the *note match:: finder.
+
+
+File: org-edna.info,  Node: Matching Headings,  Next: Negating Conditions,  Prev: Checking Tags,  Up: Conditions
+
+Matching Headings
+-----------------
+
+   • Syntax: matches?(“MATCH-STRING”)
+
+   Blocks the source heading if any of the target headings match against
+MATCH-STRING.
+
+   MATCH-STRING is a string passed to ‘org-map-entries’.
+
+     * TODO Task 1
+     * TODO Task 2
+     * TODO Task 3
+       :PROPERTIES:
+       :BLOCKER:  rest-of-siblings-wrap !matches?("TODO==\"DONE\"")
+       :END:
+
+   In the above example, Tasks 1 and 2 will block Task 3 until they’re
+marked as DONE.
+
+
+File: org-edna.info,  Node: Negating Conditions,  Prev: Matching Headings,  Up: Conditions
 
 Negating Conditions
 -------------------
@@ -1782,6 +1835,8 @@ File: org-edna.info,  Node: 10,  Next: 10beta8,  Up: Changelog
    • Added “buffer” option for match finder
    • Added timestamp sorting to relatives finder
    • Inverted meaning of consideration to avoid confusion
+   • Added *note has-tags?: Checking Tags. and *note matches?: Matching
+     Headings. conditions
 
 
 File: org-edna.info,  Node: 10beta8,  Next: 10beta7,  Prev: 10,  Up: Changelog
@@ -1898,81 +1953,83 @@ Big release here, with three new features.
 
 Tag Table:
 Node: Top225
-Node: Copying4217
-Node: Introduction5039
-Node: Installation and Setup5987
-Node: Basic Operation6711
-Node: Blockers8562
-Node: Triggers8848
-Node: Syntax9110
-Node: Basic Features9800
-Node: Finders10154
-Node: ancestors11919
-Node: children12513
-Node: descendants12923
-Node: file13445
-Node: first-child14194
-Node: ids14454
-Node: match15115
-Node: next-sibling15753
-Node: next-sibling-wrap16010
-Node: olp16324
-Node: org-file16736
-Node: parent17381
-Node: previous-sibling17579
-Node: previous-sibling-wrap17840
-Node: relatives18119
-Node: rest-of-siblings21845
-Node: rest-of-siblings-wrap22130
-Node: self22479
-Node: siblings22640
-Node: siblings-wrap22877
-Node: Actions23181
-Node: Scheduled/Deadline23944
-Node: TODO State27459
-Node: Archive28184
-Node: Chain Property28504
-Node: Clocking29257
-Node: Property29669
-Node: Priority31842
-Node: Tag32411
-Node: Effort32628
-Node: Getting Help33012
-Node: Advanced Features33457
-Node: Finder Cache33905
-Node: Conditions34944
-Node: Heading is DONE35621
-Node: File Has Headings35827
-Node: Heading TODO State36249
-Node: Lisp Variable Set36543
-Node: Heading Has Property37211
-Node: Regexp Search37957
-Node: Negating Conditions38337
-Node: Consideration38728
-Node: Conditional Forms40912
-Node: Setting the Properties43600
-Node: Extending Edna44684
-Node: Naming Conventions45174
-Node: Finders 145966
-Node: Actions 146328
-Node: Conditions 146787
-Node: Contributing47673
-Node: Bugs48539
-Node: Working with EDE48896
-Node: Compiling Edna49980
-Node: Testing Edna50849
-Node: Before Sending Changes51830
-Node: Developing with Bazaar52517
-Node: Documentation53258
-Node: Changelog53714
-Node: 1053975
-Node: 10beta854377
-Node: 10beta754500
-Node: 10beta654794
-Node: 10beta555070
-Node: 10beta455457
-Node: 10beta355710
-Node: 10beta256149
+Node: Copying4346
+Node: Introduction5168
+Node: Installation and Setup6116
+Node: Basic Operation6840
+Node: Blockers8691
+Node: Triggers8977
+Node: Syntax9239
+Node: Basic Features9929
+Node: Finders10283
+Node: ancestors12048
+Node: children12642
+Node: descendants13052
+Node: file13574
+Node: first-child14323
+Node: ids14583
+Node: match15244
+Node: next-sibling15882
+Node: next-sibling-wrap16139
+Node: olp16453
+Node: org-file16865
+Node: parent17510
+Node: previous-sibling17708
+Node: previous-sibling-wrap17969
+Node: relatives18248
+Node: rest-of-siblings21974
+Node: rest-of-siblings-wrap22259
+Node: self22608
+Node: siblings22769
+Node: siblings-wrap23006
+Node: Actions23310
+Node: Scheduled/Deadline24073
+Node: TODO State27587
+Node: Archive28312
+Node: Chain Property28632
+Node: Clocking29385
+Node: Property29797
+Node: Priority31970
+Node: Tag32539
+Node: Effort32756
+Node: Getting Help33140
+Node: Advanced Features33585
+Node: Finder Cache34033
+Node: Conditions35072
+Node: Heading is DONE35878
+Node: File Has Headings36084
+Node: Heading TODO State36506
+Node: Lisp Variable Set36800
+Node: Heading Has Property37468
+Node: Regexp Search38214
+Node: Checking Tags38657
+Node: Matching Headings39559
+Node: Negating Conditions40156
+Node: Consideration40551
+Node: Conditional Forms42735
+Node: Setting the Properties45423
+Node: Extending Edna46507
+Node: Naming Conventions46997
+Node: Finders 147789
+Node: Actions 148151
+Node: Conditions 148610
+Node: Contributing49496
+Node: Bugs50362
+Node: Working with EDE50719
+Node: Compiling Edna51803
+Node: Testing Edna52672
+Node: Before Sending Changes53653
+Node: Developing with Bazaar54340
+Node: Documentation55081
+Node: Changelog55537
+Node: 1055798
+Node: 10beta856300
+Node: 10beta756423
+Node: 10beta656717
+Node: 10beta556993
+Node: 10beta457380
+Node: 10beta357633
+Node: 10beta258072
 
 End Tag Table
 

@@ -498,7 +498,7 @@ specific form were generated, the results will be regenerated and
 stored in cache.
 
 Minor changes to an Org file, such as setting properties or
-adding unrelated headlines, will be taken into account."
+adding unrelated headings, will be taken into account."
   :group 'org-edna
   :type 'boolean)
 
@@ -2016,6 +2016,37 @@ starting from target's position."
   (let ((condition (re-search-forward match nil t)))
     (when (org-xor condition neg)
       (format "%s %s in %s" (if neg "Did Not Find" "Found") match (buffer-name)))))
+
+(defun org-edna-condition/has-tags? (neg &rest tags)
+  "Check if the target heading has tags.
+
+Edna Syntax: has-tags?(\"tag1\" \"tag2\"...)
+
+Block if the target heading has any of the tags tag1, tag2, etc."
+  (let* ((condition (apply 'org-edna-entry-has-tags-p tags)))
+    (when (org-xor condition neg)
+      (org-get-heading))))
+
+(defun org-edna--heading-matches (match-string)
+  "Return non-nil if the current heading matches MATCH-STRING."
+  (let* ((matcher (cdr (org-make-tags-matcher match-string)))
+         (todo (org-entry-get nil "TODO"))
+         (tags (org-get-tags-at))
+         (level (org-reduced-level (org-outline-level))))
+    (funcall matcher todo tags level)))
+
+(defun org-edna-condition/matches? (neg match-string)
+  "Matches a heading against a match string.
+
+Edna Syntax: matches?(\"MATCH-STRING\")
+
+Blocks if the target heading matches MATCH-STRING.
+
+MATCH-STRING is a valid match string as passed to
+`org-map-entries'."
+  (let* ((condition (org-edna--heading-matches match-string)))
+    (when (org-xor condition neg)
+      (org-get-heading))))
 
 
 ;;; Consideration
