@@ -593,6 +593,17 @@ following reasons:
         ;; Adds the entry to the cache, and returns the results.
         (org-edna--add-to-finder-cache func-sym args)))))
 
+(defun org-edna-invalidate-cache ()
+  "Invalidate the finder cache.
+
+Use this only if there's a problem with the cache.
+
+When an Org mode buffer is reverted, the cache will be made
+useless for that buffer.  Therefore, it's a good idea to call
+this after reverting Org mode buffers."
+  (interactive)
+  (setq org-edna--finder-cache (make-hash-table :test 'equal)))
+
 
 ;;; Interactive Functions
 
