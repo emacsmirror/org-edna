@@ -971,8 +971,8 @@ All arguments are symbols, unless noted otherwise.
         ('step-down
          (setq targets
                (org-with-wide-buffer
-                (org-goto-first-child)
-                (org-edna-collect-current-level (org-edna-self-marker) nil nil t))))
+                (when (org-goto-first-child)
+                (org-edna-collect-current-level (org-edna-self-marker) nil nil t)))))
         ('todo-only
          ;; Remove any entry without a TODO keyword, or with a DONE keyword
          (cl-pushnew
