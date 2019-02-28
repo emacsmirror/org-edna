@@ -76,12 +76,65 @@
      ;; Change the test file back to its original state.
      (org-edna-test-restore-test-file)))
 
+;; Copied from org-test.el in `org-mode' source code.
+(defmacro org-test-at-time (time &rest body)
+  "Run body while pretending that the current time is TIME.
+TIME can be a non-nil Lisp time value, or a string specifying a date and time."
+  (declare (indent 1))
+  (let ((tm (cl-gensym))
+	(at (cl-gensym)))
+    `(let* ((,tm ,time)
+	    (,at (if (stringp ,tm)
+		     (apply #'encode-time (org-parse-time-string ,tm))
+		   ,tm)))
+       (cl-letf
+	   ;; Wrap builtins whose behavior can depend on the current time.
+	   (((symbol-function 'current-time)
+	     (lambda () ,at))
+	    ((symbol-function 'current-time-string)
+	     (lambda (&optional time &rest args)
+	       (apply ,(symbol-function 'current-time-string)
+		      (or time ,at) args)))
+	    ((symbol-function 'current-time-zone)
+	     (lambda (&optional time &rest args)
+	       (apply ,(symbol-function 'current-time-zone)
+		      (or time ,at) args)))
+	    ((symbol-function 'decode-time)
+	     (lambda (&optional time) (funcall ,(symbol-function 'decode-time)
+					       (or time ,at))))
+	    ((symbol-function 'encode-time)
+	     (lambda (time &rest args)
+	       (apply ,(symbol-function 'encode-time) (or time ,at) args)))
+	    ((symbol-function 'float-time)
+	     (lambda (&optional time)
+	       (funcall ,(symbol-function 'float-time) (or time ,at))))
+	    ((symbol-function 'format-time-string)
+	     (lambda (format &optional time &rest args)
+	       (apply ,(symbol-function 'format-time-string)
+		      format (or time ,at) args)))
+	    ((symbol-function 'set-file-times)
+	     (lambda (file &optional time)
+	       (funcall ,(symbol-function 'set-file-times) file (or time ,at))))
+	    ((symbol-function 'time-add)
+	     (lambda (a b) (funcall ,(symbol-function 'time-add)
+				    (or a ,at) (or b ,at))))
+	    ((symbol-function 'time-equal-p)
+	     (lambda (a b) (funcall ,(symbol-function 'time-equal-p)
+				    (or a ,at) (or b ,at))))
+	    ((symbol-function 'time-less-p)
+	     (lambda (a b) (funcall ,(symbol-function 'time-less-p)
+				    (or a ,at) (or b ,at))))
+	    ((symbol-function 'time-subtract)
+	     (lambda (a b) (funcall ,(symbol-function 'time-subtract)
+				    (or a ,at) (or b ,at)))))
+	 ,@body))))
+
 (defmacro org-edna-test-setup (&rest body)
   "Common settings for tests."
   (declare (indent 0))
   ;; Override `current-time' so we can get a deterministic value
-  `(cl-letf* (((symbol-function 'current-time) (lambda () org-edna-test-time))
-              ;; Only use the test file in the agenda
+  `(org-test-at-time org-edna-test-time
+     (let* (;; Only use the test file in the agenda
               (org-agenda-files `(,org-edna-test-file))
               ;; Ensure interactive modification of TODO states works.
               (org-todo-keywords '((sequence "TODO" "|" "DONE")))
@@ -91,7 +144,7 @@
               (org-trigger-hook 'org-edna-trigger-function)
               ;; Inhibit messages if indicated
               (inhibit-message org-edna-test-inhibit-messages))
-     ,@body))
+       ,@body)))
 
 (defmacro org-edna-with-point-at-test-heading (heading-id &rest body)
   (declare (indent 1))
