@@ -7,7 +7,7 @@
 ;; Keywords: convenience, text, org
 ;; URL: https://savannah.nongnu.org/projects/org-edna-el/
 ;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
-;; Version: 1.0.2
+;; Version: 1.1.0
 
 ;; This file is part of GNU Emacs.
 
@@ -705,6 +705,19 @@ Remove Edna's workers from `org-trigger-hook' and
   (interactive)
   (remove-hook 'org-trigger-hook 'org-edna-trigger-function)
   (remove-hook 'org-blocker-hook 'org-edna-blocker-function))
+
+;;;###autoload
+(define-minor-mode org-edna-mode
+  "Toggle Org Edna mode.
+
+Calls `org-edna-load' or `org-edna-unload'."
+  :init-value nil
+  :lighter " edna"
+  :group 'org-edna
+  :global t
+  (if org-edna-mode
+      (org-edna-load)
+    (org-edna-unload)))
 
 
 ;;; Finders
