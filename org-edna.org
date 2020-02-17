@@ -1643,6 +1643,11 @@ making any changes:
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.1.1
+- Marked ~org-edna-load~ and ~org-edna-unload~ as deprecated
+- Renamed to ~org-edna--load~ and ~org-edna--unload~ to reflect internal use only intention
+** 1.1.0
+- Added ~org-edna-mode~ as a minor mode, as opposed to ~org-edna-load~ and ~org-edna-unload~
 ** 1.0.2
 - Added ~org-edna-reset-cache~ to allow a user to reset the finder cache
 
