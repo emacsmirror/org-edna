@@ -7,7 +7,7 @@
 ;; Keywords: convenience, text, org
 ;; URL: https://savannah.nongnu.org/projects/org-edna-el/
 ;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
-;; Version: 1.1.0
+;; Version: 1.1.1
 
 ;; This file is part of GNU Emacs.
 
@@ -688,36 +688,36 @@ This shouldn't be run from outside of `org-blocker-hook'."
       t)))
 
 ;;;###autoload
-(defun org-edna-load ()
+(defun org-edna--load ()
   "Setup the hooks necessary for Org Edna to run.
 
 This means adding to `org-trigger-hook' and `org-blocker-hook'."
-  (interactive)
   (add-hook 'org-trigger-hook 'org-edna-trigger-function)
   (add-hook 'org-blocker-hook 'org-edna-blocker-function))
 
+(define-obsolete-function-alias 'org-edna-load 'org-edna-mode)
+
 ;;;###autoload
-(defun org-edna-unload ()
+(defun org-edna--unload ()
   "Unload Org Edna.
 
 Remove Edna's workers from `org-trigger-hook' and
 `org-blocker-hook'."
-  (interactive)
   (remove-hook 'org-trigger-hook 'org-edna-trigger-function)
   (remove-hook 'org-blocker-hook 'org-edna-blocker-function))
 
+(define-obsolete-function-alias 'org-edna-unload 'org-edna-mode)
+
 ;;;###autoload
 (define-minor-mode org-edna-mode
-  "Toggle Org Edna mode.
-
-Calls `org-edna-load' or `org-edna-unload'."
+  "Toggle Org Edna mode."
   :init-value nil
   :lighter " edna"
   :group 'org-edna
   :global t
   (if org-edna-mode
-      (org-edna-load)
-    (org-edna-unload)))
+      (org-edna--load)
+    (org-edna--unload)))
 
 
 ;;; Finders
