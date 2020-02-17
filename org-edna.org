@@ -14,7 +14,7 @@
 #+TEXINFO_DIR_DESC: Extensible Dependencies 'N' Actions for Org Mode tasks
 
 * Copying
-Copyright (C) 2017-2018 Free Software Foundation, Inc.
+Copyright (C) 2017-2020 Free Software Foundation, Inc.
 
 #+BEGIN_QUOTE
 This program is free software: you can redistribute it and/or modify
