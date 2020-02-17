@@ -80,10 +80,12 @@ After that, add the following to your init file (typically .emacs):
 (require 'org-edna)
 
 ;; Always necessary
-(org-edna-load)
+(org-edna-mode)
 #+END_SRC
 
-If you ever want to disable Edna, run ~org-edna-unload~.
+If you ever want to disable Edna, run ~(org-edna-mode)~ again.
+
+To determine if Edna is active, check the ~org-edna-mode~ variable.
 
 ** Basic Operation
 :PROPERTIES:

@@ -1,4 +1,4 @@
-This is org-edna.info, produced by makeinfo version 6.5 from
+This is org-edna.info, produced by makeinfo version 6.7 from
 org-edna.texi.
 
 INFO-DIR-SECTION Emacs
@@ -17,7 +17,7 @@ Org Edna
 * Copying::
 * Introduction::                 A Brief Introduction to Edna
 * Basic Features::               Finders and Actions
-* Advanced Features::
+* Advanced Features::            Be careful in here
 * Extending Edna::               What else can it do?
 * Contributing::                 I wanna help!
 * Changelog::                    List of changes by version
@@ -206,9 +206,11 @@ org     9.0.5
      (require 'org-edna)
 
      ;; Always necessary
-     (org-edna-load)
+     (org-edna-mode)
 
-   If you ever want to disable Edna, run ‘org-edna-unload’.
+   If you ever want to disable Edna, run ‘(org-edna-mode)’ again.
+
+   To determine if Edna is active, check the ‘org-edna-mode’ variable.
 
 
 File: org-edna.info,  Node: Basic Operation,  Next: Blockers,  Prev: Installation and Setup,  Up: Introduction
@@ -2036,87 +2038,87 @@ Big release here, with three new features.
 
 Tag Table:
 Node: Top225
-Node: Copying4453
-Node: Introduction5276
-Node: Installation and Setup6224
-Node: Basic Operation6948
-Node: Blockers8799
-Node: Triggers9086
-Node: Syntax9348
-Node: Basic Features10038
-Node: Finders10392
-Node: ancestors12157
-Node: children12751
-Node: descendants13161
-Node: file13683
-Node: first-child14432
-Node: ids14692
-Node: match15353
-Node: next-sibling15991
-Node: next-sibling-wrap16248
-Node: olp16562
-Node: org-file16975
-Node: parent17620
-Node: previous-sibling17818
-Node: previous-sibling-wrap18079
-Node: relatives18358
-Node: rest-of-siblings22084
-Node: rest-of-siblings-wrap22369
-Node: self22718
-Node: siblings22879
-Node: siblings-wrap23116
-Node: Actions23420
-Node: Scheduled/Deadline24183
-Node: Timestamp Format27771
-Node: TODO State28659
-Node: Archive29384
-Node: Chain Property29704
-Node: Clocking30457
-Node: Property30869
-Node: Priority33042
-Node: Tag33611
-Node: Effort33828
-Node: Getting Help34212
-Node: Advanced Features34657
-Node: Finder Cache35105
-Node: Conditions36553
-Node: Heading is DONE37438
-Node: File Has Headings37644
-Node: Heading TODO State38066
-Node: Lisp Variable Set38360
-Node: Heading Has Property39029
-Node: Regexp Search39775
-Node: Checking Tags40218
-Node: Matching Headings41120
-Node: Negating Conditions41717
-Node: Multiple Conditions42140
-Node: Consideration42822
-Node: Conditional Forms45008
-Node: Setting the Properties47697
-Node: Extending Edna48781
-Node: Naming Conventions49271
-Node: Finders (1)50065
-Node: Actions (1)50431
-Node: Conditions (1)50896
-Node: Contributing51786
-Node: Bugs52652
-Node: Working with EDE53009
-Node: Compiling Edna54094
-Node: Testing Edna54963
-Node: Before Sending Changes55945
-Node: Developing with Bazaar56632
-Node: Documentation57373
-Node: Changelog57829
-Node: 10258118
-Node: 10158398
-Node: 1058535
-Node: 10beta859049
-Node: 10beta759172
-Node: 10beta659466
-Node: 10beta559742
-Node: 10beta460129
-Node: 10beta360382
-Node: 10beta260821
+Node: Copying4483
+Node: Introduction5306
+Node: Installation and Setup6254
+Node: Basic Operation7060
+Node: Blockers8911
+Node: Triggers9198
+Node: Syntax9460
+Node: Basic Features10150
+Node: Finders10504
+Node: ancestors12269
+Node: children12863
+Node: descendants13273
+Node: file13795
+Node: first-child14544
+Node: ids14804
+Node: match15465
+Node: next-sibling16103
+Node: next-sibling-wrap16360
+Node: olp16674
+Node: org-file17087
+Node: parent17732
+Node: previous-sibling17930
+Node: previous-sibling-wrap18191
+Node: relatives18470
+Node: rest-of-siblings22196
+Node: rest-of-siblings-wrap22481
+Node: self22830
+Node: siblings22991
+Node: siblings-wrap23228
+Node: Actions23532
+Node: Scheduled/Deadline24295
+Node: Timestamp Format27883
+Node: TODO State28771
+Node: Archive29496
+Node: Chain Property29816
+Node: Clocking30569
+Node: Property30981
+Node: Priority33154
+Node: Tag33723
+Node: Effort33940
+Node: Getting Help34324
+Node: Advanced Features34769
+Node: Finder Cache35217
+Node: Conditions36665
+Node: Heading is DONE37550
+Node: File Has Headings37756
+Node: Heading TODO State38178
+Node: Lisp Variable Set38472
+Node: Heading Has Property39141
+Node: Regexp Search39887
+Node: Checking Tags40330
+Node: Matching Headings41232
+Node: Negating Conditions41829
+Node: Multiple Conditions42252
+Node: Consideration42934
+Node: Conditional Forms45120
+Node: Setting the Properties47809
+Node: Extending Edna48893
+Node: Naming Conventions49383
+Node: Finders (1)50177
+Node: Actions (1)50543
+Node: Conditions (1)51008
+Node: Contributing51898
+Node: Bugs52764
+Node: Working with EDE53121
+Node: Compiling Edna54206
+Node: Testing Edna55075
+Node: Before Sending Changes56057
+Node: Developing with Bazaar56744
+Node: Documentation57485
+Node: Changelog57941
+Node: 10258230
+Node: 10158510
+Node: 1058647
+Node: 10beta859161
+Node: 10beta759284
+Node: 10beta659578
+Node: 10beta559854
+Node: 10beta460241
+Node: 10beta360494
+Node: 10beta260933
 
 End Tag Table
 
