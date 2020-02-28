@@ -54,19 +54,17 @@
 
 This only applies to the BLOCKER and TRIGGER properties, not any
 properties used during actions or conditions."
-  :group 'org-edna
   :type 'boolean)
 
 (defcustom org-edna-prompt-for-archive t
   "Whether Edna should prompt before archiving a target."
-  :group 'org-edna
   :type 'boolean)
 
 (defcustom org-edna-timestamp-format 'short
   "Default timestamp format for scheduling and deadlines.
 
-This is either 'short for short format (no time spec), or
-'long (includes time spec).
+This is either `short' for short format (no time spec), or
+`long' (includes time spec).
 
 When using the schedule! or deadline! actions with the ++
 modifier, the current time will be used as the base time.  This
@@ -87,9 +85,8 @@ it will be used.  It should be either \"short\" or
 \"long\" (without quotes).
 
 4. Fallback to this variable."
-  :group 'org-edna
-  :type '(choice (const :tag "Short Format" 'short)
-                 (const :tag "Long Format" 'long)))
+  :type '(choice (const :tag "Short Format" short)
+                 (const :tag "Long Format" long)))
 
 ;;; Form Parsing
 
@@ -230,7 +227,7 @@ siblings todo!(TODO) => ((siblings) (todo! TODO))"
 (defun org-edna--normalize-sexp-form (form action-or-condition &optional from-string)
   "Normalize flat sexp form FORM into a full edna sexp form.
 
-ACTION-OR-CONDITION is either 'action or 'condition, indicating
+ACTION-OR-CONDITION is either `action' or `condition', indicating
 which of the two types is allowed in FORM.
 
 FROM-STRING is used internally, and is non-nil if FORM was
@@ -334,7 +331,7 @@ the remainder of FORM after the current scope was parsed."
 (defun org-edna--normalize-forms (form-list action-or-condition end-forms &optional from-string)
   "Normalize forms in flat form list FORM-LIST until one of END-FORMS is found.
 
-ACTION-OR-CONDITION is either 'action or 'condition, indicating
+ACTION-OR-CONDITION is either `action' or `condition', indicating
 which of the two types is allowed in FORM.
 
 FROM-STRING is used internally, and is non-nil if FORM was
@@ -354,7 +351,7 @@ END-FORMS is a list of forms.  When one of them is found, stop parsing."
 (defun org-edna--normalize-all-forms (form-list action-or-condition &optional from-string)
   "Normalize all forms in flat form list FORM-LIST.
 
-ACTION-OR-CONDITION is either 'action or 'condition, indicating
+ACTION-OR-CONDITION is either `action' or `condition', indicating
 which of the two types is allowed in FORM.
 
 FROM-STRING is used internally, and is non-nil if FORM was
@@ -364,7 +361,7 @@ originally a string."
 (defun org-edna-string-form-to-sexp-form (string-form action-or-condition)
   "Parse string form STRING-FORM into an Edna sexp form.
 
-ACTION-OR-CONDITION is either 'action or 'condition, indicating
+ACTION-OR-CONDITION is either `action' or `condition', indicating
 which of the two types is allowed in STRING-FORM."
   (org-edna--normalize-all-forms
    (car (org-edna--convert-form string-form))
@@ -453,9 +450,8 @@ OLD-BLOCKING-VAR are used internally."
            ;; passed through all scopes.  The only time old-blocking-var won't
            ;; be set is if we are starting a new global scope, or we are
            ;; starting a conditional scope.
-           (blocking-var (if old-blocking-var
-                             old-blocking-var
-                           (cl-gentemp "blocking-entry")))
+           (blocking-var (or old-blocking-var
+                             (cl-gentemp "blocking-entry")))
            ;; These won't be used if use-old-scope is non-nil
            (tmp-let-binds `((,target-var ,old-target-var)
                             (,consideration-var ,old-consideration-var)))
@@ -497,12 +493,13 @@ OLD-BLOCKING-VAR are used internally."
 (defun org-edna-eval-sexp-form (sexp-form)
   "Evaluate Edna sexp form SEXP-FORM."
   (eval
-   (org-edna--expand-sexp-form sexp-form)))
+   (org-edna--expand-sexp-form sexp-form)
+   t))
 
 (defun org-edna-process-form (string-form action-or-condition)
   "Process STRING-FORM.
 
-ACTION-OR-CONDITION is either 'action or 'condition, indicating
+ACTION-OR-CONDITION is either `action' or `condition', indicating
 which of the two types is allowed in STRING-FORM."
   (org-edna-eval-sexp-form
    (org-edna-string-form-to-sexp-form string-form action-or-condition)))
@@ -539,12 +536,10 @@ stored in cache.
 
 Minor changes to an Org file, such as setting properties or
 adding unrelated headings, will be taken into account."
-  :group 'org-edna
   :type 'boolean)
 
 (defcustom org-edna-finder-cache-timeout 300
   "Maximum age to keep entries in cache, in seconds."
-  :group 'org-edna
   :type 'number)
 
 (defvar org-edna-finder-cache-enabled-finders
@@ -612,8 +607,8 @@ following reasons:
   (memq func-sym org-edna-finder-cache-enabled-finders))
 
 (defun org-edna--handle-finder (func-sym args)
-  (if (or (not org-edna-finder-use-cache)
-          (not (org-edna--cache-is-enabled-for-finder func-sym)))
+  (if (not (and org-edna-finder-use-cache
+                (org-edna--cache-is-enabled-for-finder func-sym)))
       ;; Not using cache, so use the function directly.
       (apply func-sym args)
     (let* ((entry (org-edna--get-cache-entry func-sym args)))
@@ -692,10 +687,10 @@ This shouldn't be run from outside of `org-blocker-hook'."
   "Setup the hooks necessary for Org Edna to run.
 
 This means adding to `org-trigger-hook' and `org-blocker-hook'."
-  (add-hook 'org-trigger-hook 'org-edna-trigger-function)
-  (add-hook 'org-blocker-hook 'org-edna-blocker-function))
+  (add-hook 'org-trigger-hook #'org-edna-trigger-function)
+  (add-hook 'org-blocker-hook #'org-edna-blocker-function))
 
-(define-obsolete-function-alias 'org-edna-load 'org-edna-mode)
+(define-obsolete-function-alias 'org-edna-load #'org-edna-mode "1.1.1")
 
 ;;;###autoload
 (defun org-edna--unload ()
@@ -703,10 +698,10 @@ This means adding to `org-trigger-hook' and `org-blocker-hook'."
 
 Remove Edna's workers from `org-trigger-hook' and
 `org-blocker-hook'."
-  (remove-hook 'org-trigger-hook 'org-edna-trigger-function)
-  (remove-hook 'org-blocker-hook 'org-edna-blocker-function))
+  (remove-hook 'org-trigger-hook #'org-edna-trigger-function)
+  (remove-hook 'org-blocker-hook #'org-edna-blocker-function))
 
-(define-obsolete-function-alias 'org-edna-unload 'org-edna-mode)
+(define-obsolete-function-alias 'org-edna-unload #'org-edna-mode "1.1.1")
 
 ;;;###autoload
 (define-minor-mode org-edna-mode
@@ -733,7 +728,7 @@ into `org-map-entries'.
 
 SCOPE and SKIP are their counterparts in `org-map-entries'.
 SCOPE defaults to agenda, and SKIP defaults to nil.  Because of
-the different defaults in SCOPE, the symbol 'buffer may also be
+the different defaults in SCOPE, the symbol `buffer' may also be
 used.  This indicates that scope should be the current buffer,
 honoring any restriction (the equivalent of the nil SCOPE in
 `org-map-entries'.)
@@ -880,7 +875,7 @@ for calling org-schedule with, or if there is no timestamp,
 returns nil."
   (let ((time (org-entry-get pom "TIMESTAMP" inherit)))
     (when time
-      (apply 'encode-time (org-parse-time-string time)))))
+      (apply #'encode-time (org-parse-time-string time)))))
 
 (defun org-edna-finder/relatives (&rest options)
   "Find some relative of the current heading.
@@ -994,13 +989,13 @@ All arguments are symbols, unless noted otherwise.
               (or (not kwd)
                   (member kwd org-done-keywords))))
           filterfuns
-          :test 'equal))
+          :test #'equal))
         ('todo-and-done-only
          ;; Remove any entry without a TODO keyword
          (cl-pushnew
           (lambda (target)
             (not (org-entry-get target "TODO")))
-          filterfuns :test 'equal))
+          filterfuns :test #'equal))
         ((pred numberp)
          (setq idx opt))
         ((and (pred stringp)
@@ -1011,7 +1006,7 @@ All arguments are symbols, unless noted otherwise.
             ;; be removed, so remove those entries that don't have the tag
             (org-with-point-at target
               (not (org-edna-entry-has-tags-p (string-remove-prefix "+" opt)))))
-          filterfuns :test 'equal))
+          filterfuns :test #'equal))
         ((and (pred stringp)
               (pred (lambda (opt) (string-match-p "^\\-" opt))))
          (cl-pushnew
@@ -1020,7 +1015,7 @@ All arguments are symbols, unless noted otherwise.
             ;; be removed, so remove those entries that DO have the tag
             (org-with-point-at target
               (org-edna-entry-has-tags-p (string-remove-prefix "-" opt))))
-          filterfuns :test 'equal))
+          filterfuns :test #'equal))
         ((pred stringp)
          (cl-pushnew
           (lambda (target)
@@ -1029,19 +1024,19 @@ All arguments are symbols, unless noted otherwise.
             (not (string-match-p opt
                                (org-with-point-at target
                                  (org-get-heading t t t t)))))
-          filterfuns :test 'equal))
+          filterfuns :test #'equal))
         ('no-comment
          (cl-pushnew
           (lambda (target)
             (org-with-point-at target
               (org-in-commented-heading-p)))
-          filterfuns :test 'equal))
+          filterfuns :test #'equal))
         ('no-archive
          (cl-pushnew
           (lambda (target)
             (org-with-point-at target
               (org-edna-entry-has-tags-p org-archive-tag)))
-          filterfuns :test 'equal))
+          filterfuns :test #'equal))
         ('no-sort
          (setq sortfun nil
                reverse-sort nil))
@@ -1128,7 +1123,7 @@ All arguments are symbols, unless noted otherwise.
         (setq targets (seq-subseq targets 0 idx))))
     targets))
 
-(defalias 'org-edna-finder/chain-find 'org-edna-finder/relatives)
+(defalias 'org-edna-finder/chain-find #'org-edna-finder/relatives)
 
 (defun org-edna-finder/siblings (&rest options)
   "Finder for all siblings of the source heading.
@@ -1138,7 +1133,7 @@ Edna Syntax: siblings(OPTIONS...)
 Siblings are returned in order, starting from the first heading.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 'from-top options))
+  (apply #'org-edna-finder/relatives 'from-top options))
 
 (defun org-edna-finder/rest-of-siblings (&rest options)
   "Finder for the siblings after the source heading.
@@ -1149,7 +1144,7 @@ Siblings are returned in order, starting from the first heading
 after the source heading.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 'forward-no-wrap options))
+  (apply #'org-edna-finder/relatives 'forward-no-wrap options))
 
 (defun org-edna-finder/rest-of-siblings-wrap (&rest options)
   "Finder for all siblings of the source heading.
@@ -1160,9 +1155,9 @@ Siblings are returned in order, starting from the first heading
 after the source heading and wrapping when it reaches the end.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 'forward-wrap options))
+  (apply #'org-edna-finder/relatives 'forward-wrap options))
 
-(defalias 'org-edna-finder/siblings-wrap 'org-edna-finder/rest-of-siblings-wrap)
+(defalias 'org-edna-finder/siblings-wrap #'org-edna-finder/rest-of-siblings-wrap)
 
 (defun org-edna-finder/next-sibling (&rest options)
   "Finder for the next sibling after the source heading.
@@ -1173,7 +1168,7 @@ If the source heading is the last of its siblings, no target is
 returned.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 1 'forward-no-wrap options))
+  (apply #'org-edna-finder/relatives 1 'forward-no-wrap options))
 
 (defun org-edna-finder/next-sibling-wrap (&rest options)
   "Finder for the next sibling after the source heading.
@@ -1184,7 +1179,7 @@ If the source heading is the last of its siblings, its first
 sibling is returned.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 1 'forward-wrap options))
+  (apply #'org-edna-finder/relatives 1 'forward-wrap options))
 
 (defun org-edna-finder/previous-sibling (&rest options)
   "Finder for the first sibling before the source heading.
@@ -1195,7 +1190,7 @@ If the source heading is the first of its siblings, no target is
 returned.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 1 'backward-no-wrap options))
+  (apply #'org-edna-finder/relatives 1 'backward-no-wrap options))
 
 (defun org-edna-finder/previous-sibling-wrap (&rest options)
   "Finder for the first sibling before the source heading.
@@ -1206,7 +1201,7 @@ If the source heading is the first of its siblings, no target is
 returned.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 1 'backward-wrap options))
+  (apply #'org-edna-finder/relatives 1 'backward-wrap options))
 
 (defun org-edna-finder/first-child (&rest options)
   "Return the first child of the source heading.
@@ -1216,7 +1211,7 @@ Edna Syntax: first-child(OPTIONS...)
 If the source heading has no children, no target is returned.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 1 'step-down options))
+  (apply #'org-edna-finder/relatives 1 'step-down options))
 
 (defun org-edna-finder/children (&rest options)
   "Finder for the immediate children of the source heading.
@@ -1226,7 +1221,7 @@ Edna Syntax: children(OPTIONS...)
 If the source has no children, no target is returned.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 'step-down options))
+  (apply #'org-edna-finder/relatives 'step-down options))
 
 (defun org-edna-finder/parent (&rest options)
   "Finder for the parent of the source heading.
@@ -1237,7 +1232,7 @@ If the source heading is a top-level heading, no target is
 returned.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 1 'walk-up options))
+  (apply #'org-edna-finder/relatives 1 'walk-up options))
 
 (defun org-edna-finder/descendants (&rest options)
   "Finder for all descendants of the source heading.
@@ -1248,7 +1243,7 @@ This is ALL descendants of the source heading, across all
 levels.  This also includes the source heading.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 'walk-down options))
+  (apply #'org-edna-finder/relatives 'walk-down options))
 
 (defun org-edna-finder/ancestors (&rest options)
   "Finder for the ancestors of the source heading.
@@ -1271,7 +1266,7 @@ Heading 3, and Heading 4 are marked DONE, while Heading 2 is
 ignored.
 
 See `org-edna-finder/relatives' for the OPTIONS argument."
-  (apply 'org-edna-finder/relatives 'walk-up options))
+  (apply #'org-edna-finder/relatives 'walk-up options))
 
 (defun org-edna-finder/olp (file olp)
   "Finder for heading by its outline path.
@@ -1381,7 +1376,7 @@ N is an integer.  WHAT can be `day', `month', `year', `minute',
 (defun org-edna--get-planning-info (what)
   "Get the planning info for WHAT.
 
-WHAT is one of 'scheduled, 'deadline, or 'timestamp."
+WHAT is one of `scheduled', `deadline', or `timestamp'."
   (org-entry-get nil (org-edna--property-for-planning-type what)))
 
 ;; Silence the byte-compiler
@@ -1432,7 +1427,7 @@ required."
   (require 'parse-time)
   (let* ((case-fold-search t) ;; ignore case when matching, so we get any
          ;; capitalization of weekday names
-         (weekdays (mapcar 'car parse-time-weekdays))
+         (weekdays (mapcar #'car parse-time-weekdays))
          ;; type-strings maps the type of thing to the index in decoded time
          ;; (see `decode-time')
          (type-strings '(("M" . 1)
@@ -1448,7 +1443,7 @@ required."
                         ;; Match 2: Digits
                         (submatch (zero-or-more digit))
                         ;; Match 3: type string (weekday, unit)
-                        (submatch (or (any ,@(mapcar 'car type-strings))
+                        (submatch (or (any ,@(mapcar #'car type-strings))
                                       "weekday" "wkdy"
                                       ,@weekdays)
                                   word-end)
@@ -1492,7 +1487,7 @@ required."
                   (cl-incf del d)
                   (setq end-day (mod (+ end-day d) 7))))
               (list del "d" rel)))
-           ((pred (lambda (arg) (member arg (mapcar 'car type-strings))))
+           ((pred (lambda (arg) (member arg (mapcar #'car type-strings))))
             (list (* n (if (= dir ?-) -1 1)) what rel))
            ((pred (lambda (arg) (member arg weekdays)))
             (setq delta (mod (+ 7 (- wday1 wday)) 7))
@@ -1514,7 +1509,7 @@ required."
                                    ;; We increment the days by 7 when we have weeks
                                    (if (string-equal what "w") (* 7 del) del))
                           tmp))
-                       (encoded-landing-time (apply 'encode-time raw-landing-time))
+                       (encoded-landing-time (apply #'encode-time raw-landing-time))
                        ;; Get the initial time difference in days, rounding down
                        ;; (it should be something like 3.0, so it won't matter)
                        (time-diff (truncate
@@ -1563,8 +1558,8 @@ Time is computed relative to either THIS-TIME (+/-) or
 DEFAULT (++/--)."
   (require 'parse-time)
   (let* ((case-fold-search t)
-         (weekdays (mapcar 'car parse-time-weekdays))
-         (month-names (mapcar 'car parse-time-months))
+         (weekdays (mapcar #'car parse-time-weekdays))
+         (month-names (mapcar #'car parse-time-months))
          (regexp (rx-to-string
                   `(and string-start
                         "float "
@@ -1671,7 +1666,7 @@ DEFAULT (++/--)."
       (pcase org-edna-timestamp-format
         (`long t)
         (`short nil)
-        (_ (error "Invalid value for org-edna-timestamp-format %s; expected 'long or 'short"
+        (_ (error "Invalid value for org-edna-timestamp-format %s; expected 'long' or 'short'"
                   org-edna-timestamp-format)))))))
 
 
@@ -1728,7 +1723,7 @@ ARGS is a list of arguments; currently, only the first is used."
       (let* ((case-fold-search t)
              (parsed-time (org-read-date-analyze arg this-time '(nil nil nil nil nil nil)))
              (have-time (nth 2 parsed-time))
-             (final-time (apply 'encode-time (mapcar (lambda (e) (or e 0)) parsed-time)))
+             (final-time (apply #'encode-time (mapcar (lambda (e) (or e 0)) parsed-time)))
              (new-ts (format-time-string (if have-time "%F %R" "%F") final-time)))
         (org--deadline-or-schedule nil type new-ts))))))
 
@@ -1947,7 +1942,7 @@ When INCREMENT is non-nil, set the property to the next allowed value."
 	 (prop org-effort-property)
 	 (cur (org-entry-get nil prop))
 	 (allowed (org-property-get-allowed-values nil prop 'table))
-	 (existing (mapcar 'list (org-property-values prop)))
+	 (existing (mapcar #'list (org-property-values prop)))
 	 rpl
 	 (val (cond
 	       ((stringp value) value)
@@ -1960,7 +1955,7 @@ When INCREMENT is non-nil, set the property to the next allowed value."
 	       (allowed
 		(message "Select 1-9,0, [RET%s]: %s"
 			 (if cur (concat "=" cur) "")
-			 (mapconcat 'car allowed " "))
+			 (mapconcat #'car allowed " "))
 		(setq rpl (read-char-exclusive))
 		(if (equal rpl ?\r)
 		    cur
@@ -2129,7 +2124,7 @@ starting from target's position."
 Edna Syntax: has-tags?(\"tag1\" \"tag2\"...)
 
 Block if the target heading has any of the tags tag1, tag2, etc."
-  (let* ((condition (apply 'org-edna-entry-has-tags-p tags)))
+  (let* ((condition (apply #'org-edna-entry-has-tags-p tags)))
     (when (org-xor condition neg)
       (org-get-heading))))
 
@@ -2174,7 +2169,7 @@ Form 1 blocks only if any target matches the condition.  This is
 the default.
 
 Form 2 blocks only if at least N targets meet the condition.  N=1
-is the same as 'any'.
+is the same as `any'.
 
 Form 3 blocks only if *at least* fraction P of the targets meet
 the condition.  This should be a decimal value between 0 and 1.
@@ -2183,7 +2178,7 @@ Form 4 blocks only if all targets match the condition.
 
 The default consideration is \"any\".
 
-If CONSIDERATION is nil, default to 'any.
+If CONSIDERATION is nil, default to `any'.
 
 The \"consideration\" keyword is also provided.  It functions the
 same as \"consider\"."
@@ -2229,8 +2224,7 @@ same as \"consider\"."
 
 (defcustom org-edna-edit-buffer-name "*Org Edna Edit Blocker/Trigger*"
   "Name of the popout buffer for editing blockers/triggers."
-  :type 'string
-  :group 'org-edna)
+  :type 'string)
 
 (defun org-edna-in-edit-buffer-p ()
   "Return non-nil if inside the Edna edit buffer."
@@ -2289,6 +2283,8 @@ same as \"consider\"."
     (org-switch-to-buffer-other-window org-edna-edit-buffer-name)
     (erase-buffer)
     ;; Keep global-font-lock-mode from turning on font-lock-mode
+    ;; FIXME: Why do we have to do that?  Sounds like a workaround for a bug
+    ;; elsewhere (is there a bug#nb for it?).
     (let ((font-lock-global-modes '(not fundamental-mode)))
       (fundamental-mode))
     (use-local-map org-edna-edit-map)
@@ -2296,7 +2292,7 @@ same as \"consider\"."
     (setq-local org-edna-edit-original-marker heading-point)
     (setq-local org-window-configuration wc)
     (setq-local org-selected-window sel-win)
-    (setq-local org-finish-function 'org-edna-edit-finish)
+    (setq-local org-finish-function #'org-edna-edit-finish)
     (insert "Edit blockers and triggers in this buffer under their respective sections below.
 All lines under a given section will be merged into one when saving back to
 the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
@@ -2310,7 +2306,7 @@ the source buffer.  Finish with `C-c C-c' or abort with `C-c C-k'\n\n")
     (modify-syntax-entry ?? "_")
 
     ;; Set up completion
-    (add-hook 'completion-at-point-functions 'org-edna-completion-at-point nil t)))
+    (add-hook 'completion-at-point-functions #'org-edna-completion-at-point nil t)))
 
 (defun org-edna-edit-finish ()
   "Finish an Edna property edit."
@@ -2437,7 +2433,7 @@ PRED, and ACTION."
 (defun org-edna-completion-at-point ()
   "Complete the Edna keyword at point."
   (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
-    (list (car bounds) (cdr bounds) 'org-edna-completion-table-function)))
+    (list (car bounds) (cdr bounds) #'org-edna-completion-table-function)))
 
 (defun org-edna-describe-keyword (keyword)
   "Describe the Org Edna keyword KEYWORD.
