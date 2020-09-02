@@ -338,6 +338,9 @@ Here, "Test" will block until the heading with ID
 
 Note that UUIDs need not be quoted; Edna will handle that for you.
 
+The IDs may also be prefixed with ~id:~, allowing the links to the headings
+themselves to be used.
+
 *** match
 :PROPERTIES:
 :CUSTOM_ID: match
@@ -1349,6 +1352,77 @@ The second is to switch the then and else clauses:
 The conditional block tells it to evaluate that section.  Thus, you can
 conditionally add targets, or conditionally check conditions.
 
+Another common use case is to check for a property:
+
+#+begin_src org
+,* TODO My Task
+  :PROPERTIES:
+  :TRIGGER: if self has-property?("REPEAT" "2") then self set-property!("REPEAT" inc) todo!("TODO") endif
+  :REPEAT: 0
+  :END:
+#+end_src
+
+When "My Task" is set to DONE, REPEAT will be incremented, then the task will be
+set back to TODO.  This happens until REPEAT is 2.  Once that happens, the task
+will be left alone, staying in the DONE state.
+
+Be warned that trying the above example with a repeater will not work.  In order
+for that to work, Edna must take over the repeater:
+
+#+begin_src org
+,* TODO My Task
+  SCHEDULED: <2020-09-02 Wed>
+  :PROPERTIES:
+  :TRIGGER: if self has-property?("REPEAT" "2") then self set-property!("REPEAT" inc) scheduled!("+1d") todo!("TODO") endif
+  :REPEAT: 0
+  :END:
+#+end_src
+
+This example will increment the SCHEDULED time by one day every time the task is
+marked DONE.
+
+** What Constitutes "Not Done"?
+:PROPERTIES:
+:CUSTOM_ID: not_done
+:DESCRIPTION: Changing from which states Edna will activate
+:END:
+
+Sometimes, you have a heading like this:
+
+#+begin_src org
+,* My Task
+  :PROPERTIES:
+  :TRIGGER:  self set-property!("TEST" inc)
+  :END:
+#+end_src
+
+You want to mark it as DONE because that's how you do things.  Will Edna run
+when you do that?
+
+The answer is it can.  There is user variable called ~org-edna-from-todo-states~
+that controls the categories of TODO states from which changing a heading will
+cause Edna to run.  This has two possible values:
+
+- todo :: Edna will only run if the old TODO state is in
+  ~org-not-done-keywords~.  This is the default.
+- not-done :: Edna will run if the old TODO state is *not* in
+  ~org-done-keywords~.  This includes no state at all.
+
+Further, using [[#conditional_forms][conditional forms]], it is possible to take different actions
+depending on the new TODO state.  For example:
+
+#+begin_src org
+,* My Task
+  :PROPERTIES:
+  :TRIGGER:  if self todo-state?("COMPLETE") then self set-property!("TEST" inc) endif
+  :TEST:     0
+  :END:
+#+end_src
+
+This will only increment the TEST property if the new TODO state is *not*
+"COMPLETE".  Currently, there is no way to take different actions depending on
+the *old* TODO state.
+
 ** Setting the Properties
 :PROPERTIES:
 :DESCRIPTION: The easy way to set BLOCKER and TRIGGER
@@ -1643,6 +1717,10 @@ making any changes:
 :PROPERTIES:
 :DESCRIPTION: List of changes by version
 :END:
+** 1.1.2
+- Allow ~id:~ syntax in ~ids~ finder
+- Added setting ~org-edna-from-todo-states~
+  - See [[#not_done][What Constitutes "Not Done"]] for more
 ** 1.1.1
 - Marked ~org-edna-load~ and ~org-edna-unload~ as deprecated
 - Renamed to ~org-edna--load~ and ~org-edna--unload~ to reflect internal use only intention

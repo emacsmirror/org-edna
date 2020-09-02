@@ -7,7 +7,7 @@
 ;; Keywords: convenience, text, org
 ;; URL: https://savannah.nongnu.org/projects/org-edna-el/
 ;; Package-Requires: ((emacs "25.1") (seq "2.19") (org "9.0.5"))
-;; Version: 1.1.1
+;; Version: 1.1.2
 
 ;; This file is part of GNU Emacs.
 
@@ -88,6 +88,20 @@ it will be used.  It should be either \"short\" or
   :type '(choice (const :tag "Short Format" short)
                  (const :tag "Long Format" long)))
 
+(defcustom org-edna-from-todo-states 'todo
+  "Category of TODO states that allow Edna to run.
+
+This is one of the following options:
+
+If `todo', Edna will run when changing TODO state from an entry
+in `org-not-done-keywords'.
+
+If `not-done', Edna will run when changing TODO state from any
+entry that's not in `org-done-keywords'.  This includes TODO
+state being empty."
+  :type '(choice (const :tag "TODO Keywords" todo)
+                 (const :tag "Not DONE Keywords" not-done)))
+
 ;;; Form Parsing
 
 ;; 3 types of "forms" here
@@ -113,6 +127,14 @@ ERROR-POS is the positiong in MSG at which the error occurred."
      "Org Edna Syntax Error: %s\n%s\n%s"
      msg form (concat (make-string pos ?\ ) "^"))))
 
+(defun org-edna--id-pred-p (arg)
+  "Return non-nil if ARG matches id:UUID.
+
+UUID is any UUID recognized by `org-uuidgen-p'."
+  (save-match-data
+    (when (string-match "^id:\\(.*\\)" (symbol-name arg))
+      (org-uuidgen-p (match-string 1 (symbol-name arg))))))
+
 (defun org-edna--transform-arg (arg)
   "Transform argument ARG.
 
@@ -125,6 +147,10 @@ Everything else is returned as is."
     ((and (pred symbolp) ;; Symbol
           ;; Name matches `org-uuidgen-p'
           (let (pred org-uuidgen-p) (symbol-name arg)))
+     (symbol-name arg))
+    ((and (pred symbolp) ;; Symbol
+          ;; Name matches `org-uuidgen-p'
+          (pred org-edna--id-pred-p))
      (symbol-name arg))
     (_
      arg)))
@@ -631,34 +657,40 @@ this after reverting Org mode buffers."
 
 ;;; Interactive Functions
 
-(defmacro org-edna-run (change-plist &rest body)
-  "Run a TODO state change.
+(defun org-enda--should-run-in-from-state-p (from)
+  (pcase org-edna-from-todo-states
+    ('todo
+     (member from (cons 'todo org-not-done-keywords)))
+    ('not-done
+     (not (member from (cons 'done org-done-keywords))))))
+
+(defun org-edna--should-run-p (change-plist)
+  "Check if Edna should run.
 
 The state information is held in CHANGE-PLIST.  If the TODO state
 is changing from a TODO state to a DONE state, run BODY."
-  (declare (indent 1))
-  `(let* ((pos (plist-get ,change-plist :position))
-          (type (plist-get ,change-plist :type))
-          (from (plist-get ,change-plist :from))
-          (to (plist-get ,change-plist :to)))
-     (if (and
-          ;; We are only handling todo-state-change
-          (eq type 'todo-state-change)
-          ;; And only from a TODO state to a DONE state
-          (member from (cons 'todo org-not-done-keywords))
-          (member to (cons 'done org-done-keywords)))
-         (condition-case-unless-debug err
-             ,@body
-           (error
-            (if (eq (car err) 'invalid-read-syntax)
-                (org-edna--print-syntax-error (cdr err))
-              (message "Edna Error at heading %s: %s" (org-get-heading t t t) (error-message-string err)))
-            (setq org-block-entry-blocking (org-get-heading))
-            ;; Block
-            nil))
-       ;; Return t for the blocker to let the calling function know that there
-       ;; is no block here.
-       t)))
+  (let* ((type (plist-get change-plist :type))
+         (from (plist-get change-plist :from))
+         (to (plist-get change-plist :to)))
+    (and
+     ;; We are only handling todo-state-change
+     (eq type 'todo-state-change)
+     ;; And only from a TODO state to a DONE state
+     (org-enda--should-run-in-from-state-p from)
+     (member to (cons 'done org-done-keywords)))))
+
+(defmacro org-edna-run (&rest body)
+  "Run a TODO state change."
+  (declare (indent 0))
+  `(condition-case-unless-debug err
+       ,@body
+     (error
+      (if (eq (car err) 'invalid-read-syntax)
+          (org-edna--print-syntax-error (cdr err))
+        (message "Edna Error at heading %s: %s" (org-get-heading t t t) (error-message-string err)))
+      (setq org-block-entry-blocking (org-get-heading))
+      ;; Block
+      nil)))
 
 (defun org-edna-trigger-function (change-plist)
   "Trigger function work-horse.
@@ -666,9 +698,11 @@ is changing from a TODO state to a DONE state, run BODY."
 See `org-edna-run' for CHANGE-PLIST explanation.
 
 This shouldn't be run from outside of `org-trigger-hook'."
-  (org-edna-run change-plist
-    (when-let* ((form (org-entry-get pos "TRIGGER" org-edna-use-inheritance)))
-      (org-edna-process-form form 'action))))
+  (when (org-edna--should-run-p change-plist)
+    (org-edna-run
+      (when-let* ((form (org-entry-get (plist-get change-plist :position)
+                                       "TRIGGER" org-edna-use-inheritance)))
+        (org-edna-process-form form 'action)))))
 
 (defun org-edna-blocker-function (change-plist)
   "Blocker function work-horse.
@@ -676,11 +710,16 @@ This shouldn't be run from outside of `org-trigger-hook'."
 See `org-edna-run' for CHANGE-PLIST explanation.
 
 This shouldn't be run from outside of `org-blocker-hook'."
-  (org-edna-run change-plist
-    (if-let* ((form (org-entry-get pos "BLOCKER" org-edna-use-inheritance)))
-        ;; Return nil if there is no blocking entry
-        (not (setq org-block-entry-blocking (org-edna-process-form form 'condition)))
-      t)))
+  (if (org-edna--should-run-p change-plist)
+      (org-edna-run
+        (if-let* ((form (org-entry-get (plist-get change-plist :position)
+                                       "BLOCKER" org-edna-use-inheritance)))
+            ;; Return nil if there is no blocking entry
+            (not (setq org-block-entry-blocking (org-edna-process-form form 'condition)))
+          t))
+    ;; Return t for the blocker to let the calling function know that there
+    ;; is no block here.
+    t))
 
 ;;;###autoload
 (defun org-edna--load ()
@@ -755,10 +794,17 @@ honoring any restriction (the equivalent of the nil SCOPE in
 
 Edna Syntax: ids(ID1 ID2 ...)
 
-Each ID is a UUID as understood by `org-id-find'.
+Each ID is a UUID as understood by `org-id-find'.  Alternatively,
+ID may also be id:UUID, where UUID is a UUID as understood by
+`org-id-find'.
 
 Note that in the edna syntax, the IDs don't need to be quoted."
-  (mapcar (lambda (id) (org-id-find id 'marker)) ids))
+  (mapcar
+   (lambda (id)
+     (if (string-prefix-p "id:" id)
+         (org-id-find (string-remove-prefix "id:" id) 'marker)
+       (org-id-find id 'marker)))
+   ids))
 
 (defun org-edna-finder/self ()
   "Finder for the current heading.

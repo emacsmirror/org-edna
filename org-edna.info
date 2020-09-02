@@ -81,6 +81,7 @@ Advanced Features
 * Conditions::                   More than just DONE headings
 * Consideration::                Only some of them
 * Conditional Forms::            If/Then/Else
+* What Constitutes ``Not Done''?:: Changing from which states Edna will activate
 * Setting the Properties::       The easy way to set BLOCKER and TRIGGER
 
 Conditions
@@ -116,6 +117,9 @@ Contributing
 
 Changelog
 
+* 1.1.2: 112.
+* 1.1.1: 111.
+* 1.1.0: 110.
 * 1.0.2: 102.
 * 1.0.1: 101.
 * 1.0: 10.
@@ -134,7 +138,7 @@ File: org-edna.info,  Node: Copying,  Next: Introduction,  Prev: Top,  Up: Top
 Copying
 *******
 
-Copyright (C) 2017-2018 Free Software Foundation, Inc.
+Copyright (C) 2017-2020 Free Software Foundation, Inc.
 
      This program is free software: you can redistribute it and/or
      modify it under the terms of the GNU General Public License as
@@ -487,6 +491,9 @@ ids
 6dbd7921-a25c-4e20-b035-365677e00f30 are set to “DONE”.
 
    Note that UUIDs need not be quoted; Edna will handle that for you.
+
+   The IDs may also be prefixed with ‘id:’, allowing the links to the
+headings themselves to be used.
 
 
 File: org-edna.info,  Node: match,  Next: next-sibling,  Prev: ids,  Up: Finders
@@ -1168,6 +1175,7 @@ Advanced Features
 * Conditions::                   More than just DONE headings
 * Consideration::                Only some of them
 * Conditional Forms::            If/Then/Else
+* What Constitutes ``Not Done''?:: Changing from which states Edna will activate
 * Setting the Properties::       The easy way to set BLOCKER and TRIGGER
 
 
@@ -1490,7 +1498,7 @@ applies.
 mean the same thing.
 
 
-File: org-edna.info,  Node: Conditional Forms,  Next: Setting the Properties,  Prev: Consideration,  Up: Advanced Features
+File: org-edna.info,  Node: Conditional Forms,  Next: What Constitutes ``Not Done''?,  Prev: Consideration,  Up: Advanced Features
 
 Conditional Forms
 =================
@@ -1559,8 +1567,75 @@ the condition.
    The conditional block tells it to evaluate that section.  Thus, you
 can conditionally add targets, or conditionally check conditions.
 
+   Another common use case is to check for a property:
+
+     * TODO My Task
+       :PROPERTIES:
+       :TRIGGER: if self has-property?("REPEAT" "2") then self set-property!("REPEAT" inc) todo!("TODO") endif
+       :REPEAT: 0
+       :END:
+
+   When “My Task” is set to DONE, REPEAT will be incremented, then the
+task will be set back to TODO.  This happens until REPEAT is 2.  Once
+that happens, the task will be left alone, staying in the DONE state.
+
+   Be warned that trying the above example with a repeater will not
+work.  In order for that to work, Edna must take over the repeater:
+
+     * TODO My Task
+       SCHEDULED: <2020-09-02 Wed>
+       :PROPERTIES:
+       :TRIGGER: if self has-property?("REPEAT" "2") then self set-property!("REPEAT" inc) scheduled!("+1d") todo!("TODO") endif
+       :REPEAT: 0
+       :END:
+
+   This example will increment the SCHEDULED time by one day every time
+the task is marked DONE.
+
 
-File: org-edna.info,  Node: Setting the Properties,  Prev: Conditional Forms,  Up: Advanced Features
+File: org-edna.info,  Node: What Constitutes ``Not Done''?,  Next: Setting the Properties,  Prev: Conditional Forms,  Up: Advanced Features
+
+What Constitutes “Not Done”?
+============================
+
+Sometimes, you have a heading like this:
+
+     * My Task
+       :PROPERTIES:
+       :TRIGGER:  self set-property!("TEST" inc)
+       :END:
+
+   You want to mark it as DONE because that’s how you do things.  Will
+Edna run when you do that?
+
+   The answer is it can.  There is user variable called
+‘org-edna-from-todo-states’ that controls the categories of TODO states
+from which changing a heading will cause Edna to run.  This has two
+possible values:
+
+todo
+     Edna will only run if the old TODO state is in
+     ‘org-not-done-keywords’.  This is the default.
+not-done
+     Edna will run if the old TODO state is *not* in
+     ‘org-done-keywords’.  This includes no state at all.
+
+   Further, using *note conditional forms: Conditional Forms, it is
+possible to take different actions depending on the new TODO state.  For
+example:
+
+     * My Task
+       :PROPERTIES:
+       :TRIGGER:  if self todo-state?("COMPLETE") then self set-property!("TEST" inc) endif
+       :TEST:     0
+       :END:
+
+   This will only increment the TEST property if the new TODO state is
+*not* “COMPLETE”.  Currently, there is no way to take different actions
+depending on the *old* TODO state.
+
+
+File: org-edna.info,  Node: Setting the Properties,  Prev: What Constitutes ``Not Done''?,  Up: Advanced Features
 
 Setting the Properties
 ======================
@@ -1876,6 +1951,9 @@ Changelog
 
 * Menu:
 
+* 1.1.2: 112.
+* 1.1.1: 111.
+* 1.1.0: 110.
 * 1.0.2: 102.
 * 1.0.1: 101.
 * 1.0: 10.
@@ -1888,7 +1966,37 @@ Changelog
 * 1.0beta2: 10beta2.
 
 
-File: org-edna.info,  Node: 102,  Next: 101,  Up: Changelog
+File: org-edna.info,  Node: 112,  Next: 111,  Up: Changelog
+
+1.1.2
+=====
+
+   • Allow ‘id:’ syntax in ‘ids’ finder
+   • Added setting ‘org-edna-from-todo-states’
+        • See *note What Constitutes “Not Done”: What Constitutes ``Not
+          Done''?. for more
+
+
+File: org-edna.info,  Node: 111,  Next: 110,  Prev: 112,  Up: Changelog
+
+1.1.1
+=====
+
+   • Marked ‘org-edna-load’ and ‘org-edna-unload’ as deprecated
+   • Renamed to ‘org-edna--load’ and ‘org-edna--unload’ to reflect
+     internal use only intention
+
+
+File: org-edna.info,  Node: 110,  Next: 102,  Prev: 111,  Up: Changelog
+
+1.1.0
+=====
+
+   • Added ‘org-edna-mode’ as a minor mode, as opposed to
+     ‘org-edna-load’ and ‘org-edna-unload’
+
+
+File: org-edna.info,  Node: 102,  Next: 101,  Prev: 110,  Up: Changelog
 
 1.0.2
 =====
@@ -2038,87 +2146,91 @@ Big release here, with three new features.
 
 Tag Table:
 Node: Top225
-Node: Copying4483
-Node: Introduction5306
-Node: Installation and Setup6254
-Node: Basic Operation7060
-Node: Blockers8911
-Node: Triggers9198
-Node: Syntax9460
-Node: Basic Features10150
-Node: Finders10504
-Node: ancestors12269
-Node: children12863
-Node: descendants13273
-Node: file13795
-Node: first-child14544
-Node: ids14804
-Node: match15465
-Node: next-sibling16103
-Node: next-sibling-wrap16360
-Node: olp16674
-Node: org-file17087
-Node: parent17732
-Node: previous-sibling17930
-Node: previous-sibling-wrap18191
-Node: relatives18470
-Node: rest-of-siblings22196
-Node: rest-of-siblings-wrap22481
-Node: self22830
-Node: siblings22991
-Node: siblings-wrap23228
-Node: Actions23532
-Node: Scheduled/Deadline24295
-Node: Timestamp Format27883
-Node: TODO State28771
-Node: Archive29496
-Node: Chain Property29816
-Node: Clocking30569
-Node: Property30981
-Node: Priority33154
-Node: Tag33723
-Node: Effort33940
-Node: Getting Help34324
-Node: Advanced Features34769
-Node: Finder Cache35217
-Node: Conditions36665
-Node: Heading is DONE37550
-Node: File Has Headings37756
-Node: Heading TODO State38178
-Node: Lisp Variable Set38472
-Node: Heading Has Property39141
-Node: Regexp Search39887
-Node: Checking Tags40330
-Node: Matching Headings41232
-Node: Negating Conditions41829
-Node: Multiple Conditions42252
-Node: Consideration42934
-Node: Conditional Forms45120
-Node: Setting the Properties47809
-Node: Extending Edna48893
-Node: Naming Conventions49383
-Node: Finders (1)50177
-Node: Actions (1)50543
-Node: Conditions (1)51008
-Node: Contributing51898
-Node: Bugs52764
-Node: Working with EDE53121
-Node: Compiling Edna54206
-Node: Testing Edna55075
-Node: Before Sending Changes56057
-Node: Developing with Bazaar56744
-Node: Documentation57485
-Node: Changelog57941
-Node: 10258230
-Node: 10158510
-Node: 1058647
-Node: 10beta859161
-Node: 10beta759284
-Node: 10beta659578
-Node: 10beta559854
-Node: 10beta460241
-Node: 10beta360494
-Node: 10beta260933
+Node: Copying4606
+Node: Introduction5429
+Node: Installation and Setup6377
+Node: Basic Operation7183
+Node: Blockers9034
+Node: Triggers9321
+Node: Syntax9583
+Node: Basic Features10273
+Node: Finders10627
+Node: ancestors12392
+Node: children12986
+Node: descendants13396
+Node: file13918
+Node: first-child14667
+Node: ids14927
+Node: match15695
+Node: next-sibling16333
+Node: next-sibling-wrap16590
+Node: olp16904
+Node: org-file17317
+Node: parent17962
+Node: previous-sibling18160
+Node: previous-sibling-wrap18421
+Node: relatives18700
+Node: rest-of-siblings22426
+Node: rest-of-siblings-wrap22711
+Node: self23060
+Node: siblings23221
+Node: siblings-wrap23458
+Node: Actions23762
+Node: Scheduled/Deadline24525
+Node: Timestamp Format28113
+Node: TODO State29001
+Node: Archive29726
+Node: Chain Property30046
+Node: Clocking30799
+Node: Property31211
+Node: Priority33384
+Node: Tag33953
+Node: Effort34170
+Node: Getting Help34554
+Node: Advanced Features34999
+Node: Finder Cache35528
+Node: Conditions36976
+Node: Heading is DONE37861
+Node: File Has Headings38067
+Node: Heading TODO State38489
+Node: Lisp Variable Set38783
+Node: Heading Has Property39452
+Node: Regexp Search40198
+Node: Checking Tags40641
+Node: Matching Headings41543
+Node: Negating Conditions42140
+Node: Multiple Conditions42563
+Node: Consideration43245
+Node: Conditional Forms45431
+Node: What Constitutes ``Not Done''?49054
+Node: Setting the Properties50452
+Node: Extending Edna51549
+Node: Naming Conventions52039
+Node: Finders (1)52833
+Node: Actions (1)53199
+Node: Conditions (1)53664
+Node: Contributing54554
+Node: Bugs55420
+Node: Working with EDE55777
+Node: Compiling Edna56862
+Node: Testing Edna57731
+Node: Before Sending Changes58713
+Node: Developing with Bazaar59400
+Node: Documentation60141
+Node: Changelog60597
+Node: 11260928
+Node: 11161214
+Node: 11061487
+Node: 10261691
+Node: 10161983
+Node: 1062120
+Node: 10beta862634
+Node: 10beta762757
+Node: 10beta663051
+Node: 10beta563327
+Node: 10beta463714
+Node: 10beta363967
+Node: 10beta264406
 
 End Tag Table
 
